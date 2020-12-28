@@ -1,2 +1,2 @@
-# Lia
+# Kiara
 AI for 0ad
