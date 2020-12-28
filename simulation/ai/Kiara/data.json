@@ -1,0 +1,7 @@
+{
+  "name": "Kiara",
+  "description": "Kiara is experimental bot for 0.AD. Settings currently have no effect.",
+  "moduleName" : "KIARA",
+  "constructor": "KiaraBot",
+  "useShared": true
+}
