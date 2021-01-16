@@ -476,9 +476,10 @@ m.HQ.prototype.configFirstBase = function(gameState)
 	else
 		this.maxFields = false;
 
-	// - count the available wood resource, and react accordingly
+	// - count the available food resource, and react accordingly
 	let startingFood = gameState.getResources().food;
 	let check = {};
+	let hunt = 0;
 	for (let proxim of ["nearby", "medium", "faraway"])
 	{
 		for (let base of this.baseManagers)
@@ -490,8 +491,18 @@ m.HQ.prototype.configFirstBase = function(gameState)
 				check[supply.id] = true;
 				startingFood += supply.ent.resourceSupplyAmount();
 			}
+			for (let supply of base.dropsiteSupplies.hunt[proxim])
+			{
+				if (check[supply.id])
+					continue;
+				check[supply.id] = true;
+				hunt += supply.ent.resourceSupplyAmount();
+			}
 		}
 	}
+	this.cavalryRush = hunt > 2000;
+	API3.warn("cavalryRush = " + this.cavalryRush);
+
 	if (startingFood < 800)
 	{
 		if (startingSize < 25000)

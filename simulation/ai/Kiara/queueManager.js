@@ -511,7 +511,7 @@ m.QueueManager.prototype.update = function(gameState)
 m.QueueManager.prototype.checkPausedQueues = function(gameState)
 {
 	let numWorkers = gameState.countOwnEntitiesAndQueuedWithRole("worker");
-	let workersMin = Math.min(Math.max(12, 24 * this.Config.popScaling), this.Config.Economy.popPhase2);
+	let workersMin = gameState.ai.HQ.strategy == "recover" ? 100 : 20;
 	for (let q in this.queues)
 	{
 		let toBePaused = false;
@@ -540,6 +540,8 @@ m.QueueManager.prototype.checkPausedQueues = function(gameState)
 				toBePaused = false;
 			if (q == "ships" && gameState.ai.HQ.needFish &&
 				!gameState.ai.HQ.navalManager.ships.filter(API3.Filters.byClass("FishingBoat")).hasEntities())
+				toBePaused = false;
+			if (q.indexOf("ent_") != -1)
 				toBePaused = false;
 		}
 

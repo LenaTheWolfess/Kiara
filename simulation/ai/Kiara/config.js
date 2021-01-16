@@ -32,7 +32,7 @@ m.Config = function(difficulty, behavior)
 		"popForDock": 25,
 		"targetNumWorkers": 80,	// dummy, will be changed later
 		"targetNumTraders": 5,	// Target number of traders
-		"targetNumFishers": 1,	// Target number of fishers per sea
+		"targetNumFishers": 2,	// Target number of fishers per sea
 		"supportRatio": 0.35,	// fraction of support workers among the workforce
 		"provisionFields": 8	
 		};

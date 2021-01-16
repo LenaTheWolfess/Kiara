@@ -251,11 +251,21 @@ m.AttackManager.prototype.update = function(gameState, queues, events)
 
 	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
 	let unexecutedAttacks = { "Rush": 0, "EarlyRaid": 0 ,"Raid": 0, "Attack": 0, "HugeAttack": 0, "MeleeRangeInfCav": 0, "MeleeRangeCav": 0, "MeleeCav": 0, "RangeCav": 0};
+	let stopAllAttacks = gameState.ai.HQ.strategy == "recover";
+
 	for (let attackType in this.upcomingAttacks)
 	{
 		for (let i = 0; i < this.upcomingAttacks[attackType].length; ++i)
 		{
 			let attack = this.upcomingAttacks[attackType][i];
+			if (stopAllAttacks)
+			{
+				attack.Abort(gameState);
+				API3.warn("Kiara stop attack " + attack.getType());
+				this.upcomingAttacks[attackType].splice(i--, 1);
+				continue;
+			}
+			
 			attack.checkEvents(gameState, events);
 
 			if (attack.isStarted())
@@ -321,6 +331,7 @@ m.AttackManager.prototype.update = function(gameState, queues, events)
 	// creating plans after updating because an aborted plan might be reused in that case.
 
 	let doSmallAttacks = this.Config.behavior == "aggressive" && gameState.ai.HQ.strategy == "attack";
+	let doEarlyRaid = gameState.ai.HQ.strategy == "earlyRaid";
 
 	let barracksNb = gameState.getOwnEntitiesByClass("Barracks", true).filter(API3.Filters.isBuilt()).length;
 	if (doSmallAttacks && this.rushNumber < this.maxRushes && barracksNb >= 1)
@@ -341,7 +352,7 @@ m.AttackManager.prototype.update = function(gameState, queues, events)
 			this.rushNumber++;
 		}
 	}
-	else if (doSmallAttacks && this.raidNumber < this.maxRaids)
+	else if (doEarlyRaid && this.raidNumber < this.maxRaids)
 	{
 		if (unexecutedAttacks.EarlyRaid === 0)
 		{
@@ -382,6 +393,9 @@ m.AttackManager.prototype.update = function(gameState, queues, events)
 			let type = this.attackNumber < 2 || this.startedAttacks.HugeAttack.length > 0 ? "Attack" : "HugeAttack";
 			if (popCaped)
 				type = "HugeAttack";
+
+			//This is hack, because i am lazy to do it properly
+			type = "HugeAttack";
 			let attackPlan = new m.AttackPlan(gameState, this.Config, this.totalNumber, type);
 			if (attackPlan.failed)
 				this.attackPlansEncounteredWater = true; // hack

@@ -68,6 +68,7 @@ m.BaseManager.prototype.init = function(gameState, state)
 		this.dropsiteSupplies[res] = { "nearby": [], "medium": [], "faraway": [] };
 		this.gatherers[res] = { "nextCheck": 0, "used": 0, "lost": 0 };
 	}
+	this.dropsiteSupplies["hunt"] = { "nearby": [], "medium": [], "faraway": [] };
 };
 
 m.BaseManager.prototype.reset = function(gameState, state)
@@ -166,6 +167,23 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 
 	let maxDistResourceSquare = this.maxDistResourceSquare;
 	let mdrs = maxDistResourceSquare;
+	
+	let dc = {
+		"food": 1,
+		"wood": 2,
+		"stone": 1,
+		"metal": 1,
+		"hunt": 1
+	};
+
+	let ddc = {
+		"food": 1,
+		"wood": 1,
+		"stone": 1,
+		"metal": 1,
+		"hunt": 3
+	}
+
 	for (let type of dropsite.resourceDropsiteTypes())
 	{
 		let resources = gameState.getResourceSupplies(type);
@@ -176,12 +194,17 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 		let medium = this.dropsiteSupplies[type].medium;
 		let faraway = this.dropsiteSupplies[type].faraway;
 
+		let nearbyHunt = this.dropsiteSupplies["hunt"].nearby;
+		let mediumHunt = this.dropsiteSupplies["hunt"].medium;
+		let farawayHunt = this.dropsiteSupplies["hunt"].faraway;
+
 		resources.forEach(function(supply)
 		{
+			let ss = type;
 			if (!supply.position())
 				return;
 			if (supply.hasClass("Animal"))    // moving resources are treated differently
-				return;
+				ss = "hunt";
 			if (supply.hasClass("Field"))     // fields are treated separately
 				return;
 			let res = supply.resourceSupplyType().generic;
@@ -193,27 +216,41 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 			
 			let dist = API3.SquareVectorDistance(supply.position(), dropsitePos) - (radius*radius/4);
 
-			if (dist < maxDistResourceSquare*81)
+			if (dist < maxDistResourceSquare * 81 * ddc[ss])
 			{
 				let sd = supply.getMetadata(PlayerID, "dist");
 				if (Math.abs(dropsitePos[2] - supply.position()[2]) > 10) {
 					if (!sd)
 						supply.setMetadata(PlayerID, "dist", "faraway");
-					faraway.push({ "dropsite": dropsiteId, "id": supply.id(), "ent": supply, "dist": dist });
+					if (ss == "hunt")
+						farawayHunt.push({"ent": supply, "id": supply.id()});
+					else
+						faraway.push({ "dropsite": dropsiteId, "id": supply.id(), "ent": supply, "dist": dist });
 				}
-				else if (dist < maxDistResourceSquare * 6){
+				else if (dist < maxDistResourceSquare * 3 * dc[ss]){
 					supply.setMetadata(PlayerID, "dist", "nearby");
-					nearby.push({ "dropsite": dropsiteId, "id": supply.id(), "ent": supply, "dist": dist });
+					if (ss == "hunt")
+						nearbyHunt.push({"ent": supply, "id": supply.id()});
+					else
+						nearby.push({ "dropsite": dropsiteId, "id": supply.id(), "ent": supply, "dist": dist });
 				}
-				else if (dist < maxDistResourceSquare * 12) {
+				else if (dist < maxDistResourceSquare * 6 * dc[ss]) {
 					if (sd != "nearby")
 						supply.setMetadata(PlayerID, "dist", "medium");
-					medium.push({ "dropsite": dropsiteId, "id": supply.id(), "ent": supply, "dist": dist });
+						
+					if (ss == "hunt")
+						mediumHunt.push({"ent": supply, "id": supply.id()});
+					else
+						medium.push({ "dropsite": dropsiteId, "id": supply.id(), "ent": supply, "dist": dist });
 				}
 				else {
 					if (!sd)
 						supply.setMetadata(PlayerID, "dist", "faraway");
-					faraway.push({ "dropsite": dropsiteId, "id": supply.id(), "ent": supply, "dist": dist });
+						
+					if (ss == "hunt")
+						farawayHunt.push({"ent": supply, "id": supply.id()});
+					else
+						faraway.push({ "dropsite": dropsiteId, "id": supply.id(), "ent": supply, "dist": dist });
 				}
 			}
 		});
@@ -240,6 +277,16 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 		else if (dropsite.getMetadata(PlayerID, "type") == type)
 			this.signalNoSupply(gameState, type, 10, true);
 	}
+
+	this.dropsiteSupplies["hunt"].faraway.forEach(function(res){
+		Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,2,2]});
+	});
+	this.dropsiteSupplies["hunt"].medium.forEach(function(res){
+		Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,2,2]});
+	});
+	this.dropsiteSupplies["hunt"].nearby.forEach(function(res){
+		Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,2,2]});
+	});
 
 	this.checkGatherers(gameState);
 
@@ -781,6 +828,22 @@ m.BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
 			}
 		}
 	}
+
+
+	//Check how many farms we have, and move women to them
+	let nFields = gameState.getOwnEntitiesByClass("Field", true).length  + gameState.getOwnFoundationsByClass("Field").length;
+	let nGatherers = this.gatherersByType(gameState, "food").filter((ent) => ent.hasClass("FemaleCitizen")).length;
+	let missing = Math.max(0, nFields * 5 - nGatherers);
+	if (missing)
+	{
+		let cycle = ["metal", "stone", "wood"];
+		for (let type of cycle)
+		{
+			missing = this.switchGatherer(gameState, cycle, "food", missing);
+			if (!missing)
+				break;
+		}
+	}
 };
 
 /**
@@ -879,6 +942,10 @@ m.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorkers)
 							continue;
 						if (needed.type != "food" && gameState.ai.HQ.isResourceExhausted(needed.type))
 							continue;
+						if (needed.type == "food" && ent.hasClass("CitizenSoldier")) {
+//							usedPriority = true;
+							continue;
+						}
 						ent.setMetadata(PlayerID, "subrole", "gatherer");
 						ent.setMetadata(PlayerID, "gather-type", needed.type);
 						gameState.ai.HQ.AddTCResGatherer(needed.type, ent.resourceGatherRates());

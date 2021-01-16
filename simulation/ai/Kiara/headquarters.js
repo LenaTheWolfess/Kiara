@@ -687,13 +687,13 @@ m.HQ.prototype.alwaysTrain = function(gameState, queues)
 
 	if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 		if (!fHouse && !nHouses) {
-			API3.warn("add house");
+		//	API3.warn("add house");
 			let plan = new m.ConstructionPlan(gameState, "structures/{civ}_house");
 			// change the starting condition according to the situation.
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
 		}
-		API3.warn("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
+	//	API3.warn("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
 		return;
 	}
 
@@ -716,7 +716,7 @@ m.HQ.prototype.alwaysTrain = function(gameState, queues)
 	});
 
 	let pop = gameState.getPopulation() + numberQueued;
-	API3.warn("pop = " + gameState.getPopulation() + " queued pop = " + numberQueued);
+//	API3.warn("pop = " + gameState.getPopulation() + " queued pop = " + numberQueued);
 	let free = gameState.getPopulationLimit() - (gameState.getPopulation() + numberInTraining);
 
 	let anyClasses = ["Worker"];
@@ -729,7 +729,11 @@ m.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let classesRangedInf = ["Ranged", "CitizenSoldier", "Infantry"];
 
 	let farmers = gameState.getOwnEntitiesByClass("FemaleCitizen", true).length;
+	let sieges = gameState.getOwnEntitiesByClass("Siege", true).length;
+	let workers = gameState.getOwnEntitiesByRole("CitizenSoldier").length;
+
 	let supportNum = 40;
+	let siegeNum = 5;
 
 	let wantDefenders = farmers + 1 > supportNum;
 
@@ -758,14 +762,17 @@ m.HQ.prototype.alwaysTrain = function(gameState, queues)
 				classes = classesRangedInf;
 			else
 				classes = classesMeleeInf;
+		} else {
+			min = 2;
 		}
 	}
 
-	let wantSiege = gameState.currentPhase(gameState) > 2;
+	let wantSiege = pop > 200 && gameState.currentPhase(gameState) > 2 && sieges < siegeNum;
 	let siegeClass = ["Siege"];
-	let siegeRequirements = [["strength", 2]];
+	let siegeRequirements = [["strength", 3]];
 
 	let wantChampions = gameState.currentPhase(gameState) > 2 && pop > 200;
+	wantChampions = false;
 	let championClass = ["Champion"];
 	let championRequirements = [["strength", 2]];
 
@@ -791,6 +798,7 @@ m.HQ.prototype.alwaysTrain = function(gameState, queues)
 		if (ent.trainingQueue().length == 0 && q.length() < 1)
 		{
 			size = min;
+			let mmin = min;
 			let wwx = ww;
 			let template;
 
@@ -801,6 +809,7 @@ m.HQ.prototype.alwaysTrain = function(gameState, queues)
 				{
 					wwx = "attack";
 					size = 2;
+					mmin = 2;
 				}
 			}
 			if (!template && wantChampions)
@@ -829,20 +838,20 @@ m.HQ.prototype.alwaysTrain = function(gameState, queues)
 					continue;
 				size = Math.min(size, Math.floor(res[r]/cost[r]));
 			}
-			size = Math.max(size, min);
+			size = Math.max(size, mmin);
 			if (!size)
 				continue;
-			mSize = Math.max(size, 5);
+			mSize = Math.min(size, 5);
 
 			let missing = pop - (gameState.getPopulationLimit() + (fHouse * pHouse));
 			let possible = gameState.getPopulationLimit() - (pop - size);
 
 			pop += size;
 			if (missing > 0) {
-				API3.warn("missing " + missing + " -> " + pop);
+		//		API3.warn("missing " + missing + " -> " + pop);
 				this.wantPop = pop;
 				while (nHouses < 3 && missing > 0) {
-					warn("add house");
+		//			warn("add house");
 					let plan = new m.ConstructionPlan(gameState, "structures/{civ}_house");
 					// change the starting condition according to the situation.
 					plan.goRequirement = "houseNeeded";
@@ -853,7 +862,7 @@ m.HQ.prototype.alwaysTrain = function(gameState, queues)
 				if (possible > 0)
 				{
 					possible = Math.min(size, possible);
-					API3.warn("possible " + possible);
+		//			API3.warn("possible " + possible);
 					size = possible;
 					mSize = size;
 				}
@@ -864,7 +873,7 @@ m.HQ.prototype.alwaysTrain = function(gameState, queues)
 			let role = {"base": 0, "role": wwx, "support": true};
 			if (!actualTemplate.hasClass("Support"))
 				role.support = false;
-			API3.warn("addPlan " + template + " " + size);
+	//		API3.warn("addPlan " + template + " " + size);
 			q.addPlan(new m.TrainingPlan(gameState, template, role, size, mSize));
 			if (wantDefenders)
 			{
@@ -2506,7 +2515,7 @@ m.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	    this.phasing == 2 && gameState.getOwnStructures().filter(API3.Filters.byClass("Village")).length < 5)
 	{
 		// first barracks/range and stables.
-		if (numBarracks + numRanges == 0)
+		if (numBarracks + numRanges < 2)
 		{
 			let template = barracksTemplate || rangeTemplate;
 			if (template)
@@ -2525,7 +2534,7 @@ m.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		}
 
 		// Second range/barracks and stables
-		if (numBarracks + numRanges == 1 && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2)
+		if (numBarracks + numRanges == 2 && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2)
 		{
 			let template = numBarracks == 0 ? (barracksTemplate || rangeTemplate) : (rangeTemplate || barracksTemplate);
 			if (template)
@@ -2541,7 +2550,7 @@ m.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		}
 
 		// Then 3rd barracks/range/stables if needed
-		if (numBarracks + numRanges + numStables == 2 && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2 + 30)
+		if (numBarracks + numRanges + numStables == 3 && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2 + 30)
 		{
 			let template = barracksTemplate || stableTemplate || rangeTemplate;
 			if (template)
@@ -3285,6 +3294,13 @@ m.HQ.prototype.update = function(gameState, queues, events)
 	} */
 
 	let pop = gameState.getPopulation();
+	// Some units were killed, reset wantPop
+	if (this.lastPop && pop < this.lastPop)
+		this.wantPop = 0;
+	this.lastPop = pop;
+	if (this.lastPopGrow < pop)
+		this.lastPopGrow = pop;
+
 	let popCaped = gameState.getPopulationMax() - pop < 5;
 	this.checkEvents(gameState, events);
 	this.navalManager.checkEvents(gameState, queues, events);
@@ -3294,8 +3310,15 @@ m.HQ.prototype.update = function(gameState, queues, events)
 	else
 		if (this.researchManager.checkPhase(gameState, queues))
 			this.phasingQued = true;
-	if (pop > 100 && this.strategy != "attack") {
+	if (pop < 200 && pop < this.lastPopGrow) {
+		this.strategy = "recover";
+	}
+	else if (pop > 200 && this.strategy == "recover" || pop > 100) {
 		this.strategy = "attack";
+	} else if (this.cavalryRush && pop > 20) {
+		this.strategy = "earlyRaid";
+		this.attackManager.maxRaids = 2;
+		this.cavalryRush = false;
 	}
 	/*
 	if (!this.phasing && this.currentPhase < 3) {
@@ -3364,7 +3387,7 @@ m.HQ.prototype.update = function(gameState, queues, events)
 	
 	if (this.numActiveBases() > 0)
 	{
-		if (gameState.ai.playedTurn % 4 == 0 && !popCaped)
+		if (gameState.ai.playedTurn % 4 == 0/* && !popCaped*/)
 			this.trainMoreWorkers(gameState, queues);
 
 		if (gameState.ai.playedTurn % 4 == 1)
@@ -3373,7 +3396,7 @@ m.HQ.prototype.update = function(gameState, queues, events)
 		if (this.needCorral && gameState.ai.playedTurn % 4 == 3)
 			this.manageCorral(gameState, queues);
 
-		if (!queues.minorTech.hasQueuedUnits()/* && gameState.ai.playedTurn % 5 == 1*/)
+		if (!queues.minorTech.hasQueuedUnits() && this.strategy != "recover"/* && gameState.ai.playedTurn % 5 == 1*/)
 			this.researchManager.update(gameState, queues);
 	}
 
@@ -3396,7 +3419,7 @@ m.HQ.prototype.update = function(gameState, queues, events)
 		{
 			if (this.currentPhase > 1) {
 				if (!gameState.getOwnEntitiesByClass("Blacksmith", true).hasEntities() && gameState.ai.HQ.canBuild(gameState,"structures/{civ}_blacksmith"))
-					this.buildBlacksmith(gameState, queues);	
+					this.buildBlacksmith(gameState, queues);
 				this.buildTemple(gameState, queues);
 			}
 		}

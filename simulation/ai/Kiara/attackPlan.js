@@ -131,8 +131,8 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	}
 	else if (type == "EarlyRaid")
 	{
-		priority = 70;
-		this.unitStat.Cavalry = { "priority": 1, "minSize": 3, "targetSize": 5, "batchSize": 5, "classes": ["Cavalry", "CitizenSoldier"],
+		priority = 310;
+		this.unitStat.Cavalry = { "priority": 1, "minSize": 5, "targetSize": 8, "batchSize": 2, "classes": ["Cavalry", "CitizenSoldier"],
 			"interests": [ ["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
 		this.neededShips = 1;
 	}
@@ -152,17 +152,17 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 				"interests": [["strength", 3]] };
 			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "CitizenSoldier"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "Champion"],
+			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Ranged", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "Champion"],
+			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Melee", "Champion"],
 				"interests": [["strength", 3]] };
 			this.unitStat.RangedCavalry     = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Ranged", "CitizenSoldier"],
 				"interests": [["strength", 2]] };
 			this.unitStat.MeleeCavalry      = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Melee", "CitizenSoldier"],
 				"interests": [["strength", 2]] };
-			this.unitStat.ChampRangedCavalry  = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Ranged", "Champion"],
+			this.unitStat.ChampRangedCavalry  = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Cavalry", "Ranged", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeCavalry   = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Melee", "Champion"],
+			this.unitStat.ChampMeleeCavalry   = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Cavalry", "Melee", "Champion"],
 				"interests": [["strength", 2]] };
 			this.unitStat.Healer = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
 			this.unitStat.Siege = {"priority": 2, "minSize": 0, "targetSize": 5, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
@@ -173,21 +173,22 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 				"interests": [["strength", 3]] };
 			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "CitizenSoldier"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 3, "targetSize": 18, "batchSize": 5, "classes": ["Infantry", "Ranged", "Champion"],
+			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Infantry", "Ranged", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 3, "targetSize": 18, "batchSize": 5, "classes": ["Infantry", "Melee", "Champion"],
+			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Infantry", "Melee", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.RangedCavalry     = { "priority": 0.7, "minSize": 4, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Ranged", "CitizenSoldier"],
+			this.unitStat.RangedCavalry     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Ranged", "CitizenSoldier"],
 				"interests": [["strength", 2]] };
-			this.unitStat.MeleeCavalry      = { "priority": 0.7, "minSize": 4, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Melee", "CitizenSoldier"],
+			this.unitStat.MeleeCavalry      = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Melee", "CitizenSoldier"],
 				"interests": [["strength", 2]] };
-			this.unitStat.ChampRangedCavalry  = { "priority": 1, "minSize": 3, "targetSize": 15, "batchSize": 5, "classes": ["Cavalry", "Ranged", "Champion"],
+			this.unitStat.ChampRangedCavalry  = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Cavalry", "Ranged", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeCavalry   = { "priority": 1, "minSize": 3, "targetSize": 15, "batchSize": 5, "classes": ["Cavalry", "Melee", "Champion"],
+			this.unitStat.ChampMeleeCavalry   = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Cavalry", "Melee", "Champion"],
 				"interests": [["strength", 2]] };
 			this.unitStat.Hero                = { "priority": 1, "minSize": 0, "targetSize":  1, "batchSize": 1, "classes": ["Hero"],
 				"interests": [["strength", 2]] };
 			this.unitStat.Healer 			  = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
+			this.unitStat.Siege = {"priority": 2, "minSize": 0, "targetSize": 5, "batchSize": 2, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 			this.neededShips = 5;
 		}
 	}
@@ -224,7 +225,7 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		this.canBuildUnits = false;
 		this.noAll = true;
 	}
-	this.siegeState = 0;	// 0 = not yet tested, 1 = not yet any siege trainer, 2 = siege added in build orders
+	this.siegeState = 2;	// 0 = not yet tested, 1 = not yet any siege trainer, 2 = siege added in build orders
 
 	// some variables used during the attack
 	this.position5TurnsAgo = [0, 0];
@@ -405,6 +406,7 @@ m.AttackPlan.prototype.addSiegeUnits = function(gameState)
 	// no minsize as we don't want the plan to fail at the last minute though.
 	let stat = { "priority": 1, "minSize": 0, "targetSize": targetSize, "batchSize": Math.min(targetSize, 2),
 		 "classes": classes[i], "interests": [ ["siegeStrength", 3] ] };
+	API3.warn("attackPlan add siege: " + uneval(classes[i]) + " size " + targetSize);
 	this.addBuildOrder(gameState, "Siege", stat, true);
 	return true;
 };
@@ -658,20 +660,47 @@ m.AttackPlan.prototype.trainMoreUnits = function(gameState)
 		if (queue.length() <= 5)
 		{
 			let template = gameState.ai.HQ.findBestTrainableUnit(gameState, firstOrder[1], firstOrder[3].interests);
+			let allTrainers = gameState.findTrainers(template).values();
+			if (allTrainers.length == 1 && firstOrder[3].targetSize > 5 && !gameState.ai.queues.militaryBuilding.hasQueuedUnits())
+			{
+				// Request another trainer
+				let t = allTrainers[0];
+				let plan = new m.ConstructionPlan(gameState, t.templateName());
+				// change the starting condition according to the situation.
+				gameState.ai.queues.militaryBuilding.addPlan(plan);
+		//		API3.warn("attack plan adding house to reach " + wantPop);
+			}
 			// HACK (TODO replace) : if we have no trainable template... Then we'll simply remove the buildOrder,
 			// effectively removing the unit from the plan.
-			if (template === undefined)
+			let skip = false;
+			if (template === undefined && firstOrder[3].Fallback)
+			{
+				if (this.Config.debug > 1)
+					API3.warn("attack no template found " + firstOrder[1] + " fallback to " + firstOrder[3].Fallback);
+				template = gameState.ai.HQ.findBestTrainableUnit(gameState, firstOrder[3].Fallback, firstOrder[3].interests);
+				if (template === undefined)
+				{
+					if (this.Config.debug > 1)
+						API3.warn("attack no template found " + firstOrder[3].Fallback);
+					delete this.unitStat[firstOrder[4]];	// deleting the associated unitstat.
+					this.buildOrders.splice(0, 1);
+					skip = true;
+				}
+			}
+			if (template === undefined && !firstOrder[3].Fallback)
 			{
 				if (this.Config.debug > 1)
 					API3.warn("attack no template found " + firstOrder[1]);
 				delete this.unitStat[firstOrder[4]];	// deleting the associated unitstat.
 				this.buildOrders.splice(0, 1);
+				skip = true;
 			}
-			else
+
+			if (!skip)
 			{
-				if (this.Config.debug > 2)
-					API3.warn("attack template " + template + " added for plan " + this.name);
 				let max = firstOrder[3].batchSize;
+				if (this.Config.debug > 2)
+					API3.warn("attack template " + template + "size = " + max + " added for plan " + this.name);
 				let specialData = "Plan_" + this.name + "_" + firstOrder[4];
 				let data = { "plan": this.name, "special": specialData, "base": 0 };
 				data.role = gameState.getTemplate(template).hasClass("CitizenSoldier") ? "worker" : "attack";
@@ -700,7 +729,7 @@ m.AttackPlan.prototype.trainMoreUnits = function(gameState)
 			gameState.ai.queues.house.addPlan(plan);
 			missing = missing - pHouse;
 			nHouses++;
-			API3.warn("attack plan adding house to reach " + wantPop);
+		//	API3.warn("attack plan adding house to reach " + wantPop);
 		}
 	}
 };
@@ -759,7 +788,7 @@ m.AttackPlan.prototype.assignUnits = function(gameState)
 	// Assign all units without specific role
 	for (let ent of gameState.getOwnEntitiesByRole(undefined, true).values())
 	{
-		if (!ent.hasClass("Unit") || !this.isAvailableUnit(gameState, ent))
+		if ((!ent.hasClass("Unit") && !ent.hasClass("Siege")) || !this.isAvailableUnit(gameState, ent))
 			continue;
 		if (ent.hasClass("Ship") || ent.hasClass("Support") || ent.attackTypes() === undefined)
 			continue;
@@ -834,7 +863,6 @@ m.AttackPlan.prototype.reassignCavUnit = function(gameState, type)
 		ent.setMetadata(PlayerID, "plan", raid.name);
 		this.unitCollection.updateEnt(ent);
 		raid.unitCollection.updateEnt(ent);
-		return;
 	}
 };
 
@@ -1125,7 +1153,7 @@ m.AttackPlan.prototype.raidTargetFinder = function(gameState)
 m.AttackPlan.prototype.earlyRaidTargetFinder = function(gameState)
 {
 	let targets = new API3.EntityCollection(gameState.sharedScript);
-	for (let ent of gameState.getEnemyUnits().filter(API3.Filters.byClass("Worker")).values())
+	for (let ent of gameState.getEnemyUnits().filter(API3.Filters.byClass("FemaleCitizen")).values())
 			targets.addEnt(ent);
 	return targets;
 };
@@ -1352,7 +1380,7 @@ m.AttackPlan.prototype.StartAttack = function(gameState)
 		for (let ent of this.unitCollection.values())
 			gameState.ai.HQ.navalManager.requireTransport(gameState, ent, rallyAccess, targetAccess, this.targetPos);
 	}
-	this.nUnits = this.unitCollection.values().length;
+	this.nUnits = this.unitCollection.length;
 	return true;
 };
 
@@ -1365,8 +1393,14 @@ m.AttackPlan.prototype.update = function(gameState, events)
 	Engine.ProfileStart("Update Attack");
 
 	this.position = this.unitCollection.getCentrePosition();
-	if (this.unitCollection.values().length < this.nUnits / 2)
+
+	if (this.unitCollection.length < this.nUnits / 2) {
+		Engine.ProfileStop();
 		return 0;
+	}
+
+
+//	API3.warn("#units : " + this.unitCollection.length + " >= " + this.nUnits / 2); 
 
 	// we are transporting our units, let's wait
 	// TODO instead of state "arrived", made a state "walking" with a new path
@@ -1542,22 +1576,22 @@ m.AttackPlan.prototype.update = function(gameState, events)
 		let targetClassesUnit;
 		let targetClassesSiege;
 		if (this.type == "EarlyRaid")
-			targetClassesUnit = { "attack": ["Unit"], "avoid": ["Structure"], "vetoEntities": veto };
+			targetClassesUnit = { "attack": ["FemaleCitizen"], "avoid": ["Structure"], "vetoEntities": veto };
 		else if (this.type == "Rush")
-			targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "StoneWall", "Tower", "Fortress"], "vetoEntities": veto };
+			targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Storehouse", "Farmstead", "Field", "Blacksmith", "Palisade", "StoneWall", "Tower", "Fortress"], "vetoEntities": veto };
 		else
 		{
 			if (this.target.hasClass("Fortress"))
-				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "StoneWall"], "vetoEntities": veto };
+				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "StoneWall", "House", "Storehouse", "Farmstead", "Field", "Blacksmith"], "vetoEntities": veto };
 			else if (this.target.hasClass("Palisade") || this.target.hasClass("StoneWall"))
-				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Fortress"], "vetoEntities": veto };
+				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Fortress", "House", "Storehouse", "Farmstead", "Field", "Blacksmith"], "vetoEntities": veto };
 			else
-				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "StoneWall", "Fortress"], "vetoEntities": veto };
+				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "StoneWall", "Fortress", "House", "Storehouse", "Farmstead", "Field", "Blacksmith"], "vetoEntities": veto };
 		}
 		if (this.target.hasClass("Structure"))
-			targetClassesSiege = { "attack": ["Structure"], "avoid": [], "vetoEntities": veto };
+			targetClassesSiege = { "attack": ["Structure"], "avoid": ["Unit", "House", "Storehouse", "Farmstead", "Field", "Blacksmith"], "vetoEntities": veto };
 		else
-			targetClassesSiege = { "attack": ["Unit", "Structure"], "avoid": [], "vetoEntities": veto };
+			targetClassesSiege = { "attack": ["Structure"], "avoid": ["Unit", "House", "Storehouse", "Farmstead", "Field", "Blacksmith"], "vetoEntities": veto };
 
 		// do not loose time destroying buildings which do not help enemy's defense and can be easily captured later
 		if (this.target.hasDefensiveFire())
