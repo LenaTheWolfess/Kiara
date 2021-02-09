@@ -42,6 +42,33 @@ KIARA.Queue.prototype.check= function(gameState)
 	}
 };
 
+KIARA.Queue.prototype.makeRoom = function(gameState)
+{
+	while (this.plans.length > 0) {
+		if (!this.plans[0].allreadyStarted() && !this.plans[0].isInvalid(gameState))
+			return;
+		this.plans.shift();
+	}
+};
+
+KIARA.Queue.prototype.getPlan = function(id)
+{
+	if (id < this.plans.length)
+		return this.plans[id];
+	return null;
+};
+
+KIARA.Queue.prototype.hasNext = function(id)
+{
+	return id < this.plans.length;
+};
+
+KIARA.Queue.prototype.startPlan = function(gameState, id)
+{
+	if (id < this.plans.length)
+		this.plans[id].start(gameState);
+};
+
 KIARA.Queue.prototype.getNext = function()
 {
 	if (this.plans.length > 0)
@@ -65,6 +92,17 @@ KIARA.Queue.prototype.startNext = function(gameState)
  */
 KIARA.Queue.prototype.maxAccountWanted = function(gameState, fraction)
 {
+	let Lia = true;
+	if (Lia) {
+		let cost = new API3.Resources();
+		for (let plan of this.plans) {
+			if (plan.isGo(gameState) && !plan.allreadyStarted()) {
+				cost.add(plan.getCost());
+			}
+		}
+		return cost;
+	}
+
 	let cost = new API3.Resources();
 	if (this.plans.length > 0 && this.plans[0].isGo(gameState))
 		cost.add(this.plans[0].getCost());

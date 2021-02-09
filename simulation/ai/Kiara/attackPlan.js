@@ -26,6 +26,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		this.targetPlayer = undefined;
 	}
 
+	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
 	this.uniqueTargetId = data && data.uniqueTargetId || undefined;
 
 	// get a starting rallyPoint ... will be improved later
@@ -117,74 +118,86 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	if (type == "Rush")
 	{
 		priority = 250;
-		this.unitStat.Infantry = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 2, "classes": ["Infantry"],
-			"interests": [["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"]] };
-		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 4, "batchSize": 2, "classes": ["FastMoving", "CitizenSoldier"],
-			"interests": [["strength", 1]] };
+		this.unitStat.Infantry = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 10, "classes": ["Infantry"],
+			"interests": [["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"]] };
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 4, "batchSize": 4, "classes": ["FastMoving", "CitizenSoldier"],
 		if (data && data.targetSize)
 			this.unitStat.Infantry.targetSize = data.targetSize;
+		this.neededShips = 1;
+	}
+	else if (type == "EarlyRaid")
+	{
+		priority = 310;
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 5, "targetSize": 8, "batchSize": 2, "classes": ["FastMoving", "CitizenSoldier"],
+			"interests": [ ["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
 		this.neededShips = 1;
 	}
 	else if (type == "Raid")
 	{
 		priority = 150;
-		this.unitStat.FastMoving = { "priority": 1, "minSize": 3, "targetSize": 4, "batchSize": 2, "classes": ["FastMoving", "CitizenSoldier"],
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 5, "targetSize": 5, "batchSize": 10, "classes": ["FastMoving", "CitizenSoldier"],
 			"interests": [ ["strength", 1] ] };
+		this.unitStat.Siege = {"priority": 2, "minSize": 1, "targetSize": 2, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 		this.neededShips = 1;
 	}
 	else if (type == "HugeAttack")
 	{
-		priority = 90;
-		// basically we want a mix of citizen soldiers so our barracks have a purpose, and champion units.
-		this.unitStat.RangedInfantry = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "CitizenSoldier"],
-			"interests": [["strength", 3]] };
-		this.unitStat.MeleeInfantry = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "CitizenSoldier"],
-			"interests": [["strength", 3]] };
-		this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 3, "targetSize": 18, "batchSize": 3, "classes": ["Infantry", "Ranged", "Champion"],
-			"interests": [["strength", 3]] };
-		this.unitStat.ChampMeleeInfantry = { "priority": 1, "minSize": 3, "targetSize": 18, "batchSize": 3, "classes": ["Infantry", "Melee", "Champion"],
-			"interests": [["strength", 3]] };
-		this.unitStat.RangedFastMoving = { "priority": 0.7, "minSize": 4, "targetSize": 20, "batchSize": 4, "classes": ["FastMoving", "Ranged", "CitizenSoldier"],
-			"interests": [["strength", 2]] };
-		this.unitStat.MeleeFastMoving = { "priority": 0.7, "minSize": 4, "targetSize": 20, "batchSize": 4, "classes": ["FastMoving", "Melee", "CitizenSoldier"],
-			"interests": [["strength", 2]] };
-		this.unitStat.ChampRangedFastMoving = { "priority": 1, "minSize": 3, "targetSize": 15, "batchSize": 3, "classes": ["FastMoving", "Ranged", "Champion"],
-			"interests": [["strength", 3]] };
-		this.unitStat.ChampMeleeFastMoving = { "priority": 1, "minSize": 3, "targetSize": 15, "batchSize": 3, "classes": ["FastMoving", "Melee", "Champion"],
-			"interests": [["strength", 2]] };
-		this.unitStat.Hero = { "priority": 1, "minSize": 0, "targetSize": 1, "batchSize": 1, "classes": ["Hero"],
-			"interests": [["strength", 2]] };
-		this.neededShips = 5;
+		priority = 350;
+		if (popCaped) {
+			this.unitStat.RangedInfantry    = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "CitizenSoldier"],
+				"interests": [["strength", 3]] };
+			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "CitizenSoldier"],
+				"interests": [["strength", 3]] };
+			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Ranged", "Champion"],
+				"interests": [["strength", 3]] };
+			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Melee", "Champion"],
+				"interests": [["strength", 3]] };
+			this.unitStat.RangedFastMoving     = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged", "CitizenSoldier"],
+				"interests": [["strength", 2]] };
+			this.unitStat.MeleeFastMoving      = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee", "CitizenSoldier"],
+				"interests": [["strength", 2]] };
+			this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "Ranged", "Champion"],
+				"interests": [["strength", 3]] };
+			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "Melee", "Champion"],
+				"interests": [["strength", 2]] };
+			this.unitStat.Healer = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
+			this.unitStat.Siege = {"priority": 2, "minSize": 0, "targetSize": 5, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
+			this.neededShips = 10;
+		} else {
+			// basically we want a mix of citizen soldiers so our barracks have a purpose, and champion units.
+			this.unitStat.RangedInfantry    = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "CitizenSoldier"],
+				"interests": [["strength", 3]] };
+			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "CitizenSoldier"],
+				"interests": [["strength", 3]] };
+			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Infantry", "Ranged", "Champion"],
+				"interests": [["strength", 3]] };
+			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Infantry", "Melee", "Champion"],
+				"interests": [["strength", 3]] };
+			this.unitStat.RangedFastMoving     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged", "CitizenSoldier"],
+				"interests": [["strength", 2]] };
+			this.unitStat.MeleeFastMoving      = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee", "CitizenSoldier"],
+				"interests": [["strength", 2]] };
+			this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["FastMoving", "Ranged", "Champion"],
+				"interests": [["strength", 3]] };
+			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["FastMoving", "Melee", "Champion"],
+				"interests": [["strength", 2]] };
+			this.unitStat.Hero                = { "priority": 1, "minSize": 0, "targetSize":  1, "batchSize": 1, "classes": ["Hero"],
+				"interests": [["strength", 2]] };
+			this.unitStat.Healer 			  = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
+			this.unitStat.Siege = {"priority": 2, "minSize": 0, "targetSize": 5, "batchSize": 2, "classes": ["Siege"] , "interests":  [["strength", 1]]};
+			this.neededShips = 5;
+		}
 	}
 	else
 	{
 		priority = 70;
-		this.unitStat.RangedInfantry = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 3, "classes": ["Infantry", "Ranged"],
+		this.unitStat.RangedInfantry = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 6, "classes": ["Infantry", "Ranged"],
 			"interests": [["canGather", 1], ["strength", 1.6], ["costsResource", 0.3, "stone"], ["costsResource", 0.3, "metal"]] };
-		this.unitStat.MeleeInfantry = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 3, "classes": ["Infantry", "Melee"],
+		this.unitStat.MeleeInfantry  = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 6, "classes": ["Infantry", "Melee"],
 			"interests": [["canGather", 1], ["strength", 1.6], ["costsResource", 0.3, "stone"], ["costsResource", 0.3, "metal"]] };
-		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 6, "batchSize": 2, "classes": ["FastMoving", "CitizenSoldier"],
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 6, "batchSize": 6, "classes": ["FastMoving", "CitizenSoldier"],
 			"interests": [["strength", 1]] };
 		this.neededShips = 3;
-	}
-
-	// Put some randomness on the attack size
-	let variation = randFloat(0.8, 1.2);
-	// and lower priority and smaller sizes for easier difficulty levels
-	if (this.Config.difficulty < 2)
-	{
-		priority *= 0.6;
-		variation *= 0.5;
-	}
-	else if (this.Config.difficulty < 3)
-	{
-		priority *= 0.8;
-		variation *= 0.8;
-	}
-	for (let cat in this.unitStat)
-	{
-		this.unitStat[cat].targetSize = Math.round(variation * this.unitStat[cat].targetSize);
-		this.unitStat[cat].minSize = Math.min(this.unitStat[cat].minSize, this.unitStat[cat].targetSize);
 	}
 
 	// change the sizes according to max population
@@ -192,7 +205,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	for (let cat in this.unitStat)
 	{
 		this.unitStat[cat].targetSize = Math.round(this.Config.popScaling * this.unitStat[cat].targetSize);
-		this.unitStat[cat].minSize = Math.ceil(this.Config.popScaling * this.unitStat[cat].minSize);
+		this.unitStat[cat].minSize = Math.floor(this.Config.popScaling * this.unitStat[cat].minSize);
 	}
 
 	// TODO: there should probably be one queue per type of training building
@@ -203,7 +216,12 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	// each array is [ratio, [associated classes], associated EntityColl, associated unitStat, name ]
 	this.buildOrders = [];
 	this.canBuildUnits = gameState.ai.HQ.canBuildUnits;
-	this.siegeState = 0;	// 0 = not yet tested, 1 = not yet any siege trainer, 2 = siege added in build orders
+	this.noAll = false;
+	if (popCaped) {
+		this.canBuildUnits = false;
+		this.noAll = true;
+	}
+	this.siegeState = 2;	// 0 = not yet tested, 1 = not yet any siege trainer, 2 = siege added in build orders
 
 	// some variables used during the attack
 	this.position5TurnsAgo = [0, 0];
@@ -222,6 +240,8 @@ KIARA.AttackPlan.prototype.init = function(gameState)
 
 	this.unitCollection = gameState.getOwnUnits().filter(API3.Filters.byMetadata(PlayerID, "plan", this.name));
 	this.unitCollection.registerUpdates();
+
+	this.formationList = [];
 
 	this.unit = {};
 
@@ -304,7 +324,7 @@ KIARA.AttackPlan.prototype.mustStart = function()
 		return true;
 	if (MinReachedEverywhere)
 		return this.type == "Raid" && this.target && this.target.foundationProgress() &&
-		                                             this.target.foundationProgress() > 50;
+		                                             this.target.foundationProgress() > 0 && this.target.foundationProgress() < 90;
 	return false;
 };
 
@@ -386,11 +406,7 @@ KIARA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 
 	this.siegeState = 2;
 	let targetSize;
-	if (this.Config.difficulty < 3)
-		targetSize = this.type == "HugeAttack" ? Math.max(this.Config.difficulty, 1) : Math.max(this.Config.difficulty - 1, 0);
-	else
-		targetSize = this.type == "HugeAttack" ? this.Config.difficulty + 1 : this.Config.difficulty - 1;
-	targetSize = Math.max(Math.round(this.Config.popScaling * targetSize), this.type == "HugeAttack" ? 1 : 0);
+	let targetSize = this.type == "HugeAttack" ? 5 : 4;
 	if (!targetSize)
 		return true;
 	// no minsize as we don't want the plan to fail at the last minute though.
@@ -403,6 +419,7 @@ KIARA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 /** Three returns possible: 1 is "keep going", 0 is "failed plan", 2 is "start". */
 KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 {
+	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
 	// the completing step is used to return resources and regroup the units
 	// so we check that we have no more forced order before starting the attack
 	if (this.state == "completing")
@@ -434,11 +451,13 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 
 	if (this.type != "Raid" || !this.forced)    // Forced Raids have special purposes (as relic capture)
 		this.assignUnits(gameState);
-	if (this.type != "Raid" && gameState.ai.HQ.attackManager.getAttackInPreparation("Raid") !== undefined)
-		this.reassignFastUnit(gameState);    // reassign some fast units (if any) to fasten raid preparations
+	if (this.type == "Raid" && gameState.ai.HQ.attackManager.getAttackInPreparation("Raid") !== undefined)
+		this.reassignCavUnit(gameState, this.type);    // reassign some cav (if any) to fasten raid preparations
+	if (this.type == "EarlyRaid" && gameState.ai.HQ.attackManager.getAttackInPreparation("EarlyRaid") !== undefined)
+		this.reassignCavUnit(gameState, this.type);    // reassign some cav (if any) to fasten early raid preparations
 
 	// Fasten the end game.
-	if (gameState.ai.playedTurn % 5 == 0 && this.hasSiegeUnits())
+	if (gameState.ai.playedTurn % 5 == 0 && this.hasSiegeUnits() || popCaped)
 	{
 		let totEnemies = 0;
 		let hasEnemies = false;
@@ -454,17 +473,18 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 	}
 
 	// special case: if we've reached max pop, and we can start the plan, start it.
-	if (gameState.getPopulationMax() - gameState.getPopulation() < 5)
+	if (popCaped)
 	{
 		let lengthMin = 16;
-		if (gameState.getPopulationMax() < 300)
-			lengthMin -= Math.floor(8 * (300 - gameState.getPopulationMax()) / 300);
-		if (this.canStart() || this.unitCollection.length > lengthMin)
-		{
+		if (this.unitCollection.length > lengthMin) {
 			this.emptyQueues();
 		}
 		else	// Abort the plan so that its units will be reassigned to other plans.
 		{
+			if (this.getType() == "HugeAttack") {
+				this.forceStart();
+				return 1;
+			}
 			if (this.Config.debug > 1)
 			{
 				let am = gameState.ai.HQ.attackManager;
@@ -513,7 +533,7 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 	if (!this.overseas)
 		this.getPathToTarget(gameState);
 
-	if (this.type == "Raid")
+	if (this.type == "Raid" || this.type == "EarlyRaid")
 		this.maxCompletingTime = this.forced ? 0 : gameState.ai.elapsedTime + 20;
 	else
 	{
@@ -571,6 +591,16 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 	// let's sort by training advancement, ie 'current size / target size'
 	// count the number of queued units too.
 	// substract priority.
+
+	let fHouse = gameState.getOwnFoundationsByClass("House").length;
+	let popLimit = gameState.getPopulationLimit();
+	let wantPop = gameState.ai.HQ.wantPop;
+	let nHouses = gameState.ai.queues.house.length();
+	let tHouse = gameState.getTemplate(gameState.applyCiv("structures/{civ}/house"));
+	let pHouse = tHouse.getPopulationBonus();
+
+	let addTotal = 0;
+
 	for (let order of this.buildOrders)
 	{
 		let special = "Plan_" + this.name + "_" + order[4];
@@ -623,30 +653,75 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 		if (queue.length() <= 5)
 		{
 			let template = gameState.ai.HQ.findBestTrainableUnit(gameState, firstOrder[1], firstOrder[3].interests);
+			let allTrainers = gameState.findTrainers(template).values();
+			if (allTrainers.length == 1 && firstOrder[3].targetSize > 5 && !gameState.ai.queues.militaryBuilding.hasQueuedUnits())
+			{
+				// Request another trainer
+				let t = allTrainers[0];
+				let plan = new m.ConstructionPlan(gameState, t.templateName());
+				// change the starting condition according to the situation.
+				gameState.ai.queues.militaryBuilding.addPlan(plan);
+		//		API3.warn("attack plan adding house to reach " + wantPop);
+			}
 			// HACK (TODO replace) : if we have no trainable template... Then we'll simply remove the buildOrder,
 			// effectively removing the unit from the plan.
-			if (template === undefined)
+			let skip = false;
+			if (template === undefined && firstOrder[3].Fallback)
+			{
+				if (this.Config.debug > 1)
+					API3.warn("attack no template found " + firstOrder[1] + " fallback to " + firstOrder[3].Fallback);
+				template = gameState.ai.HQ.findBestTrainableUnit(gameState, firstOrder[3].Fallback, firstOrder[3].interests);
+				if (template === undefined)
+				{
+					if (this.Config.debug > 1)
+						API3.warn("attack no template found " + firstOrder[3].Fallback);
+					delete this.unitStat[firstOrder[4]];	// deleting the associated unitstat.
+					this.buildOrders.splice(0, 1);
+					skip = true;
+				}
+			}
+			if (template === undefined && !firstOrder[3].Fallback)
 			{
 				if (this.Config.debug > 1)
 					API3.warn("attack no template found " + firstOrder[1]);
 				delete this.unitStat[firstOrder[4]];	// deleting the associated unitstat.
 				this.buildOrders.splice(0, 1);
+				skip = true;
 			}
-			else
+
+			if (!skip)
 			{
+				let max = firstOrder[3].batchSize;
 				if (this.Config.debug > 2)
 					API3.warn("attack template " + template + " added for plan " + this.name);
-				let max = firstOrder[3].batchSize;
+
 				let specialData = "Plan_" + this.name + "_" + firstOrder[4];
 				let data = { "plan": this.name, "special": specialData, "base": 0 };
 				data.role = gameState.getTemplate(template).hasClass("CitizenSoldier") ? "worker" : "attack";
 				let trainingPlan = new KIARA.TrainingPlan(gameState, template, data, max, max);
-				if (trainingPlan.template)
+				if (trainingPlan.template) {
 					queue.addPlan(trainingPlan);
+					addTotal += max;
+				}
 				else if (this.Config.debug > 1)
 					API3.warn("training plan canceled because no template for " + template + "   build1 " + uneval(firstOrder[1]) +
 						  " build3 " + uneval(firstOrder[3].interests));
 			}
+		}
+	}
+	wantPop = wantPop + addTotal;
+	gameState.ai.HQ.wantPop = wantPop;
+
+	if (wantPop >= popLimit + (pHouse * fHouse) + (nHouses * fHouse)) {
+		let missing = wantPop - (popLimit + (pHouse * fHouse) + (nHouses * fHouse));
+		while (nHouses < 3 && missing > 0) {
+			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
+			// change the starting condition according to the situation.
+			plan.goRequirement = "houseNeeded";
+			gameState.ai.queues.house.addPlan(plan);
+			missing = missing - pHouse;
+			nHouses++;
+		//	API3.warn("attack plan adding house to reach " + wantPop);
 		}
 	}
 };
@@ -656,7 +731,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	let plan = this.name;
 	let added = false;
 	// If we can not build units, assign all available except those affected to allied defense to the current attack.
-	if (!this.canBuildUnits)
+	if (!this.canBuildUnits && !this.noAll)
 	{
 		for (let ent of gameState.getOwnUnits().values())
 		{
@@ -669,6 +744,22 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 		return added;
 	}
 
+	if (this.type == "EarlyRaid")
+	{
+		// Raid are fast FastMoving attack: assign all cav except some for hunting
+		let num = 0;
+		for (let ent of gameState.getOwnUnits().values())
+		{
+			if (!ent.hasClass("FastMoving") || !this.isAvailableUnit(gameState, ent))
+				continue;
+			if (num++ < 2)
+				continue;
+			ent.setMetadata(PlayerID, "plan", plan);
+			this.unitCollection.updateEnt(ent);
+			added = true;
+		}
+		return added;
+	}
 	if (this.type == "Raid")
 	{
 		// Raids are quick attacks: assign all FastMoving soldiers except some for hunting.
@@ -689,7 +780,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	// Assign all units without specific role.
 	for (let ent of gameState.getOwnEntitiesByRole(undefined, true).values())
 	{
-		if (!ent.hasClass("Unit") || !this.isAvailableUnit(gameState, ent))
+		if (!ent.hasClass("Unit") && !ent.hasClass("Siege")) || !this.isAvailableUnit(gameState, ent))
 			continue;
 		if (ent.hasClass("Ship") || ent.hasClass("Support") || ent.attackTypes() === undefined)
 			continue;
@@ -713,7 +804,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	let num = 0;
 	let numbase = {};
 	let keep = this.type != "Rush" ?
-		6 + 4 * gameState.getNumPlayerEnemies() + 8 * this.Config.personality.defensive : 8;
+		6 + 4 * gameState.getNumPlayerEnemies() + 8;
 	keep = Math.round(this.Config.popScaling * keep);
 	for (let ent of gameState.getOwnEntitiesByRole("worker", true).values())
 	{
@@ -752,7 +843,7 @@ KIARA.AttackPlan.prototype.isAvailableUnit = function(gameState, ent)
 };
 
 /** Reassign one (at each turn) FastMoving unit to fasten raid preparation. */
-KIARA.AttackPlan.prototype.reassignFastUnit = function(gameState)
+KIARA.AttackPlan.prototype.reassignFastUnit = function(gameState, type)
 {
 	for (let ent of this.unitCollection.values())
 	{
@@ -760,7 +851,7 @@ KIARA.AttackPlan.prototype.reassignFastUnit = function(gameState)
 			continue;
 		if (!ent.hasClass("FastMoving") || !ent.hasClass("CitizenSoldier"))
 			continue;
-		let raid = gameState.ai.HQ.attackManager.getAttackInPreparation("Raid");
+		let raid = gameState.ai.HQ.attackManager.getAttackInPreparation(type);
 		ent.setMetadata(PlayerID, "plan", raid.name);
 		this.unitCollection.updateEnt(ent);
 		raid.unitCollection.updateEnt(ent);
@@ -874,6 +965,9 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 	{
 		if (this.type == "Raid")
 			targets = this.raidTargetFinder(gameState);
+		else if (this.type == "EarlyRaid") {
+			targets = this.earlyRaidTargetFinder(gameState);
+		}
 		else if (this.type == "Rush" || this.type == "Attack")
 		{
 			targets = this.rushTargetFinder(gameState, this.targetPlayer);
@@ -939,7 +1033,15 @@ KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 	if (gameState.getVictoryConditions().has("capture_the_relic"))
 		for (let ent of gameState.updatingGlobalCollection("allRelics", API3.Filters.byClass("Relic")).filter(relic => relic.owner() == playerEnemy).values())
 			targets.addEnt(ent);
-	targets = targets.filter(this.isValidTarget, this);
+	targets = validTargets.filter(API3.Filters.byClass("Fortress"));
+
+	let ccs = validTargets.filter(API3.Filters.byClass("CivCentre"));
+	if (!targets.hasEntities())
+		targets = ccs;
+	else {
+		for(let ent of ccs.values())
+			targets.addEnt(ent);
+	}
 	if (targets.hasEntities())
 		return targets;
 
@@ -1002,7 +1104,7 @@ KIARA.AttackPlan.prototype.rushTargetFinder = function(gameState, playerEnemy)
 			if (!defense.hasDefensiveFire())
 				continue;
 			let dist = API3.SquareVectorDistance(pos, defense.position());
-			if (dist < 6400)   // TODO check on defense range rather than this fixed 80*80
+			if (dist < 10000)   // TODO check on defense range rather than this fixed 80*80
 			{
 				defended = true;
 				break;
@@ -1035,6 +1137,14 @@ KIARA.AttackPlan.prototype.raidTargetFinder = function(gameState)
 		if (target && target.position())
 			targets.addEnt(target);
 	}
+	return targets;
+};
+
+KIARA.AttackPlan.prototype.earlyRaidTargetFinder = function(gameState)
+{
+	let targets = new API3.EntityCollection(gameState.sharedScript);
+	for (let ent of gameState.getEnemyUnits().filter(API3.Filters.byClass("FemaleCitizen")).values())
+			targets.addEnt(ent);
 	return targets;
 };
 
@@ -1208,7 +1318,7 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 		API3.warn("start attack " + this.name + " with type " + this.type);
 
 	// if our target was destroyed during preparation, choose a new one
-	if ((this.targetPlayer === undefined || !this.target || !gameState.getEntityById(this.target.id())) &&
+	if ((this.targetPlayer === undefined || !this.target || !gameState.getEntityById(this.target.id())) && this.type != "Raid" &&
 	    !this.chooseTarget(gameState))
 		return false;
 
@@ -1218,7 +1328,7 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 	for (let ent of this.unitCollection.values())
 	{
 		ent.setMetadata(PlayerID, "subrole", "walking");
-		let stance = ent.isPackable() ? "standground" : "aggressive";
+		let stance = ent.isPackable() ? "standground" : "defensive";
 		if (ent.getStance() != stance)
 			ent.setStance(stance);
 	}
@@ -1233,7 +1343,9 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 			return false;
 		this.overseas = 0;
 		this.state = "walking";
-		this.unitCollection.moveToRange(this.path[0][0], this.path[0][1], 0, 15);
+		// put units into formation and move them together
+		this.RecreateGroups(gameState, true);
+//		this.unitCollection.moveToRange(this.path[0][0], this.path[0][1], 0, 15);
 	}
 	else
 	{
@@ -1246,6 +1358,7 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 		for (let ent of this.unitCollection.values())
 			gameState.ai.HQ.navalManager.requireTransport(gameState, ent, rallyAccess, targetAccess, this.targetPos);
 	}
+	this.nUnits = this.unitCollection.length;
 	return true;
 };
 
@@ -1258,6 +1371,12 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 	Engine.ProfileStart("Update Attack");
 
 	this.position = this.unitCollection.getCentrePosition();
+
+	if (this.unitCollection.length < this.nUnits / 2) {
+		Engine.ProfileStop();
+		return 0;
+	}
+
 
 	// we are transporting our units, let's wait
 	// TODO instead of state "arrived", made a state "walking" with a new path
@@ -1280,6 +1399,15 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 			ent.setMetadata(PlayerID, "subrole", "attacking");
 		});
 		if (this.type == "Rush")   // try to find a better target for rush
+		{
+			let newtarget = this.getNearestTarget(gameState, this.position);
+			if (newtarget)
+			{
+				this.target = newtarget;
+				this.targetPos = this.target.position();
+			}
+		}
+		if (this.type == "EarlyRaid") // try to find better target for early raid
 		{
 			let newtarget = this.getNearestTarget(gameState, this.position);
 			if (newtarget)
@@ -1435,21 +1563,24 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 
 		let targetClassesUnit;
 		let targetClassesSiege;
-		if (this.type == "Rush")
+		if (this.type == "EarlyRaid")
+			targetClassesUnit = { "attack": ["FemaleCitizen"], "avoid": ["Structure"], "vetoEntities": veto };
+		else if (this.type == "Rush")
+			targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Storehouse", "Farmstead", "Field", "Blacksmith", "Palisade", "StoneWall", "Tower", "Fortress"], "vetoEntities": veto };
 			targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "Wall", "Tower", "Fortress"], "vetoEntities": veto };
 		else
 		{
 			if (this.target.hasClass("Fortress"))
-				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "Wall"], "vetoEntities": veto };
-			else if (this.target.hasClass("Palisade") || this.target.hasClass("Wall"))
-				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Fortress"], "vetoEntities": veto };
+				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "StoneWall", "House", "Storehouse", "Farmstead", "Field", "Blacksmith"], "vetoEntities": veto };
+			else if (this.target.hasClass("Palisade") || this.target.hasClass("StoneWall"))
+				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Fortress", "House", "Storehouse", "Farmstead", "Field", "Blacksmith"], "vetoEntities": veto };
 			else
-				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "Wall", "Fortress"], "vetoEntities": veto };
+				targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "StoneWall", "Fortress", "House", "Storehouse", "Farmstead", "Field", "Blacksmith"], "vetoEntities": veto };
 		}
 		if (this.target.hasClass("Structure"))
-			targetClassesSiege = { "attack": ["Structure"], "avoid": [], "vetoEntities": veto };
+			targetClassesSiege = { "attack": ["Structure"], "avoid": ["Unit", "House", "Storehouse", "Farmstead", "Field", "Blacksmith"], "vetoEntities": veto };
 		else
-			targetClassesSiege = { "attack": ["Unit", "Structure"], "avoid": [], "vetoEntities": veto };
+			targetClassesSiege = { "attack": ["Structure"], "avoid": ["Unit", "House", "Storehouse", "Farmstead", "Field", "Blacksmith"], "vetoEntities": veto };
 
 		// do not loose time destroying buildings which do not help enemy's defense and can be easily captured later
 		if (this.target.hasDefensiveFire())
@@ -1638,7 +1769,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 							valb -= 20000;
 						return valb - vala;
 					});
-					let rand = randIntExclusive(0, mUnit.length * 0.1);
+					let rand = 0;
 					ent.attack(mUnit[rand].id(), KIARA.allowCapture(gameState, ent, mUnit[rand]));
 				}
 				// This may prove dangerous as we may be blocked by something we
@@ -1786,6 +1917,7 @@ KIARA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 	// or if we reached the enemy base. Different plans may react differently.
 	let attackedNB = 0;
 	let attackedUnitNB = 0;
+	let attackers = [];
 	for (let evt of events.Attacked)
 	{
 		if (!this.unitCollection.hasEntId(evt.target))
@@ -1851,9 +1983,11 @@ KIARA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 				API3.warn("Attack Plan " + this.type + " " + this.name + " has met walls and gives up.");
 			return false;
 		}
-
+		for (let group of this.formationList) {
+			group.move(this.path[0][0], this.path[0][1]);
+		}
 		// this.unitCollection.move(this.path[0][0], this.path[0][1]);
-		this.unitCollection.moveIndiv(this.path[0][0], this.path[0][1]);
+		//this.unitCollection.moveIndiv(this.path[0][0], this.path[0][1]);
 	}
 
 	// check if our units are close enough from the next waypoint.
@@ -1867,12 +2001,18 @@ KIARA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 	else if (this.path.length && API3.SquareVectorDistance(this.position, this.path[0]) < 1600)
 	{
 		this.path.shift();
-		if (this.path.length)
-			this.unitCollection.moveToRange(this.path[0][0], this.path[0][1], 0, 15);
+		if (this.path.length) {
+			for (let group of this.formationList)
+				group.moveToRange(this.path[0][0], this.path[0][1], 0, 15);
+		}
 		else
 		{
 			if (this.Config.debug > 1)
 				API3.warn("Attack Plan " + this.type + " " + this.name + " has arrived to destination.");
+			if (this.target) {
+				for (let group of this.formationList)
+					group.attack(this.target);
+			}
 			this.state = "arrived";
 			return true;
 		}
@@ -1964,10 +2104,55 @@ KIARA.AttackPlan.prototype.UpdateTarget = function(gameState)
 				API3.warn("We will help one of our other attacks");
 		}
 		this.targetPos = this.target.position();
+		if (this.target) {
+			// regroup army
+			this.Regroup(gameState);
+		}
 	}
 	return true;
 };
 
+KIARA.AttackPlan.prototype.RecreateGroups = function(gameState, moveThem = false)
+{
+	if (this.formationList.length)
+		return;
+	// group units up to 20
+	this.formationList.push(new API3.EntityCollection(gameState.sharedScript));
+	let formationId = 0;
+	let count = 0;
+	for (let ent of this.unitCollection.values())
+	{
+		if (count == 20) {
+			this.formationList.push(new API3.EntityCollection(gameState.sharedScript));
+			count = 0;
+			formationId++;
+		}
+		this.formationList[formationId].addEnt(ent);
+		count++;
+	}
+	for (let group of this.formationList) {
+		if (group.toEntityArray().length > 8)
+			group.form("special/formations/box");
+		else
+			group.form("special/formations/line_closed");
+		if (moveThem)
+			group.moveToRange(this.path[0][0], this.path[0][1], 0, 15, true);
+	}
+};
+
+KIARA.AttackPlan.prototype.Regroup = function(gameState)
+{
+	for (let group of this.formationList)
+		group.regroup();
+};
+
+KIARA.AttackPlan.prototype.RegroupAndAttack = function(gameState)
+{
+	for (let group of this.formationList) {
+		group.regroup();
+		group.attack(this.target, true);
+	}
+};
 /** reset any units */
 KIARA.AttackPlan.prototype.Abort = function(gameState)
 {
@@ -2038,6 +2223,8 @@ KIARA.AttackPlan.prototype.checkEvents = function(gameState, events)
 		if (!this.target || this.target.id() != evt.entity)
 			continue;
 		if (this.type == "Raid" && !this.isStarted())
+			this.target = undefined;
+		else if (this.type == "EarlyRaid" && !this.isStarted())
 			this.target = undefined;
 		else
 			this.target = gameState.getEntityById(evt.newentity);
@@ -2155,7 +2342,8 @@ KIARA.AttackPlan.prototype.Serialize = function()
 		"target": this.target !== undefined ? this.target.id() : undefined,
 		"targetPos": this.targetPos,
 		"uniqueTargetId": this.uniqueTargetId,
-		"path": this.path
+		"path": this.path,
+		"formationList": this.formationList
 	};
 
 	return { "properties": properties };

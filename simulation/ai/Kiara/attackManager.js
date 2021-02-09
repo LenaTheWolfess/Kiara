@@ -9,7 +9,8 @@ KIARA.AttackManager = function(Config)
 	this.attackNumber = 0;
 	this.rushNumber = 0;
 	this.raidNumber = 0;
-	this.upcomingAttacks = { "Rush": [], "Raid": [], "Attack": [], "HugeAttack": [] };
+	this.upcomingAttacks = {"Anihilation": [], "Rush": [], "EarlyRaid": [], "Raid": [], "Attack": [], "HugeAttack": [], "MeleeRangeInfCav": [], "MeleeRangeCav": [], "MeleeCav": [], "RangeCav": [] };
+	this.startedAttacks = {"Anihilation": [], "Rush": [], "EarlyRaid": [], "Raid": [], "Attack": [], "HugeAttack": [], "MeleeRangeInfCav": [], "MeleeRangeCav": [], "MeleeCav": [], "RangeCav": [] };	
 	this.startedAttacks = { "Rush": [], "Raid": [], "Attack": [], "HugeAttack": [] };
 	this.bombingAttacks = new Map();// Temporary attacks for siege units while waiting their current attack to start
 	this.debugTime = 0;
@@ -28,21 +29,16 @@ KIARA.AttackManager.prototype.init = function(gameState)
 
 KIARA.AttackManager.prototype.setRushes = function(allowed)
 {
-	if (this.Config.personality.aggressive > this.Config.personalityCut.strong && allowed > 2)
-	{
-		this.maxRushes = 3;
-		this.rushSize = [ 16, 20, 24 ];
-	}
-	else if (this.Config.personality.aggressive > this.Config.personalityCut.medium && allowed > 1)
-	{
-		this.maxRushes = 2;
-		this.rushSize = [ 18, 22 ];
-	}
-	else if (this.Config.personality.aggressive > this.Config.personalityCut.weak && allowed > 0)
-	{
-		this.maxRushes = 1;
-		this.rushSize = [ 20 ];
-	}
+	if (allowed > 3)
+		allowed = 3;
+	this.maxRushes = allowed;
+	if (allowed > 3)
+		this.maxRaids = 2;
+	this.raidSize = [ 5, 10 ];
+	this.rushSize = [ 16, 20, 24 ];
+
+	this.maxRushes = 0;
+	this.maxRaids = 0;
 };
 
 KIARA.AttackManager.prototype.checkEvents = function(gameState, events)
@@ -253,12 +249,23 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 
 	this.checkEvents(gameState, events);
 
-	let unexecutedAttacks = { "Rush": 0, "Raid": 0, "Attack": 0, "HugeAttack": 0 };
+	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
+	let unexecutedAttacks = { "Rush": 0, "EarlyRaid": 0 ,"Raid": 0, "Attack": 0, "HugeAttack": 0, "MeleeRangeInfCav": 0, "MeleeRangeCav": 0, "MeleeCav": 0, "RangeCav": 0};
+	let stopAllAttacks = gameState.ai.HQ.strategy == "recover";
+
 	for (let attackType in this.upcomingAttacks)
 	{
 		for (let i = 0; i < this.upcomingAttacks[attackType].length; ++i)
 		{
 			let attack = this.upcomingAttacks[attackType][i];
+			if (stopAllAttacks)
+			{
+				attack.Abort(gameState);
+				API3.warn("Kiara stop attack " + attack.getType());
+				this.upcomingAttacks[attackType].splice(i--, 1);
+				continue;
+			}
+
 			attack.checkEvents(gameState, events);
 
 			if (attack.isStarted())
@@ -318,8 +325,11 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 
 	// creating plans after updating because an aborted plan might be reused in that case.
 
+	let doSmallAttacks = this.Config.behavior == "aggressive" && gameState.ai.HQ.strategy == "attack";
+	let doEarlyRaid = gameState.ai.HQ.strategy == "earlyRaid";
+
 	let barracksNb = gameState.getOwnEntitiesByClass("Barracks", true).filter(API3.Filters.isBuilt()).length;
-	if (this.rushNumber < this.maxRushes && barracksNb >= 1)
+	if (doSmallAttacks && this.rushNumber < this.maxRushes && barracksNb >= 1)
 	{
 		if (unexecutedAttacks.Rush === 0)
 		{
@@ -337,6 +347,37 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			this.rushNumber++;
 		}
 	}
+	else if (doEarlyRaid && this.raidNumber < this.maxRaids)
+	{
+		if (unexecutedAttacks.EarlyRaid === 0)
+		{
+			let target;
+			for (let targetId of gameState.ai.HQ.defenseManager.targetList)
+			{
+				target = gameState.getEntityById(targetId);
+				if (!target)
+					continue;
+				if (gameState.isPlayerEnemy(target.owner()))
+					break;
+				target = undefined;
+			}
+			let data;
+			if (target) // prepare a raid against this target
+				data = { "targetSize": this.raidSize[this.raidNumber], "target": ent };
+			else
+				data = { "targetSize": this.raidSize[this.raidNumber] };
+			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, "EarlyRaid", data);
+			if (!attackPlan.failed)
+			{
+				if (this.Config.debug > 1)
+					API3.warn("Military Manager: EarlyRaid plan " + this.totalNumber + " with maxRaids " + this.maxRaids);
+				this.totalNumber++;
+				attackPlan.init(gameState);
+				this.upcomingAttacks.EarlyRaid.push(attackPlan);
+			}
+			this.raidNumber++;
+		}
+	}
 	else if (unexecutedAttacks.Attack == 0 && unexecutedAttacks.HugeAttack == 0 &&
 		this.startedAttacks.Attack.length + this.startedAttacks.HugeAttack.length < Math.min(2, 1 + Math.round(gameState.getPopulationMax()/100)) &&
 		(this.startedAttacks.Attack.length + this.startedAttacks.HugeAttack.length == 0 || gameState.getPopulationMax() - gameState.getPopulation() > 12))
@@ -345,6 +386,11 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			!gameState.ai.HQ.baseManagers[1])	// if we have no base ... nothing else to do than attack
 		{
 			let type = this.attackNumber < 2 || this.startedAttacks.HugeAttack.length > 0 ? "Attack" : "HugeAttack";
+			if (popCaped)
+				type = "HugeAttack";
+
+			//This is hack, because i am lazy to do it properly
+			type = "HugeAttack";
 			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, type);
 			if (attackPlan.failed)
 				this.attackPlansEncounteredWater = true; // hack
@@ -360,25 +406,25 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 		}
 	}
 
-	if (unexecutedAttacks.Raid === 0 && gameState.ai.HQ.defenseManager.targetList.length)
-	{
-		let target;
-		for (let targetId of gameState.ai.HQ.defenseManager.targetList)
+	if (!popCaped && doSmallAttacks) {
+		if (unexecutedAttacks.Raid === 0 && gameState.ai.HQ.defenseManager.targetList.length)
 		{
-			target = gameState.getEntityById(targetId);
-			if (!target)
-				continue;
-			if (gameState.isPlayerEnemy(target.owner()))
-				break;
-			target = undefined;
+			let target;
+			for (let targetId of gameState.ai.HQ.defenseManager.targetList)
+			{
+				target = gameState.getEntityById(targetId);
+				if (!target)
+					continue;
+				if (gameState.isPlayerEnemy(target.owner())) {
+					this.raidTargetEntity(gameState, target);
+				}
+			}
 		}
-		if (target) // prepare a raid against this target
-			this.raidTargetEntity(gameState, target);
-	}
 
-	// Check if we have some unused ranged siege unit which could do something useful while waiting
-	if (this.Config.difficulty > 1 && gameState.ai.playedTurn % 5 == 0)
-		this.assignBombers(gameState);
+		// Check if we have some unused ranged siege unit which could do something useful while waiting
+		if (doSmallAttacks && gameState.ai.playedTurn % 5 == 0)
+			this.assignBombers(gameState);
+	}
 };
 
 KIARA.AttackManager.prototype.getPlan = function(planName)
@@ -465,7 +511,7 @@ KIARA.AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 	for (let i in this.defeated)
 		veto[i] = true;
 	// No rush if enemy too well defended (i.e. iberians)
-	if (attack.type == "Rush")
+	if (attack.type == "Rush"|| attack.type == "EarlyRaid")
 	{
 		for (let i = 1; i < gameState.sharedScript.playersData.length; ++i)
 		{
@@ -474,10 +520,21 @@ KIARA.AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 			if (this.defeated[i])
 				continue;
 			let enemyDefense = 0;
+			let enemyUnits = gameState.getEnemyUnits(i).values();
+			let enemyUnitSize = enemyUnits.length;
+			let suports = 0;
+			for (let ent of enemyUnits) {
+				if (ent.hasClass("Support"))
+					++suports;
+			}
+			if (suports / enemyUnitSize < 0.3) {
+				continue;
+				veto[i] = true;
+			}
 			for (let ent of gameState.getEnemyStructures(i).values())
 				if (ent.hasClass("Tower") || ent.hasClass("WallTower") || ent.hasClass("Fortress"))
 					enemyDefense++;
-			if (enemyDefense > 6)
+			if (enemyDefense > 3)
 				veto[i] = true;
 		}
 	}
@@ -527,30 +584,24 @@ KIARA.AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 
 	// then let's target our strongest enemy (basically counting enemies units)
 	// with priority to enemies with civ center
-	let max = 0;
+	let max = Math.min();
 	for (let i = 1; i < gameState.sharedScript.playersData.length; ++i)
 	{
 		if (veto[i])
 			continue;
 		if (!gameState.isPlayerEnemy(i))
 			continue;
-		let enemyCount = 0;
-		let enemyCivCentre = false;
-		for (let ent of gameState.getEntities(i).values())
-		{
-			enemyCount++;
-			if (ent.hasClass("CivCentre"))
-				enemyCivCentre = true;
-		}
-		if (enemyCivCentre)
-			enemyCount += 500;
-		if (!enemyCount || enemyCount < max)
+		let enemyCount = gameState.getEnemyUnits(i).length;
+		API3.warn("enemy " + i + " : " + enemyCount + " > " + max);
+		if (enemyCount > max)
 			continue;
 		max = enemyCount;
 		enemyPlayer = i;
 	}
 	if (attack.targetPlayer === undefined)
 		this.currentEnemyPlayer = enemyPlayer;
+	if (enemyPlayer === undefined)
+		API3.warn("picking enemy is undefined");
 	return enemyPlayer;
 };
 
@@ -734,6 +785,8 @@ KIARA.AttackManager.prototype.switchDefenseToAttack = function(gameState, target
 	attackPlan.targetPos = pos;
 	attackPlan.target = target;
 	attackPlan.state = "arrived";
+	//	attackPlan.RecreateGroups(gameState);
+	//	attackPlan.RegroupAndAttack(gameState);
 	return true;
 };
 

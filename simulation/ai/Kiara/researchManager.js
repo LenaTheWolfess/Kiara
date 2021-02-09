@@ -12,34 +12,33 @@ KIARA.ResearchManager = function(Config)
 KIARA.ResearchManager.prototype.checkPhase = function(gameState, queues)
 {
 	if (queues.majorTech.hasQueuedUnits())
-		return;
+		return false;
 	// Don't try to phase up if already trying to gather resources for a civil-centre or wonder
 	if (queues.civilCentre.hasQueuedUnits() || queues.wonder.hasQueuedUnits())
-		return;
+		return false;
 
-	let currentPhaseIndex = gameState.currentPhase();
+	let av = gameState.getResources();
+	let currentPhaseIndex = gameState.currentPhase(gameState);
 	let nextPhaseName = gameState.getPhaseName(currentPhaseIndex+1);
 	if (!nextPhaseName)
-		return;
+		return false;
 
-	let petraRequirements =
-		currentPhaseIndex == 1 && gameState.ai.HQ.getAccountedPopulation(gameState) >= this.Config.Economy.popPhase2 ||
+	let kiaraRequirements =
+		currentPhaseIndex == 1 && gameState.getPopulation() >= this.Config.Economy.popPhase2 ||
 		currentPhaseIndex == 2 && gameState.ai.HQ.getAccountedWorkers(gameState) > this.Config.Economy.workPhase3 ||
 		currentPhaseIndex >= 3 && gameState.ai.HQ.getAccountedWorkers(gameState) > this.Config.Economy.workPhase4;
-	if (petraRequirements && gameState.hasResearchers(nextPhaseName, true))
+	if (kiaraRequirements && gameState.hasResearchers(nextPhaseName, true))
 	{
 		gameState.ai.HQ.phasing = currentPhaseIndex + 1;
 		// Reset the queue priority in case it was changed during a previous phase update
 		gameState.ai.queueManager.changePriority("majorTech", gameState.ai.Config.priorities.majorTech);
 		queues.majorTech.addPlan(new KIARA.ResearchPlan(gameState, nextPhaseName, true));
+		return true;
 	}
 };
 
 KIARA.ResearchManager.prototype.researchPopulationBonus = function(gameState, queues)
 {
-	if (queues.minorTech.hasQueuedUnits())
-		return;
-
 	let techs = gameState.findAvailableTech();
 	for (let tech of techs)
 	{
@@ -80,6 +79,68 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 	let phase1 = gameState.currentPhase() === 1;
 	let available = phase1 ? gameState.ai.queueManager.getAvailableResources(gameState) : null;
 	let numWorkers = phase1 ? gameState.getOwnEntitiesByRole("worker", true).length : 0;
+
+if (gameState.currentPhase() > 2) {
+		for (let tech of techs)
+		{
+			if (!tech[1]._template.modifications)
+				continue;
+			let template = tech[1]._template;
+			for (let i in template.modifications)
+			{
+				if (template.modifications[i].value === "ResourceGatherer/Rates/food.grain") {
+					return { "name": tech[0], "increasePriority": true };
+				}
+				if (template.modifications[i].value === "ResourceGatherer/Rates/wood.tree") {
+					return { "name": tech[0], "increasePriority": true };
+				}
+				if (template.modifications[0].value == "Cost/PopulationBonus") {
+					return { "name": tech[0], "increasePriority": true };
+				}
+			}
+		}
+		for (let tech of techs)
+		{
+			if (tech[0] == "training_conscription")
+				return { "name": tech[0], "increasePriority": true };
+			if (tech[0] == "unlock_champion_units")
+				return { "name": tech[0], "increasePriority": true };
+			if (!tech[1]._template.modifications)
+				continue;
+			let template = tech[1]._template;
+			for (let i in template.modifications)
+			{
+				if (template.modifications[i].value === "ResourceGatherer/Rates/food.grain") {
+					return { "name": tech[0], "increasePriority": false };
+				}
+				if (template.modifications[i].value === "BuildingAI/DefaultArrowCount") {
+					return { "name": tech[0], "increasePriority": true};
+				}
+				if (template.modifications[i].value === "Attack/Ranged/MaxRange") {
+					return { "name": tech[0], "increasePriority": true};
+				}
+				if (template.modifications[i].value === "Attack/Ranged/MinRange") {
+					return { "name": tech[0], "increasePriority": true};
+				}
+				if (template.modifications[i].value === "BuildingAI/GarrisonArrowMultiplier") {
+					return { "name": tech[0], "increasePriority": true};
+				}
+				/*
+				let t = "Ranged";
+				if (template.modifications[i].value == "Attack/"+t+"/Hack") {
+					return { "name": tech[0], "increasePriority": true};
+				}
+				if (template.modifications[i].value == "Attack/"+t+"/Pierce") {
+					return { "name": tech[0], "increasePriority": true};
+				}
+				if (template.modifications[i].value == "Attack/"+t+"/Crush") {
+					return { "name": tech[0], "increasePriority": true};
+				}
+				*/
+			}
+		}
+	}
+
 	for (let tech of techs)
 	{
 		if (tech[0].indexOf("unlock_champion") == 0)
@@ -157,8 +218,8 @@ KIARA.ResearchManager.prototype.researchPreferredTechs = function(gameState, tec
 
 KIARA.ResearchManager.prototype.update = function(gameState, queues)
 {
-	if (queues.minorTech.hasQueuedUnits() || queues.majorTech.hasQueuedUnits())
-		return;
+//	if (queues.minorTech.hasQueuedUnits() || queues.majorTech.hasQueuedUnits())
+//		return;
 
 	let techs = gameState.findAvailableTech();
 
@@ -221,7 +282,7 @@ KIARA.ResearchManager.prototype.update = function(gameState, queues)
 		return;
 
 	// randomly pick one. No worries about pairs in that case.
-	queues.minorTech.addPlan(new KIARA.ResearchPlan(gameState, pickRandom(techs)[0]));
+	//queues.minorTech.addPlan(new KIARA.ResearchPlan(gameState, pickRandom(techs)[0]));
 };
 
 KIARA.ResearchManager.prototype.CostSum = function(cost)

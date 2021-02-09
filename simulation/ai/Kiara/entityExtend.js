@@ -36,7 +36,7 @@ KIARA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 			else if (debugLevel > 0)
 				API3.warn("Kiara: " + str + " unknown attackStrength in getMaxStrength (please add " + str + "  to config.js).");
 		}
-
+/*
 		let attackRange = ent.attackRange(type);
 		if (attackRange)
 			strength += attackRange.max * 0.0125;
@@ -58,7 +58,7 @@ KIARA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 			}
 		}
 	}
-
+*/
 	let resistanceStrength = ent.resistanceStrengths();
 
 	if (resistanceStrength.Damage)

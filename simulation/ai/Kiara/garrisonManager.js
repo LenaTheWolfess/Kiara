@@ -13,6 +13,127 @@ KIARA.GarrisonManager = function(Config)
 	this.decayingStructures = new Map();
 };
 
+KIARA.GarrisonManager.prototype.raiseAlert = function(gameState, holder)
+{
+	let out = false;
+	if (holder.getMetadata(PlayerID, "alert") !== undefined && holder.getMetadata(PlayerID, "alert")) {
+		if (out)
+			API3.warn("alert raised allready");
+		return false;
+	}
+	this.registerHolder(gameState, holder, true);
+	holder.setMetadata(PlayerID, "alert", true);
+	holder.setMetadata(PlayerID, "alertInit", true);
+
+	let holderPos = holder.position();
+	let reserved = new Map();
+	let units = gameState.getOwnUnits().filter(API3.Filters.byClass("Support")).filterNearest(holderPos).values();
+	let holderAccess = m.getLandAccess(gameState, holder);
+	let range = holder.attackRange("Ranged") ? holder.attackRange("Ranged").max : 80;
+	let searchRange = range;
+	let structures = gameState.getOwnStructures().filter(API3.Filters.and(API3.Filters.byClassesOr(["DefenseTower", "House", "Fortress", "CivCentre"]),API3.Filters.not(API3.Filters.isFoundation()))).values();
+
+	let validStructures = [];
+
+	for (let saveHouse of structures) {
+		let spos = saveHouse.position();
+		if (!spos) {
+			if (out)
+				API3.warn(saveHouse + " : no position");
+			continue;
+		}
+		let sAcc = m.getLandAccess(gameState, saveHouse);
+		if (holderAccess != sAcc) {
+			if (out)
+				API3.warn(saveHouse + " : wrong access");
+			continue;
+		}
+		if (API3.SquareVectorDistance(spos, holderPos) > 4*range*range) {
+			if (out)
+				API3.warn(saveHouse + " : too far from holder");
+			continue;
+		}
+		this.setAlert(saveHouse);
+		validStructures.push(saveHouse);
+	}
+
+	for (let unit of units) {
+		if (!unit.canGarrison()) {
+			if (out)
+				API3.warn(unit + " : cannot garrison");
+			continue;
+		}
+		if (unit.getMetadata(PlayerID, "garrisonHolder") != undefined) {
+			if (out)
+				API3.warn(unit + " has set garrisonHolder");
+			continue;
+		}
+		let pos = unit.position();
+		if (!pos) {
+			if (out)
+				API3.warn(unit + " : no position");
+			continue;
+		}
+		let unitAccess = m.getLandAccess(gameState, unit);
+		if (unitAccess != holderAccess) {
+			if (out)
+				API3.warn(unit + ": wrong access");
+			continue;
+		}
+		let dist = API3.SquareVectorDistance(pos, holderPos);
+		if (dist > range*range) {
+			if (out)
+				API3.warn(unit + " : too far" + dist + " vs " + (range*range));
+			continue;
+		}
+		for (let saveHouse of validStructures) {
+			if (out)
+				API3.warn(unit + " looking to " + saveHouse);
+			let spos = saveHouse.position();
+			if (API3.SquareVectorDistance(pos, spos) > searchRange*searchRange) {
+				if (out)
+					API3.warn(saveHouse + " : too far from unit" + API3.SquareVectorDistance(pos, spos) + " vs " + (searchRange*searchRange));
+				continue;
+			}
+			if (!reserved.has(saveHouse))
+				reserved.set(saveHouse, saveHouse.garrisonMax() - this.numberOfGarrisonedUnits(saveHouse));
+			if (!reserved.get(saveHouse)) {
+				if (out)
+					API3.warn(saveHouse + " : no place for more units");
+				continue;
+			}
+			if (out)
+				API3.warn(unit + " garrison to saveHouse " + saveHouse + " because alert");
+			this.garrison(gameState, unit, saveHouse, "alert");
+			break;
+		}
+	}
+	return true;
+}
+
+KIARA.GarrisonManager.prototype.endAlert = function(gameState, holder)
+{
+	let out = true;
+	if (out) {
+		API3.warn(holder + " is ending alert");
+	}
+	if (holder.getMetadata(PlayerID, "alert") === undefined || !holder.getMetadata(PlayerID, "alert")) {
+		return;
+	}
+	let range = holder.attackRange("Ranged") ? holder.attackRange("Ranged").max : 80;
+	holder.setMetadata(PlayerID, "alert", false);
+	let structures = gameState.getOwnStructures().filter(API3.Filters.and(API3.Filters.byClassesOr(["DefenseTower", "House", "Fortress", "CivCentre"]),API3.Filters.not(API3.Filters.isFoundation()))).values();
+	let holderPos = holder.position();
+	for (let saveHouse of structures) {
+		let spos = saveHouse.position();
+		if (!spos)
+			continue;
+		if (API3.SquareVectorDistance(spos, holderPos) > 4*range*range) 
+			continue;
+		this.markEndOfAlert(gameState, saveHouse);
+	}
+}
+
 KIARA.GarrisonManager.prototype.update = function(gameState, events)
 {
 	// First check for possible upgrade of a structure
@@ -123,6 +244,8 @@ KIARA.GarrisonManager.prototype.update = function(gameState, events)
 		if (gameState.ai.elapsedTime - holder.getMetadata(PlayerID, "holderTimeUpdate") > 3)
 		{
 			let range = holder.attackRange("Ranged") ? holder.attackRange("Ranged").max : 80;
+			if (holder.getMetadata(PlayerID, "alertInit"))
+				range = range * 4;
 			let around = { "defenseStructure": false, "meleeSiege": false, "rangeSiege": false, "unit": false };
 			for (let ent of gameState.getEnemyEntities().values())
 			{
@@ -158,6 +281,11 @@ KIARA.GarrisonManager.prototype.update = function(gameState, events)
 					break;
 				}
 			}
+			if (holder.getMetadata(PlayerID, "alertInit") && !around.meleeSiege && !around.rangeSiege && !around.unit && holder.getMetadata(PlayerID, "alert")) {
+				API3.warn( holder + " no enemy units around -> ending alert");
+				this.endAlert(gameState, holder);
+			}
+
 			// Keep defenseManager.garrisonUnitsInside in sync to avoid garrisoning-ungarrisoning some units
 			data.allowMelee = around.defenseStructure || around.unit;
 
@@ -271,12 +399,30 @@ KIARA.GarrisonManager.prototype.cancelGarrison = function(ent)
 		list.splice(index, 1);
 };
 
+KIARA.GarrisonManager.prototype.markEndOfAlert = function(gameState, holder)
+{
+//	API3.warn(holder + " is marking units as not alert state");
+	holder.setMetadata(PlayerID, "alert", false);
+	for (let entId of holder.garrisoned())
+	{
+		let ent = gameState.getEntityById(entId);
+		if (ent.getMetadata(PlayerID, "garrisonType") == "alert")
+			ent.setMetadata(PlayerID, "garrisonType", "protection");
+	//	API3.warn ( ent + " has state " + ent.getMetadata(PlayerID, "garrisonType"));
+	}
+};
+
 KIARA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 {
 	switch (ent.getMetadata(PlayerID, "garrisonType"))
 	{
 	case 'force':           // force the ungarrisoning
 		return false;
+	case 'alert':
+		if (!holder.getMetadata(PlayerID, "alert")) {
+			ent.setMetadata(PlayerID, "garrisonType", "protection");
+		}
+		return true;
 	case 'trade':		// trader garrisoned in ship
 		return true;
 	case 'protection':	// hurt unit for healing or infantry for defense
@@ -320,6 +466,12 @@ KIARA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 	}
 };
 
+m.GarrisonManager.prototype.setAlert = function(holder)
+{
+	if (this.holders.has(holder.id()))
+		holder.setMetadata(PlayerID, "alert", true);
+};
+
 /** Add this holder in the list managed by the garrisonManager */
 KIARA.GarrisonManager.prototype.registerHolder = function(gameState, holder)
 {
@@ -327,6 +479,8 @@ KIARA.GarrisonManager.prototype.registerHolder = function(gameState, holder)
 		return;
 	this.holders.set(holder.id(), { "list": [], "allowMelee": true });
 	holder.setMetadata(PlayerID, "holderTimeUpdate", gameState.ai.elapsedTime);
+	holder.setMetadata(PlayerID, "alert", false);
+	holder.setMetadata(PlayerID, "alertInit", false);
 };
 
 /**

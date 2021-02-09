@@ -37,6 +37,8 @@ KIARA.QueueManager = function(Config, queues)
 	}
 	let priorities = this.priorities;
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
+
+	this.Lia = false;
 };
 
 KIARA.QueueManager.prototype.getAvailableResources = function(gameState)
@@ -168,7 +170,7 @@ KIARA.QueueManager.prototype.printQueues = function(gameState)
 		if (q.hasQueuedUnits())
 		{
 			API3.warn(i + ": ( with priority " + this.priorities[i] +" and accounts " + uneval(this.accounts[i]) +")");
-			API3.warn(" while maxAccountWanted(0.6) is " + uneval(q.maxAccountWanted(gameState, 0.6)));
+			API3.warn(" while maxAccountWanted(0.8) is " + uneval(q.maxAccountWanted(gameState, 0.6)));
 		}
 		for (let plan of q.plans)
 		{
@@ -230,6 +232,56 @@ KIARA.QueueManager.prototype.transferAccounts = function(cost, i, j)
  */
 KIARA.QueueManager.prototype.distributeResources = function(gameState)
 {
+	// Use distribution defined for Lia
+	if (this.Lia) {
+		let availableRes = this.getAvailableResources(gameState);
+		for (let res of Resources.GetCodes())
+		{
+			if (availableRes[res] < 0)    // rescale the accounts if we've spent resources already accounted (e.g. by bartering)
+			{
+				let total = gameState.getResources()[res];
+				let scale = total / (total - availableRes[res]);
+				availableRes[res] = total;
+				for (let j in this.queues)
+				{
+					this.accounts[j][res] = Math.floor(scale * this.accounts[j][res]);
+					availableRes[res] -= this.accounts[j][res];
+				}
+			}
+
+			if (!availableRes[res])
+			{
+		//		this.switchResource(gameState, res);
+				continue;
+			}
+			let available = availableRes[res];
+			let maxNeed = {};
+			for (let j in this.queues)
+			{
+				// returns exactly the correct amount, ie 0 if we're not go.
+				let queueCost = this.queues[j].maxAccountWanted(gameState, 1.0);
+				if (this.queues[j].hasQueuedUnits() && this.accounts[j][res] < queueCost[res] && !this.queues[j].paused)
+				{
+					// adding us to the list of queues that need an update.
+					maxNeed[j] = queueCost[res] - this.accounts[j][res];
+					let toAdd = Math.min(maxNeed[j], available);
+					if (toAdd >= maxNeed[j])
+						toAdd = maxNeed[j];
+					this.accounts[j][res] += toAdd;
+
+				}
+				else if (this.accounts[j][res] > queueCost[res])
+				{
+					availableRes[res] += this.accounts[j][res] - queueCost[res];
+					this.accounts[j][res] = queueCost[res];
+				}
+			}
+			if (available < 0)
+				API3.warn("Luna: problem with remaining " + res + " in queueManager " + available);
+		}
+		return;
+	}
+
 	let availableRes = this.getAvailableResources(gameState);
 	for (let res of Resources.GetCodes())
 	{
@@ -266,7 +318,7 @@ KIARA.QueueManager.prototype.distributeResources = function(gameState)
 		for (let j in this.queues)
 		{
 			// returns exactly the correct amount, ie 0 if we're not go.
-			let queueCost = this.queues[j].maxAccountWanted(gameState, 0.6);
+			let queueCost = this.queues[j].maxAccountWanted(gameState, 0.8);
 			if (this.queues[j].hasQueuedUnits() && this.accounts[j][res] < queueCost[res] && !this.queues[j].paused)
 			{
 				// adding us to the list of queues that need an update.
@@ -356,6 +408,50 @@ KIARA.QueueManager.prototype.switchResource = function(gameState, res)
 // Start the next item in the queue if we can afford it.
 KIARA.QueueManager.prototype.startNextItems = function(gameState)
 {
+	if (this.Lia) {
+		for (let q of this.queueArrays)
+		{
+			let name = q[0];
+			let queue = q[1];
+			if (queue.hasQueuedUnits() && !queue.paused)
+			{
+				let i = 0;
+				let item = queue.getPlan(i);
+				// allways start at least one item from queue if has enough resources -> do not block it with first one
+				// actually limit to 3 to avoid stalling
+				while (queue.hasNext(i) && i < 3) {
+					item = queue.getPlan(i);
+					if (!item) {
+						break;
+					}
+					if (!item.allreadyStarted() && this.accounts[name].canAfford(item.getCost()) && item.canStart(gameState))
+					{
+						// canStart may update the cost because of the costMultiplier so we must check it again
+						if (this.accounts[name].canAfford(item.getCost()))
+						{
+							this.finishingTime = gameState.ai.elapsedTime;
+							this.accounts[name].subtract(item.getCost());
+							queue.startPlan(gameState, i);
+							// clean queue if first item have started
+							if (i == 0 && queue.getPlan(i).allreadyStarted()) {
+								queue.makeRoom(gameState);
+							}
+							queue.switched = 0;
+							break;
+						}
+					}
+					i++;
+				}
+			}
+			else if (!queue.hasQueuedUnits())
+			{
+				this.accounts[name].reset();
+				queue.switched = 0;
+			}
+		}
+		return;
+	}
+
 	for (let q of this.queueArrays)
 	{
 		let name = q[0];
@@ -415,7 +511,7 @@ KIARA.QueueManager.prototype.update = function(gameState)
 KIARA.QueueManager.prototype.checkPausedQueues = function(gameState)
 {
 	let numWorkers = gameState.countOwnEntitiesAndQueuedWithRole("worker");
-	let workersMin = Math.min(Math.max(12, 24 * this.Config.popScaling), this.Config.Economy.popPhase2);
+	let workersMin =  gameState.ai.HQ.strategy == "recover" ? 100 : 20;
 	for (let q in this.queues)
 	{
 		let toBePaused = false;
@@ -444,6 +540,9 @@ KIARA.QueueManager.prototype.checkPausedQueues = function(gameState)
 				toBePaused = false;
 			if (q == "ships" && gameState.ai.HQ.needFish &&
 				!gameState.ai.HQ.navalManager.ships.filter(API3.Filters.byClass("FishingBoat")).hasEntities())
+				toBePaused = false;
+
+			if (q.indexOf("ent_") != -1)
 				toBePaused = false;
 		}
 

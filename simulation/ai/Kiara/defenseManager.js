@@ -354,6 +354,9 @@ KIARA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 		// TODO check smaller distance with all our buildings instead of only ccs with big distance.
 		let stillDangerous = false;
 		let bases = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
+		let fortresses =  gameState.getOwnStructures().filter(API3.Filters.byClass("Fortress")).values()
+		let towers =  gameState.getOwnStructures().filter(API3.Filters.byClass("StoneTower")).values()
+
 		for (let base of bases.values())
 		{
 			if (!gameState.isEntityAlly(base))
@@ -365,6 +368,29 @@ KIARA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 				continue;
 			if(this.Config.debug > 1)
 				API3.warn("army in neutral territory, but still near one of our CC");
+			stillDangerous = true;
+			break;
+		}
+		for (let fortress of fortresses)
+		{
+			if (!gameState.isEntityAlly(fortress))
+				continue;
+			if (API3.SquareVectorDistance(fortress.position(), army.foePosition) > 12000)
+				continue;
+			if(this.Config.debug > 1)
+				API3.warn("army in neutral territory, but still near one of our fortress");
+			stillDangerous = true;
+			break;
+		}
+
+		for (let tower of towers)
+		{
+			if (!gameState.isEntityAlly(tower))
+				continue;
+			if (API3.SquareVectorDistance(tower.position(), army.foePosition) > 12000)
+				continue;
+			if(this.Config.debug > 1)
+				API3.warn("army in neutral territory, but still near one of our fortress");
 			stillDangerous = true;
 			break;
 		}
@@ -547,11 +573,10 @@ KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 	}
 
 	let allAttacked = {};
-	for (let evt of events.Attacked)
-		allAttacked[evt.target] = evt.attacker;
 
 	for (let evt of events.Attacked)
 	{
+		allAttacked[evt.target] = evt.attacker;
 		let target = gameState.getEntityById(evt.target);
 		if (!target || !target.position())
 			continue;
@@ -631,6 +656,23 @@ KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 				this.makeIntoArmy(gameState, attacker.id());
 		}
 
+		if (
+			attacker && attacker.position() &&
+			attacker.hasClass("Structure")&&
+			this.targetList.indexOf(attacker.id()) == -1 &&
+			(
+				target.hasClass("Structure") || 
+				target.hasClass("Foundation") ||
+				(
+					target.hasClass("Unit") &&
+					this.territoryMap.getOwner(target.position()) == PlayerID
+				)
+			)
+		) {
+			this.targetList.push(attacker.id());
+			Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [attacker.id()], "rgb": [2,0,0]});
+		}
+
 		if (target.getMetadata(PlayerID, "PartOfArmy") !== undefined)
 		{
 			let army = this.getArmy(target.getMetadata(PlayerID, "PartOfArmy"));
@@ -661,10 +703,11 @@ KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 		}
 
 		// Try to garrison any attacked support unit if low health.
-		if (target.hasClass("Support") && target.healthLevel() < this.Config.garrisonHealthLevel.medium &&
-			!target.getMetadata(PlayerID, "transport") && plan != -2 && plan != -3)
+		if (target.hasClass("Support") && !target.getMetadata(PlayerID, "transport") && plan != -2 && plan != -3)
 		{
-			this.garrisonAttackedUnit(gameState, target);
+			if (!attacker || !attacker.position() || !this.raiseAlert(gameState, target, { "attacker": attacker }))
+				this.garrisonAttackedUnit(gameState, target);
+
 			continue;
 		}
 
@@ -894,6 +937,32 @@ KIARA.DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, 
 	return true;
 };
 
+KIARA.DefenseManager.prototype.raiseAlert = function(gameState, unit, data)
+{
+	let attacker = data.attacker;
+	let aPos = attacker.position();
+	let garrisonManager = gameState.ai.HQ.garrisonManager;
+	for (let ent of gameState.getOwnStructures().filter(API3.Filters.and(API3.Filters.not(API3.Filters.isFoundation()), API3.Filters.byClass("CivCentre"))).values()) {
+		let dist = API3.SquareVectorDistance(aPos, ent.position());
+		if (dist < 10000) {
+			if(garrisonManager.raiseAlert(gameState, ent))
+				return true;
+			else 
+				return false;
+		}
+	}
+	return false;
+};
+
+KIARA.DefenseManager.prototype.endAlert = function(gameState)
+{
+	for (let ent of gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).values()) {
+		ent.endAlert();
+	}
+	return true;
+};
+
+
 /**
  * Be more inclined to help an ally attacked by several enemies.
  */
@@ -910,6 +979,7 @@ KIARA.DefenseManager.prototype.GetCooperationLevel = function(ally)
  */
 KIARA.DefenseManager.prototype.switchToAttack = function(gameState, army)
 {
+	return;
 	if (!army)
 		return;
 	for (let targetId of this.targetList)

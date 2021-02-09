@@ -19,6 +19,9 @@ KIARA.ConstructionPlan.prototype = Object.create(KIARA.QueuePlan.prototype);
 
 KIARA.ConstructionPlan.prototype.canStart = function(gameState)
 {
+	if (this.allreadyStarted())
+		return false;
+
 	if (gameState.ai.HQ.turnCache.buildingBuilt)   // do not start another building if already one this turn
 		return false;
 
@@ -43,6 +46,7 @@ KIARA.ConstructionPlan.prototype.start = function(gameState)
 	{
 		API3.warn("petra error: builder not found when starting construction.");
 		Engine.ProfileStop();
+		this.started = true;
 		return;
 	}
 
@@ -51,6 +55,7 @@ KIARA.ConstructionPlan.prototype.start = function(gameState)
 	{
 		gameState.ai.HQ.buildManager.setUnbuildable(gameState, this.type, 90, "room");
 		Engine.ProfileStop();
+		this.started = true;
 		return;
 	}
 
@@ -62,6 +67,7 @@ KIARA.ConstructionPlan.prototype.start = function(gameState)
 		tradeManager.checkRoutes(gameState);
 		if (!tradeManager.isNewMarketWorth(this.metadata.expectedGain))
 		{
+			this.started = true;
 			Engine.ProfileStop();
 			return;
 		}
@@ -114,12 +120,16 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 		return this.findDockPosition(gameState);
 
 	let HQ = gameState.ai.HQ;
-	if (template.hasClass("Storehouse") && this.metadata && this.metadata.base)
+	if ((template.hasClass("Storehouse")|| template.hasClass("Farmstead")  && this.metadata && this.metadata.base)
 	{
 		// recompute the best dropsite location in case some conditions have changed
 		let base = HQ.getBaseByID(this.metadata.base);
 		let type = this.metadata.type ? this.metadata.type : "wood";
-		let newpos = base.findBestDropsiteLocation(gameState, type);
+		let newpos;
+		if (type === "food")
+			newpos = base.findBestFarmsteadLocation(gameState, type);
+		else
+			newpos = base.findBestDropsiteLocation(gameState, type);
 		if (newpos && newpos.quality > 0)
 		{
 			let pos = newpos.pos;
@@ -127,11 +137,11 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 		}
 	}
 
+	let pos;
 	if (!this.position)
 	{
 		if (template.hasClass("CivCentre"))
 		{
-			let pos;
 			if (this.metadata && this.metadata.resource)
 			{
 				let proximity = this.metadata.proximity ? this.metadata.proximity : undefined;
@@ -154,16 +164,18 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 		}
 		else if (template.hasClass("Tower") || template.hasClass("Fortress") || template.hasClass("ArmyCamp"))
 		{
-			let pos = HQ.findDefensiveLocation(gameState, template);
-			if (pos)
-				return { "x": pos[0], "z": pos[1], "angle": 3*Math.PI/4, "base": pos[2] };
-			// if this fortress is our first one, just try the standard placement
-			if (!template.hasClass("Fortress") || gameState.getOwnEntitiesByClass("Fortress", true).hasEntities())
-				return false;
+			pos = HQ.findDefensiveLocation(gameState, template);
+
+			if (pos) {
+				if ( (template.hasClass("Tower") && gameState.getOwnEntitiesByClass("Tower", true).length < 3) ||
+					(template.hasClass("Fortress") && gameState.getOwnEntitiesByClass("Fortress", true).hasEntities())
+				)
+					return { "x": pos[0], "z": pos[1], "angle": 3*Math.PI/4, "base": pos[2] };
+			}
 		}
 		else if (template.hasClass("Market")) // Docks are done before.
 		{
-			let pos = HQ.findMarketLocation(gameState, template);
+			pos = HQ.findMarketLocation(gameState, template);
 			if (pos && pos[2] > 0)
 			{
 				if (!this.metadata)
@@ -191,11 +203,21 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 	}
 	else	// No position was specified so try and find a sensible place to build
 	{
+		if (pos) {
+			placement.set(pos[3], 255);
+		}
 		// give a small > 0 level as the result of addInfluence is constrained to be > 0
 		// if we really need houses (i.e. Phasing without enough village building), do not apply these constraints
 		if (this.metadata && this.metadata.base !== undefined)
 		{
 			let base = this.metadata.base;
+			for (let j = 0; j < placement.map.length; ++j)
+				if (HQ.basesMap.map[j] == base)
+					placement.set(j, 45);
+		}
+		else if (pos !== undefined)
+		{
+			let base = pos[2];
 			for (let j = 0; j < placement.map.length; ++j)
 				if (HQ.basesMap.map[j] == base)
 					placement.set(j, 45);
@@ -222,25 +244,28 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 					else // If this is not a field add a negative influence because we want to leave this area for fields
 						placement.addInfluence(x, z, 80 / cellSize, -20);
 				}
-				else if (template.hasClass("House"))
-				{
-					if (ent.hasClass("House"))
-					{
-						placement.addInfluence(x, z, 60 / cellSize, 40);    // houses are close to other houses
-						alreadyHasHouses = true;
-					}
-					else if (!ent.hasClass("Wall") || ent.hasClass("Gate"))
-						placement.addInfluence(x, z, 60 / cellSize, -40);   // and further away from other stuffs
-				}
-				else if (template.hasClass("Farmstead") && (!ent.hasClass("Field") && !ent.hasClass("Corral") &&
-					(!ent.hasClass("Wall") || ent.hasClass("Gate"))))
-					placement.addInfluence(x, z, 100 / cellSize, -25);       // move farmsteads away to make room (Wall test needed for iber)
-				else if (template.hasClass("GarrisonFortress") && ent.hasClass("House"))
-					placement.addInfluence(x, z, 120 / cellSize, -50);
-				else if (template.hasClass("Military"))
-					placement.addInfluence(x, z, 40 / cellSize, -40);
-				else if (template.genericName() == "Rotary Mill" && ent.hasClass("Field"))
-					placement.addInfluence(x, z, 60 / cellSize, 40);
+/**/
+				if (template.hasClass("House") && ent.hasClass("CivilCentre"))
+					placement.addInfluence(x, z, 40/cellSize, -10);    // we want to leave this for fields
+				if (template.hasClass("House") && ent.hasClass("Field"))
+					placement.addInfluence(x, z, 40/cellSize, 5);
+				if (template.hasClass("Farmstead") && (!ent.hasClass("Field") && !ent.hasClass("Corral") &&
+					(!ent.hasClass("StoneWall") || ent.hasClass("Gates"))))
+					placement.addInfluence(x, z, 100/cellSize, -25);       // move farmsteads away to make room (StoneWall test needed for iber)
+				if (template.hasClass("Tower") && ent.hasClass("Tower"))
+					placement.addInfluence(x, z, 60/cellSize, -20);
+				if (template.hasClass("Tower") && (ent.hasClass("House") || ent.hasClass("Military") || ent.hasClass("Storehouse")))
+					placement.addInfluence(x, z, 40/cellSize, 20);
+
+				if (template.hasClass("Farmstead") && (!ent.hasClass("Field") && !ent.hasClass("Corral") &&
+					(!ent.hasClass("StoneWall") || ent.hasClass("Gates"))))
+					placement.addInfluence(x, z, 100/cellSize, -25);       // move farmsteads away to make room (StoneWall test needed for iber)
+
+				if (template.genericName() == "Rotary Mill" && ent.hasClass("Field"))
+					placement.addInfluence(x, z, 60/cellSize, 40);
+
+				placement.addInfluence(x, z, 20/cellSize, 20);
+/**/
 			});
 		}
 		if (template.hasClass("Farmstead"))
@@ -257,11 +282,29 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 
 	// Requires to be inside our territory, and inside our base territory if required
 	// and if our first market, put it on border if possible to maximize distance with next Market.
-	let favorBorder = template.hasClass("Market");
-	let disfavorBorder = gameState.currentPhase() > 1 && !template.hasDefensiveFire();
-	let favoredBase = this.metadata && (this.metadata.favoredBase ||
-		         (this.metadata.militaryBase ? HQ.findBestBaseForMilitary(gameState) : undefined));
-	if (this.metadata && this.metadata.base !== undefined)
+	let radius = 0;
+	// Find the best non-obstructed:
+	// Find target building's approximate obstruction radius, and expand by a bit to make sure we're not too close,
+	// this allows room for units to walk between buildings.
+	// note: not for houses and dropsites who ought to be closer to either each other or a resource.
+	// also not for fields who can be stacked quite a bit
+
+	let obstructions = KIARA.createObstructionMap(gameState, 0, template);
+	// obstructions.dumpIm(template.buildPlacementType() + "_obstructions.png");
+	if (template.hasClass("Fortress") || template.hasClass("Workshop") ||
+		this.type == gameState.applyCiv("structures/{civ}/elephant_stables"))
+		radius = Math.floor((template.obstructionRadius().max + 8) / obstructions.cellSize);
+	else if (template.resourceDropsiteTypes() === undefined && !template.hasClass("House") &&
+	         !template.hasClass("Field") && !template.hasClass("Market"))
+		radius = Math.ceil((template.obstructionRadius().max + 4) / obstructions.cellSize);
+	else
+		radius = Math.ceil(template.obstructionRadius().max / obstructions.cellSize);
+
+	// Requires to be inside our territory, and inside our base territory if required
+	// and if our first market, put it on border if possible to maximize distance with next market
+	let favorBorder = false;
+	let disfavorBorder = true;
+	let favoredBase = this.metadata && this.metadata.favoredBase;	if (this.metadata && this.metadata.base !== undefined)
 	{
 		let base = this.metadata.base;
 		for (let j = 0; j < placement.map.length; ++j)
@@ -278,6 +321,8 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				let x = (j % placement.width + 0.5) * cellSize;
 				let z = (Math.floor(j / placement.width) + 0.5) * cellSize;
 				if (HQ.isNearInvadingArmy([x, z]))
+					placement.map[j] = 0;
+				else if (HQ.isUnderEnemyFire(gameState, [x, z], radius/2))
 					placement.map[j] = 0;
 			}
 		}
@@ -299,40 +344,15 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				let z = (Math.floor(j / placement.width) + 0.5) * cellSize;
 				if (HQ.isNearInvadingArmy([x, z]))
 					placement.map[j] = 0;
+				else if (HQ.isUnderEnemyFire(gameState, [x, z], radius/2))
+					placement.map[j] = 0;
 				else if (favoredBase && HQ.basesMap.map[j] == favoredBase)
 					placement.set(j, placement.map[j] + 100);
 			}
 		}
 	}
 
-	// Find the best non-obstructed:
-	// Find target building's approximate obstruction radius, and expand by a bit to make sure we're not too close,
-	// this allows room for units to walk between buildings.
-	// note: not for houses and dropsites who ought to be closer to either each other or a resource.
-	// also not for fields who can be stacked quite a bit
-
-	let obstructions = KIARA.createObstructionMap(gameState, 0, template);
-	// obstructions.dumpIm(template.buildPlacementType() + "_obstructions.png");
-
-	let radius = 0;
-	if (template.hasClass("Fortress") || template.hasClass("Arsenal") ||
-		this.type == gameState.applyCiv("structures/{civ}/elephant_stables"))
-		radius = Math.floor((template.obstructionRadius().max + 8) / obstructions.cellSize);
-	else if (template.resourceDropsiteTypes() === undefined && !template.hasClass("House") &&
-		!template.hasClass("Field") && !template.hasClass("Market"))
-		radius = Math.ceil((template.obstructionRadius().max + 4) / obstructions.cellSize);
-	else
-		radius = Math.ceil(template.obstructionRadius().max / obstructions.cellSize);
-
 	let bestTile;
-	if (template.hasClass("House") && !alreadyHasHouses)
-	{
-		// try to get some space to place several houses first
-		bestTile = placement.findBestTile(3*radius, obstructions);
-		if (!bestTile.val)
-			bestTile = undefined;
-	}
-
 	if (!bestTile)
 		bestTile = placement.findBestTile(radius, obstructions);
 
@@ -889,6 +909,8 @@ KIARA.ConstructionPlan.prototype.getResourcesAround = function(gameState, types,
 
 KIARA.ConstructionPlan.prototype.isGo = function(gameState)
 {
+	if (this.allreadyStarted())
+		return false;
 	if (this.goRequirement && this.goRequirement == "houseNeeded")
 	{
 		if (!gameState.ai.HQ.canBuild(gameState, "structures/{civ}/house"))

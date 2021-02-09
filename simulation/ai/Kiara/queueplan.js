@@ -6,6 +6,7 @@ KIARA.QueuePlan = function(gameState, type, metadata)
 {
 	this.type = gameState.applyCiv(type);
 	this.metadata = metadata;
+	this.started = false;
 
 	this.template = gameState.getTemplate(this.type);
 	if (!this.template)
@@ -30,7 +31,7 @@ KIARA.QueuePlan.prototype.isInvalid = function(gameState)
 /** if true, the queue manager will begin increasing this plan's account. */
 KIARA.QueuePlan.prototype.isGo = function(gameState)
 {
-	return true;
+	return !this.started;
 };
 
 /** can we start this plan immediately? */
@@ -42,7 +43,9 @@ KIARA.QueuePlan.prototype.canStart = function(gameState)
 /** process the plan. */
 KIARA.QueuePlan.prototype.start = function(gameState)
 {
-	// should call onStart.
+	if (this.started)
+		return;
+	this.onStart(gameState);
 };
 
 KIARA.QueuePlan.prototype.getCost = function()
@@ -62,4 +65,10 @@ KIARA.QueuePlan.prototype.getCost = function()
  */
 KIARA.QueuePlan.prototype.onStart = function(gameState)
 {
+	this.started = true;
+};
+
+KIARA.QueuePlan.prototype.allreadyStarted = function()
+{
+	return this.started;
 };

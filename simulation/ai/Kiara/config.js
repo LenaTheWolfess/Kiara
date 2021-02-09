@@ -14,31 +14,32 @@ KIARA.Config = function(difficulty, behavior)
 	this.popScaling = 1;	// scale factor depending on the max population
 
 	this.Military = {
-		"towerLapseTime": 90,	// Time to wait between building 2 towers
-		"fortressLapseTime": 390,	// Time to wait between building 2 fortresses
-		"popForBarracks1": 25,
-		"popForBarracks2": 95,
-		"popForForge": 65,
-		"numSentryTowers": 1
+		"towerLapseTime": 5,	// Time to wait between building 2 towers
+		"fortressLapseTime": 100,	// Time to wait between building 2 fortresses
+		"popForBarracks1": 35,
+		"popForBarracks2": 55,
+		"popForBlacksmith": 65,
+		"numSentryTowers": 3,
+		"numFortresses": 2,
 	};
 
 	this.DamageTypeImportance = {
-		"Hack": 0.085,
-		"Pierce": 0.075,
-		"Crush": 0.065,
+		"Hack": 0.075,
+		"Pierce": 0.065,
+		"Crush": 0.085,
 		"Fire": 0.095
 	};
 
 	this.Economy = {
-		"popPhase2": 38,	// How many units we want before aging to phase2.
-		"workPhase3": 65,	// How many workers we want before aging to phase3.
-		"workPhase4": 80,	// How many workers we want before aging to phase4 or higher.
+		"popPhase2": 80,	// How many units we want before aging to phase2.
+		"workPhase3": 150,	// How many workers we want before aging to phase3.
+		"workPhase4": 150,	// How many workers we want before aging to phase4 or higher.
 		"popForDock": 25,
-		"targetNumWorkers": 40,	// dummy, will be changed later
+		"targetNumWorkers": 80,	// dummy, will be changed later
 		"targetNumTraders": 5,	// Target number of traders
-		"targetNumFishers": 1,	// Target number of fishers per sea
+		"targetNumFishers": 2,	// Target number of fishers per sea
 		"supportRatio": 0.35,	// fraction of support workers among the workforce
-		"provisionFields": 2
+		"provisionFields": 8
 	};
 
 	// Note: attack settings are set directly in attack_plan.js
@@ -109,8 +110,8 @@ KIARA.Config = function(difficulty, behavior)
 
 	this.priorities =
 	{
-		"villager": 30,      // should be slightly lower than the citizen soldier one to not get all the food
-		"citizenSoldier": 60,
+		"villager": 250,      // should be slightly lower than the citizen soldier one to not get all the food
+		"citizenSoldier": 300,
 		"trader": 50,
 		"healer": 20,
 		"ships": 70,
@@ -124,7 +125,7 @@ KIARA.Config = function(difficulty, behavior)
 		"defenseBuilding": 70,
 		"civilCentre": 950,
 		"majorTech": 700,
-		"minorTech": 250,
+		"minorTech": 270,
 		"wonder": 1000,
 		"emergency": 1000    // used only in emergency situations, should be the highest one
 	};
@@ -147,14 +148,16 @@ KIARA.Config = function(difficulty, behavior)
 		},
 		"short": {
 			"food": 200,
-			"wood": 200,
-			"default": 100
+			"wood": 100,
+			"default": 80
 		},
 		"medium": {
-			"default": 0
+			"food": 180,
+			"default": 80
 		},
 		"long": {
-			"default": 0
+			"food": 150,
+			"default": 80
 		}
 	};
 
@@ -180,6 +183,11 @@ KIARA.Config.prototype.setConfig = function(gameState)
 		let variation = 0.15 * randFloat(-1, 1) * Math.sqrt(Math.square(0.5) - Math.square(behavior));
 		let aggressive = Math.max(Math.min(behavior + variation, 0.5), -0.5) + 0.5;
 		let defensive = Math.max(Math.min(-behavior + variation, 0.5), -0.5) + 0.5;
+		if (this.behavior == "defensive") {
+			this.priorities.villager = 30;
+			this.priorities.citizenSoldier = 60;
+		}
+		API3.warn(uneval(this.priorities));
 		let min = personalityList[this.behavior].min;
 		let max = personalityList[this.behavior].max;
 		this.personality = {
@@ -201,51 +209,9 @@ KIARA.Config.prototype.setConfig = function(gameState)
 	else if (gameState.getAlliedVictory())
 		this.personality.cooperative = Math.min(1, this.personality.cooperative + 0.15);
 
-	// changing settings based on difficulty or personality
-	this.Military.towerLapseTime = Math.round(this.Military.towerLapseTime * (1.1 - 0.2 * this.personality.defensive));
-	this.Military.fortressLapseTime = Math.round(this.Military.fortressLapseTime * (1.1 - 0.2 * this.personality.defensive));
-	this.priorities.defenseBuilding = Math.round(this.priorities.defenseBuilding * (0.9 + 0.2 * this.personality.defensive));
-
-	if (this.difficulty < 2)
-	{
-		this.Economy.supportRatio = 0.5;
-		this.Economy.provisionFields = 1;
-		this.Military.numSentryTowers = this.personality.defensive > this.personalityCut.strong ? 1 : 0;
-	}
-	else if (this.difficulty < 3)
-	{
-		this.Economy.supportRatio = 0.4;
-		this.Economy.provisionFields = 1;
-		this.Military.numSentryTowers = this.personality.defensive > this.personalityCut.strong ? 1 : 0;
-	}
-	else
-	{
-		if (this.difficulty == 3)
-			this.Military.numSentryTowers = 1;
-		else
-			this.Military.numSentryTowers = 2;
-		if (this.personality.defensive > this.personalityCut.strong)
-			++this.Military.numSentryTowers;
-		else if (this.personality.defensive < this.personalityCut.weak)
-			--this.Military.numSentryTowers;
-
-		if (this.personality.aggressive > this.personalityCut.strong)
-		{
-			this.Military.popForBarracks1 = 12;
-			this.Economy.popPhase2 = 50;
-			this.priorities.healer = 10;
-		}
-	}
-
 	let maxPop = gameState.getPopulationMax();
-	if (this.difficulty < 2)
-		this.Economy.targetNumWorkers = Math.max(1, Math.min(40, maxPop));
-	else if (this.difficulty < 3)
-		this.Economy.targetNumWorkers = Math.max(1, Math.min(60, Math.floor(maxPop/2)));
-	else
-		this.Economy.targetNumWorkers = Math.max(1, Math.min(120, Math.floor(maxPop/3)));
-	this.Economy.targetNumTraders = 2 + this.difficulty;
-
+	this.Economy.targetNumWorkers = Math.max(1, Math.min(120, Math.floor(maxPop/3)));
+	this.Economy.targetNumTraders = 20;
 
 	if (gameState.getVictoryConditions().has("wonder"))
 	{
@@ -256,15 +222,15 @@ KIARA.Config.prototype.setConfig = function(gameState)
 	if (maxPop < 300)
 	{
 		this.popScaling = Math.sqrt(maxPop / 300);
-		this.Military.popForBarracks1 = Math.min(Math.max(Math.floor(this.Military.popForBarracks1 * this.popScaling), 12), Math.floor(maxPop/5));
+		this.Military.popForBarracks1 = Math.min(Math.max(Math.floor(this.Military.popForBarracks1 * this.popScaling), 15), Math.floor(maxPop*2/3));
 		this.Military.popForBarracks2 = Math.min(Math.max(Math.floor(this.Military.popForBarracks2 * this.popScaling), 45), Math.floor(maxPop*2/3));
 		this.Military.popForForge = Math.min(Math.max(Math.floor(this.Military.popForForge * this.popScaling), 30), Math.floor(maxPop/2));
-		this.Economy.popPhase2 = Math.min(Math.max(Math.floor(this.Economy.popPhase2 * this.popScaling), 20), Math.floor(maxPop/2));
-		this.Economy.workPhase3 = Math.min(Math.max(Math.floor(this.Economy.workPhase3 * this.popScaling), 40), Math.floor(maxPop*2/3));
+//		this.Economy.popPhase2 = Math.min(Math.max(Math.floor(this.Economy.popPhase2 * this.popScaling), 20), Math.floor(maxPop/2));
+//		this.Economy.workPhase3 = Math.min(Math.max(Math.floor(this.Economy.workPhase3 * this.popScaling), 40), Math.floor(maxPop*2/3));
 		this.Economy.workPhase4 = Math.min(Math.max(Math.floor(this.Economy.workPhase4 * this.popScaling), 45), Math.floor(maxPop*2/3));
 		this.Economy.targetNumTraders = Math.round(this.Economy.targetNumTraders * this.popScaling);
 	}
-	this.Economy.targetNumWorkers = Math.max(this.Economy.targetNumWorkers, this.Economy.popPhase2);
+//	this.Economy.targetNumWorkers = Math.max(this.Economy.targetNumWorkers, this.Economy.popPhase2);
 	this.Economy.workPhase3 = Math.min(this.Economy.workPhase3, this.Economy.targetNumWorkers);
 	this.Economy.workPhase4 = Math.min(this.Economy.workPhase4, this.Economy.targetNumWorkers);
 	if (this.difficulty < 2)

@@ -11,7 +11,7 @@ KIARA.VictoryManager = function(Config)
 	this.criticalEnts = new Map();
 	// Holds ids of all ents who are (or can be) guarding and if the ent is currently guarding
 	this.guardEnts = new Map();
-	this.healersPerCriticalEnt = 2 + Math.round(this.Config.personality.defensive * 2);
+	this.healersPerCriticalEnt = 2;
 	this.tryCaptureGaiaRelic = false;
 	this.tryCaptureGaiaRelicLapseTime = -1;
 	// Gaia relics which we are targeting currently and have not captured yet

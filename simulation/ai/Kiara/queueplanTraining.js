@@ -1,4 +1,4 @@
-KIARA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 5)
+KIARA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 5, m_trainer = undefined)
 {
 	if (!KIARA.QueuePlan.call(this, gameState, type, metadata))
 	{
@@ -7,13 +7,16 @@ KIARA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 
 	}
 
 	// Refine the estimated cost and add pop cost
-	let trainers = this.getBestTrainers(gameState);
+	let trainers = m_trainer ? [m_trainer] : this.getBestTrainers(gameState);
 	let trainer = trainers ? trainers[0] : undefined;
 	this.cost = new API3.Resources(this.template.cost(trainer), +this.template._template.Cost.Population);
 
 	this.category = "unit";
 	this.number = number;
 	this.maxMerge = maxMerge;
+
+	if (m_trainer)
+		this.trainer = m_trainer;
 
 	return true;
 };
@@ -22,7 +25,9 @@ KIARA.TrainingPlan.prototype = Object.create(KIARA.QueuePlan.prototype);
 
 KIARA.TrainingPlan.prototype.canStart = function(gameState)
 {
-	this.trainers = this.getBestTrainers(gameState);
+	if (this.allreadyStarted())
+		return false;
+	this.trainers = this.trainer ? [this.trainer] : this.getBestTrainers(gameState);
 	if (!this.trainers)
 		return false;
 	this.cost = new API3.Resources(this.template.cost(this.trainers[0]), +this.template._template.Cost.Population);
@@ -65,6 +70,8 @@ KIARA.TrainingPlan.prototype.getBestTrainers = function(gameState)
 
 KIARA.TrainingPlan.prototype.start = function(gameState)
 {
+	if (this.allreadyStarted())
+		return false;
 	if (this.metadata && this.metadata.trainer)
 	{
 		let metadata = {};
@@ -122,9 +129,32 @@ KIARA.TrainingPlan.prototype.start = function(gameState)
 		});
 	}
 
+	// spread load among all possible trainers
+	let ln = this.trainers.length;
+	let ideal = Math.max(1, Math.floor(this.number / 5));
+	if (ln > ideal)
+		ln = ideal;
+	let number = Math.floor(this.number / ln);
+	let nMissing = this.number - (number*ln);
+
+	let pt = this.promotedTypes(gameState);
+	let civ = gameState.getPlayerCiv();
+	let i = 1;
+	while (i < ln) {
+	//	API3.warn("spreading load with " + number);
+		if (this.metadata && this.metadata.base !== undefined && this.metadata.base === 0)
+			this.metadata.base = this.trainers[i].getMetadata(PlayerID, "base");
+		this.trainers[i].train(civ, this.type, number, this.metadata, pt);
+		i++;
+	}
+
+	if (nMissing > 0)
+		number = number + nMissing;
+
+	i = 0;
 	if (this.metadata && this.metadata.base !== undefined && this.metadata.base === 0)
-		this.metadata.base = this.trainers[0].getMetadata(PlayerID, "base");
-	this.trainers[0].train(gameState.getPlayerCiv(), this.type, this.number, this.metadata, this.promotedTypes(gameState));
+		this.metadata.base = this.trainers[i].getMetadata(PlayerID, "base");
+	this.trainers[i].train(civ, this.type, number, this.metadata, pt);
 
 	this.onStart(gameState);
 };

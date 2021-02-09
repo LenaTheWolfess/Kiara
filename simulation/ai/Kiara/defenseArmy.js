@@ -122,6 +122,7 @@ KIARA.DefenseArmy.prototype.addOwn = function(gameState, id, force)
 	if (subrole === undefined || subrole !== "defender")
 		ent.setMetadata(PlayerID, "formerSubrole", subrole);
 	ent.setMetadata(PlayerID, "subrole", "defender");
+	ent.setStance("aggressive");
 	return true;
 };
 
@@ -323,8 +324,14 @@ KIARA.DefenseArmy.prototype.assignUnit = function(gameState, entID)
 		}
 
 		// already enough units against it
-		if (this.assignedAgainst[id].length > 8 ||
-			this.assignedAgainst[id].length > 5 && !eEnt.hasClass("Hero") && !KIARA.isSiegeUnit(eEnt))
+		let s = this.assignedAgainst[id].length;
+		if (eEnt.hasClass("Hero") && s > 8)
+			continue;
+		else if (m.isSiegeUnit(eEnt) && s > 5)
+			continue;
+		else if (eEnt.hasClass("Champion") && s > 4)
+			continue;
+		else if (s > 2)
 			continue;
 
 		let dist = API3.SquareVectorDistance(ent.position(), eEnt.position());
@@ -333,8 +340,6 @@ KIARA.DefenseArmy.prototype.assignUnit = function(gameState, entID)
 			idMinAll = id;
 			distMinAll = dist;
 		}
-		if (this.assignedAgainst[id].length > 2)
-			continue;
 		if (idMin === undefined || dist < distMin)
 		{
 			idMin = id;

@@ -36,7 +36,7 @@ KIARA.HQ.prototype.gameAnalysis = function(gameState)
 
 
 	// Sandbox difficulty should not try to expand
-	this.canExpand = this.Config.difficulty != 0;
+	this.canExpand = true;
 	// If no base yet, check if we can construct one. If not, dispatch our units to possible tasks/attacks
 	this.canBuildUnits = true;
 	if (!gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).hasEntities())
@@ -478,6 +478,7 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 	// - count the available food resource, and react accordingly
 	let startingFood = gameState.getResources().food;
 	let check = {};
+	let hunt = 0;
 	for (let proxim of ["nearby", "medium", "faraway"])
 	{
 		for (let base of this.baseManagers)
@@ -489,8 +490,19 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 				check[supply.id] = true;
 				startingFood += supply.ent.resourceSupplyAmount();
 			}
+			for (let supply of base.dropsiteSupplies.hunt[proxim])
+			{
+				if (check[supply.id])
+					continue;
+				check[supply.id] = true;
+				hunt += supply.ent.resourceSupplyAmount();
+			}
 		}
 	}
+
+	this.cavalryRush = hunt > 2000;
+	API3.warn("cavalryRush = " + this.cavalryRush);
+
 	if (startingFood < 800)
 	{
 		if (startingSize < 25000)
@@ -522,7 +534,7 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 	if (startingWood < 6000)
 	{
 		this.saveResources = true;
-		this.Config.Economy.popPhase2 = Math.floor(0.75 * this.Config.Economy.popPhase2);	// Switch to town phase sooner to be able to expand
+//		this.Config.Economy.popPhase2 = Math.floor(0.75 * this.Config.Economy.popPhase2);	// Switch to town phase sooner to be able to expand
 
 		if (startingWood < 2000 && this.needFarm)
 		{
@@ -544,25 +556,6 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 		this.attackManager.setRushes(allowed);
 	}
 
-	// immediatly build a wood dropsite if possible.
-	let template = gameState.applyCiv("structures/{civ}/storehouse");
-	if (!gameState.getOwnEntitiesByClass("Storehouse", true).hasEntities() && this.canBuild(gameState, template))
-	{
-		let newDP = this.baseManagers[1].findBestDropsiteLocation(gameState, "wood");
-		if (newDP.quality > 40)
-		{
-			// if we start with enough workers, put our available resources in this first dropsite
-			// same thing if our pop exceed the allowed one, as we will need several houses
-			let numWorkers = gameState.getOwnUnits().filter(API3.Filters.byClass("Worker")).length;
-			if (numWorkers > 12 && newDP.quality > 60 ||
-				gameState.getPopulation() > gameState.getPopulationLimit() + 20)
-			{
-				let cost = new API3.Resources(gameState.getTemplate(template).cost());
-				gameState.ai.queueManager.setAccounts(gameState, cost, "dropsites");
-			}
-			gameState.ai.queues.dropsites.addPlan(new KIARA.ConstructionPlan(gameState, template, { "base": this.baseManagers[1].ID }, newDP.pos));
-		}
-	}
 	// and build immediately a corral if needed
 	if (this.needCorral)
 	{

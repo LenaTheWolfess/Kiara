@@ -708,8 +708,8 @@ KIARA.NavalManager.prototype.moveApart = function(gameState)
 
 KIARA.NavalManager.prototype.buildNavalStructures = function(gameState, queues)
 {
-	if (!gameState.ai.HQ.navalMap || !gameState.ai.HQ.baseManagers[1])
-		return;
+//	if (!gameState.ai.HQ.navalMap || !gameState.ai.HQ.baseManagers[1])
+//		return;
 
 	if (gameState.ai.HQ.getAccountedPopulation(gameState) > this.Config.Economy.popForDock)
 	{
