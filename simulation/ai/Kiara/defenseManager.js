@@ -1,4 +1,4 @@
-PETRA.DefenseManager = function(Config)
+KIARA.DefenseManager = function(Config)
 {
 	// Array of "army" Objects.
 	this.armies = [];
@@ -14,7 +14,7 @@ PETRA.DefenseManager = function(Config)
 	this.attackedAllies = {};
 };
 
-PETRA.DefenseManager.prototype.update = function(gameState, events)
+KIARA.DefenseManager.prototype.update = function(gameState, events)
 {
 	Engine.ProfileStart("Defense Manager");
 
@@ -65,7 +65,7 @@ PETRA.DefenseManager.prototype.update = function(gameState, events)
 	Engine.ProfileStop();
 };
 
-PETRA.DefenseManager.prototype.makeIntoArmy = function(gameState, entityID, type = "default")
+KIARA.DefenseManager.prototype.makeIntoArmy = function(gameState, entityID, type = "default")
 {
 	if (type == "default")
 	{
@@ -76,12 +76,12 @@ PETRA.DefenseManager.prototype.makeIntoArmy = function(gameState, entityID, type
 	}
 
 	// Create a new army for it.
-	let army = new PETRA.DefenseArmy(gameState, [entityID], type);
+	let army = new KIARA.DefenseArmy(gameState, [entityID], type);
 
 	this.armies.push(army);
 };
 
-PETRA.DefenseManager.prototype.getArmy = function(partOfArmy)
+KIARA.DefenseManager.prototype.getArmy = function(partOfArmy)
 {
 	// Find the army corresponding to this ID partOfArmy.
 	for (let army of this.armies)
@@ -91,7 +91,7 @@ PETRA.DefenseManager.prototype.getArmy = function(partOfArmy)
 	return undefined;
 };
 
-PETRA.DefenseManager.prototype.isDangerous = function(gameState, entity)
+KIARA.DefenseManager.prototype.isDangerous = function(gameState, entity)
 {
 	if (!entity.position())
 		return false;
@@ -199,7 +199,7 @@ PETRA.DefenseManager.prototype.isDangerous = function(gameState, entity)
 	return false;
 };
 
-PETRA.DefenseManager.prototype.checkEnemyUnits = function(gameState)
+KIARA.DefenseManager.prototype.checkEnemyUnits = function(gameState)
 {
 	const nbPlayers = gameState.sharedScript.playersData.length;
 	let i = gameState.ai.playedTurn % nbPlayers;
@@ -275,7 +275,7 @@ PETRA.DefenseManager.prototype.checkEnemyUnits = function(gameState)
 	}
 };
 
-PETRA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
+KIARA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 {
 	for (let i = 0; i < this.armies.length; ++i)
 	{
@@ -388,7 +388,7 @@ PETRA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 	}
 };
 
-PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
+KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 {
 	if (!this.armies.length)
 		return;
@@ -407,11 +407,11 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 			let ent = gameState.getEntityById(entId);
 			if (!ent || !ent.position())
 				continue;
-			armyAccess = PETRA.getLandAccess(gameState, ent);
+			armyAccess = KIARA.getLandAccess(gameState, ent);
 			break;
 		}
 		if (!armyAccess)
-			API3.warn(" Petra error: attacking army " + army.ID + " without access");
+			API3.warn(" Kiara error: attacking army " + army.ID + " without access");
 		army.recalculatePosition(gameState);
 		armiesNeeding.push({ "army": army, "access": armyAccess, "need": needsDef });
 	}
@@ -459,7 +459,7 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 				continue;
 			let aMin;
 			let distMin;
-			let access = ipass == 0 ? PETRA.getLandAccess(gameState, ent) : undefined;
+			let access = ipass == 0 ? KIARA.getLandAccess(gameState, ent) : undefined;
 			for (let a = 0; a < armiesNeeding.length; ++a)
 			{
 				if (access && armiesNeeding[a].access != access)
@@ -468,7 +468,7 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 				// Do not assign defender if it cannot attack at least part of the attacking army.
 				if (!armiesNeeding[a].army.foeEntities.some(eEnt => {
 					let eEntID = gameState.getEntityById(eEnt);
-					return ent.canAttackTarget(eEntID, PETRA.allowCapture(gameState, ent, eEntID));
+					return ent.canAttackTarget(eEntID, KIARA.allowCapture(gameState, ent, eEntID));
 					}))
 					continue;
 
@@ -491,7 +491,7 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 			else if (aMin === undefined)
 				continue;
 
-			armiesNeeding[aMin].need -= PETRA.getMaxStrength(ent, this.Config.debug, this.Config.DamageTypeImportance);
+			armiesNeeding[aMin].need -= KIARA.getMaxStrength(ent, this.Config.debug, this.Config.DamageTypeImportance);
 			armiesNeeding[aMin].army.addOwn(gameState, potentialDefenders[i]);
 			armiesNeeding[aMin].army.assignUnit(gameState, potentialDefenders[i]);
 			potentialDefenders[i] = undefined;
@@ -510,7 +510,7 @@ PETRA.DefenseManager.prototype.assignDefenders = function(gameState)
 	gameState.ai.HQ.trainEmergencyUnits(gameState, armiesPos);
 };
 
-PETRA.DefenseManager.prototype.abortArmy = function(gameState, army)
+KIARA.DefenseManager.prototype.abortArmy = function(gameState, army)
 {
 	army.clear(gameState);
 	for (let i = 0; i < this.armies.length; ++i)
@@ -528,7 +528,7 @@ PETRA.DefenseManager.prototype.abortArmy = function(gameState, army)
  * and if a ranged siege unit (not used for defense) is attacked, garrison it in the nearest fortress.
  * If our hero is attacked with regicide victory condition, the victoryManager will handle it.
  */
-PETRA.DefenseManager.prototype.checkEvents = function(gameState, events)
+KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 {
 	// Must be called every turn for all armies.
 	for (let army of this.armies)
@@ -699,7 +699,7 @@ PETRA.DefenseManager.prototype.checkEvents = function(gameState, events)
 					continue;
 				if (unitAIStateOrder == "REPAIR" && currentTarget.hasDefensiveFire())
 					continue;
-				if (unitAIStateOrder == "COMBAT" && !PETRA.isSiegeUnit(currentTarget) &&
+				if (unitAIStateOrder == "COMBAT" && !KIARA.isSiegeUnit(currentTarget) &&
 				    gameState.ai.HQ.capturableTargets.has(orderData[0].target))
 				{
 					// Take the nearest unit also attacking this structure to help us.
@@ -713,7 +713,7 @@ PETRA.DefenseManager.prototype.checkEvents = function(gameState, events)
 						if (allAttacked[entId])
 							continue;
 						let ent = gameState.getEntityById(entId);
-						if (!ent || !ent.position() || !ent.canAttackTarget(attacker, PETRA.allowCapture(gameState, ent, attacker)))
+						if (!ent || !ent.position() || !ent.canAttackTarget(attacker, KIARA.allowCapture(gameState, ent, attacker)))
 							continue;
 						// Check that the unit is still attacking the structure (since the last played turn).
 						let state = ent.unitAIState();
@@ -732,18 +732,18 @@ PETRA.DefenseManager.prototype.checkEvents = function(gameState, events)
 					if (minEnt)
 					{
 						capturableTarget.ents.delete(minEnt.id());
-						minEnt.attack(attacker.id(), PETRA.allowCapture(gameState, minEnt, attacker));
+						minEnt.attack(attacker.id(), KIARA.allowCapture(gameState, minEnt, attacker));
 					}
 				}
 			}
-			let allowCapture = PETRA.allowCapture(gameState, target, attacker);
+			let allowCapture = KIARA.allowCapture(gameState, target, attacker);
 			if (target.canAttackTarget(attacker, allowCapture))
 				target.attack(attacker.id(), allowCapture);
 		}
 	}
 };
 
-PETRA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target, data)
+KIARA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target, data)
 {
 	if (target.hitpoints() < target.garrisonEjectHealth() * target.maxHitpoints())
 		return false;
@@ -760,7 +760,7 @@ PETRA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target,
 		if (dist >= range*range)
 			return false;
 	}
-	let access = PETRA.getLandAccess(gameState, target);
+	let access = KIARA.getLandAccess(gameState, target);
 	let garrisonManager = gameState.ai.HQ.garrisonManager;
 	let garrisonArrowClasses = target.getGarrisonArrowClasses();
 	let typeGarrison = data.type || "protection";
@@ -769,7 +769,7 @@ PETRA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target,
 	{
 		// Should be kept in sync with garrisonManager to avoid garrisoning-ungarrisoning some units.
 		if (data.attacker)
-			allowMelee = data.attacker.hasClass("Structure") ? data.attacker.attackRange("Ranged") : !PETRA.isSiegeUnit(data.attacker);
+			allowMelee = data.attacker.hasClass("Structure") ? data.attacker.attackRange("Ranged") : !KIARA.isSiegeUnit(data.attacker);
 		else
 			allowMelee = true;
 	}
@@ -792,7 +792,7 @@ PETRA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target,
 			if (typeGarrison != "decay" && subrole && (subrole == "completing" || subrole == "walking" || subrole == "attacking"))
 				return false;
 		}
-		if (PETRA.getLandAccess(gameState, ent) != access)
+		if (KIARA.getLandAccess(gameState, ent) != access)
 			return false;
 		return true;
 	}).filterNearest(target.position());
@@ -818,11 +818,11 @@ PETRA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target,
 };
 
 /** Garrison a attacked siege ranged unit inside the nearest fortress. */
-PETRA.DefenseManager.prototype.garrisonSiegeUnit = function(gameState, unit)
+KIARA.DefenseManager.prototype.garrisonSiegeUnit = function(gameState, unit)
 {
 	let distmin = Math.min();
 	let nearest;
-	let unitAccess = PETRA.getLandAccess(gameState, unit);
+	let unitAccess = KIARA.getLandAccess(gameState, unit);
 	let garrisonManager = gameState.ai.HQ.garrisonManager;
 	for (let ent of gameState.getAllyStructures().values())
 	{
@@ -834,7 +834,7 @@ PETRA.DefenseManager.prototype.garrisonSiegeUnit = function(gameState, unit)
 			continue;
 		if (ent.hitpoints() < ent.garrisonEjectHealth() * ent.maxHitpoints())
 			continue;
-		if (PETRA.getLandAccess(gameState, ent) != unitAccess)
+		if (KIARA.getLandAccess(gameState, ent) != unitAccess)
 			continue;
 		let dist = API3.SquareVectorDistance(ent.position(), unit.position());
 		if (dist > distmin)
@@ -852,11 +852,11 @@ PETRA.DefenseManager.prototype.garrisonSiegeUnit = function(gameState, unit)
  * If emergency is true, the unit will be garrisoned in the closest possible structure.
  * Otherwise, it will garrison in the closest healing structure.
  */
-PETRA.DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, emergency = false)
+KIARA.DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, emergency = false)
 {
 	let distmin = Math.min();
 	let nearest;
-	let unitAccess = PETRA.getLandAccess(gameState, unit);
+	let unitAccess = KIARA.getLandAccess(gameState, unit);
 	let garrisonManager = gameState.ai.HQ.garrisonManager;
 	for (let ent of gameState.getAllyStructures().values())
 	{
@@ -871,7 +871,7 @@ PETRA.DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, 
 			continue;
 		if (ent.hitpoints() < ent.garrisonEjectHealth() * ent.maxHitpoints())
 			continue;
-		if (PETRA.getLandAccess(gameState, ent) != unitAccess)
+		if (KIARA.getLandAccess(gameState, ent) != unitAccess)
 			continue;
 		let dist = API3.SquareVectorDistance(ent.position(), unit.position());
 		if (dist > distmin)
@@ -897,7 +897,7 @@ PETRA.DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, 
 /**
  * Be more inclined to help an ally attacked by several enemies.
  */
-PETRA.DefenseManager.prototype.GetCooperationLevel = function(ally)
+KIARA.DefenseManager.prototype.GetCooperationLevel = function(ally)
 {
 	let cooperation = this.Config.personality.cooperative;
 	if (this.attackedAllies[ally] && this.attackedAllies[ally] > 1)
@@ -908,7 +908,7 @@ PETRA.DefenseManager.prototype.GetCooperationLevel = function(ally)
 /**
  * Switch a defense army into an attack if needed.
  */
-PETRA.DefenseManager.prototype.switchToAttack = function(gameState, army)
+KIARA.DefenseManager.prototype.switchToAttack = function(gameState, army)
 {
 	if (!army)
 		return;
@@ -917,12 +917,12 @@ PETRA.DefenseManager.prototype.switchToAttack = function(gameState, army)
 		let target = gameState.getEntityById(targetId);
 		if (!target || !target.position() || !gameState.isPlayerEnemy(target.owner()))
 			continue;
-		let targetAccess = PETRA.getLandAccess(gameState, target);
+		let targetAccess = KIARA.getLandAccess(gameState, target);
 		let targetPos = target.position();
 		for (let entId of army.ownEntities)
 		{
 			let ent = gameState.getEntityById(entId);
-			if (!ent || !ent.position() || PETRA.getLandAccess(gameState, ent) != targetAccess)
+			if (!ent || !ent.position() || KIARA.getLandAccess(gameState, ent) != targetAccess)
 				continue;
 			if (API3.SquareVectorDistance(targetPos, ent.position()) > 14400)
 				continue;
@@ -932,7 +932,7 @@ PETRA.DefenseManager.prototype.switchToAttack = function(gameState, army)
 	}
 };
 
-PETRA.DefenseManager.prototype.Serialize = function()
+KIARA.DefenseManager.prototype.Serialize = function()
 {
 	let properties = {
 		"targetList": this.targetList,
@@ -949,7 +949,7 @@ PETRA.DefenseManager.prototype.Serialize = function()
 	return { "properties": properties, "armies": armies };
 };
 
-PETRA.DefenseManager.prototype.Deserialize = function(gameState, data)
+KIARA.DefenseManager.prototype.Deserialize = function(gameState, data)
 {
 	for (let key in data.properties)
 		this[key] = data.properties[key];
@@ -957,7 +957,7 @@ PETRA.DefenseManager.prototype.Deserialize = function(gameState, data)
 	this.armies = [];
 	for (let dataArmy of data.armies)
 	{
-		let army = new PETRA.DefenseArmy(gameState, []);
+		let army = new KIARA.DefenseArmy(gameState, []);
 		army.Deserialize(dataArmy);
 		this.armies.push(army);
 	}

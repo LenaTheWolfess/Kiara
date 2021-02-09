@@ -59,6 +59,10 @@ m.Template = m.Class({
 		return GetIdentityClasses(template);
 	},
 
+	"alertRaiser": function() {
+		return !!this.get("AlertRaiser");
+	},
+
 	"hasClass": function(name) {
 		if (!this._classes)
 			this._classes = this.classes();
@@ -238,7 +242,8 @@ m.Template = m.Class({
 
 		return {
 			"max": +this.get("Attack/" + type +"/MaxRange"),
-			"min": +(this.get("Attack/" + type +"/MinRange") || 0)
+			"min": +(this.get("Attack/" + type +"/MinRange") || 0),
+			"elevationBonus": +(this.get("Attack/" + type + "/ElevationBonus") || 0)
 		};
 	},
 
@@ -611,7 +616,7 @@ m.Entity = m.Class({
 	"getStance": function() { return this._entity.stance !== undefined ? this._entity.stance : undefined; },
 	"unitAIState": function() { return this._entity.unitAIState !== undefined ? this._entity.unitAIState : undefined; },
 	"unitAIOrderData": function() { return this._entity.unitAIOrderData !== undefined ? this._entity.unitAIOrderData : undefined; },
-
+	"getFormationController": function() {return this._entity.formationController;},
 	"hitpoints": function() { return this._entity.hitpoints !== undefined ? this._entity.hitpoints : undefined; },
 	"isHurt": function() { return this.hitpoints() < this.maxHitpoints(); },
 	"healthLevel": function() { return this.hitpoints() / this.maxHitpoints(); },
@@ -786,6 +791,20 @@ m.Entity = m.Class({
 
 	"move": function(x, z, queued = false) {
 		Engine.PostCommand(PlayerID, { "type": "walk", "entities": [this.id()], "x": x, "z": z, "queued": queued });
+		return this;
+	},
+
+	"raiseAlert": function() {
+		if (!this.alertRaiser())
+			return undefined;
+		Engine.PostCommand(PlayerID, {"type": "alert-raise", "entities": [this.id()]});
+		return this;
+	},
+
+	"endAlert": function() {
+		if (!this.alertRaiser())
+			return undefined;
+		Engine.PostCommand(PlayerID, {"type": "alert-end", "entities": [this.id()]});
 		return this;
 	},
 

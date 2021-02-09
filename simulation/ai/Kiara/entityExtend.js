@@ -1,18 +1,18 @@
 /** returns true if this unit should be considered as a siege unit */
-PETRA.isSiegeUnit = function(ent)
+KIARA.isSiegeUnit = function(ent)
 {
 	return ent.hasClass("Siege") || ent.hasClass("Elephant") && ent.hasClass("Melee");
 };
 
 /** returns true if this unit should be considered as "fast". */
-PETRA.isFastMoving = function(ent)
+KIARA.isFastMoving = function(ent)
 {
 	// TODO: use clever logic based on walkspeed comparisons.
 	return ent.hasClass("FastMoving");
 };
 
 /** returns some sort of DPS * health factor. If you specify a class, it'll use the modifiers against that class too. */
-PETRA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstClass)
+KIARA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstClass)
 {
 	let strength = 0;
 	let attackTypes = ent.attackTypes();
@@ -34,7 +34,7 @@ PETRA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 			if (DamageTypeImportance[str])
 				strength += DamageTypeImportance[str] * val / damageTypes.length;
 			else if (debugLevel > 0)
-				API3.warn("Petra: " + str + " unknown attackStrength in getMaxStrength (please add " + str + "  to config.js).");
+				API3.warn("Kiara: " + str + " unknown attackStrength in getMaxStrength (please add " + str + "  to config.js).");
 		}
 
 		let attackRange = ent.attackRange(type);
@@ -54,7 +54,7 @@ PETRA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 				strength -= val / 100000;
 				break;
 			default:
-				API3.warn("Petra: " + str + " unknown attackTimes in getMaxStrength");
+				API3.warn("Kiara: " + str + " unknown attackTimes in getMaxStrength");
 			}
 		}
 	}
@@ -68,7 +68,7 @@ PETRA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 			if (DamageTypeImportance[str])
 				strength += DamageTypeImportance[str] * val / damageTypes.length;
 			else if (debugLevel > 0)
-				API3.warn("Petra: " + str + " unknown resistanceStrength in getMaxStrength (please add " + str + "  to config.js).");
+				API3.warn("Kiara: " + str + " unknown resistanceStrength in getMaxStrength (please add " + str + "  to config.js).");
 		}
 
 	// ToDo: Add support for StatusEffects and Capture.
@@ -77,19 +77,19 @@ PETRA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 };
 
 /** Get access and cache it (except for units as it can change) in metadata if not already done */
-PETRA.getLandAccess = function(gameState, ent)
+KIARA.getLandAccess = function(gameState, ent)
 {
 	if (ent.hasClass("Unit"))
 	{
 		let pos = ent.position();
 		if (!pos)
 		{
-			let holder = PETRA.getHolder(gameState, ent);
+			let holder = KIARA.getHolder(gameState, ent);
 			if (holder)
-				return PETRA.getLandAccess(gameState, holder);
+				return KIARA.getLandAccess(gameState, holder);
 
-			API3.warn("Petra error: entity without position, but not garrisoned");
-			PETRA.dumpEntity(ent);
+			API3.warn("Kiara error: entity without position, but not garrisoned");
+			KIARA.dumpEntity(ent);
 			return undefined;
 		}
 		return gameState.ai.accessibility.getAccessValue(pos);
@@ -125,7 +125,7 @@ PETRA.getLandAccess = function(gameState, ent)
 };
 
 /** Sea access always cached as it never changes */
-PETRA.getSeaAccess = function(gameState, ent)
+KIARA.getSeaAccess = function(gameState, ent)
 {
 	let sea = ent.getMetadata(PlayerID, "sea");
 	if (!sea)
@@ -151,13 +151,13 @@ PETRA.getSeaAccess = function(gameState, ent)
 	return sea;
 };
 
-PETRA.setSeaAccess = function(gameState, ent)
+KIARA.setSeaAccess = function(gameState, ent)
 {
-	PETRA.getSeaAccess(gameState, ent);
+	KIARA.getSeaAccess(gameState, ent);
 };
 
 /** Decide if we should try to capture (returns true) or destroy (return false) */
-PETRA.allowCapture = function(gameState, ent, target)
+KIARA.allowCapture = function(gameState, ent, target)
 {
 	if (!target.isCapturable() || !ent.canCapture(target))
 		return false;
@@ -177,7 +177,7 @@ PETRA.allowCapture = function(gameState, ent, target)
 	let capturableTargets = gameState.ai.HQ.capturableTargets;
 	if (!capturableTargets.has(target.id()))
 	{
-		capture = ent.captureStrength() * PETRA.getAttackBonus(ent, target, "Capture");
+		capture = ent.captureStrength() * KIARA.getAttackBonus(ent, target, "Capture");
 		capturableTargets.set(target.id(), { "strength": capture, "ents": new Set([ent.id()]) });
 	}
 	else
@@ -185,7 +185,7 @@ PETRA.allowCapture = function(gameState, ent, target)
 		let capturable = capturableTargets.get(target.id());
 		if (!capturable.ents.has(ent.id()))
 		{
-			capturable.strength += ent.captureStrength() * PETRA.getAttackBonus(ent, target, "Capture");
+			capturable.strength += ent.captureStrength() * KIARA.getAttackBonus(ent, target, "Capture");
 			capturable.ents.add(ent.id());
 		}
 		capture = capturable.strength;
@@ -197,7 +197,7 @@ PETRA.allowCapture = function(gameState, ent, target)
 	return capture > antiCapture + sumCapturePoints/80;
 };
 
-PETRA.getAttackBonus = function(ent, target, type)
+KIARA.getAttackBonus = function(ent, target, type)
 {
 	let attackBonus = 1;
 	if (!ent.get("Attack/" + type) || !ent.get("Attack/" + type + "/Bonuses"))
@@ -216,7 +216,7 @@ PETRA.getAttackBonus = function(ent, target, type)
 };
 
 /** Makes the worker deposit the currently carried resources at the closest accessible dropsite */
-PETRA.returnResources = function(gameState, ent)
+KIARA.returnResources = function(gameState, ent)
 {
 	if (!ent.resourceCarrying() || !ent.resourceCarrying().length || !ent.position())
 		return false;
@@ -225,7 +225,7 @@ PETRA.returnResources = function(gameState, ent)
 
 	let closestDropsite;
 	let distmin = Math.min();
-	let access = PETRA.getLandAccess(gameState, ent);
+	let access = KIARA.getLandAccess(gameState, ent);
 	let dropsiteCollection = gameState.playerData.hasSharedDropsites ?
 	                         gameState.getAnyDropsites(resource) : gameState.getOwnDropsites(resource);
 	for (let dropsite of dropsiteCollection.values())
@@ -236,7 +236,7 @@ PETRA.returnResources = function(gameState, ent)
 		// owner !== PlayerID can only happen when hasSharedDropsites === true, so no need to test it again
 		if (owner !== PlayerID && (!dropsite.isSharedDropsite() || !gameState.isPlayerMutualAlly(owner)))
 			continue;
-		if (PETRA.getLandAccess(gameState, dropsite) != access)
+		if (KIARA.getLandAccess(gameState, dropsite) != access)
 			continue;
 		let dist = API3.SquareVectorDistance(ent.position(), dropsite.position());
 		if (dist > distmin)
@@ -252,7 +252,7 @@ PETRA.returnResources = function(gameState, ent)
 };
 
 /** is supply full taking into account gatherers affected during this turn */
-PETRA.IsSupplyFull = function(gameState, ent)
+KIARA.IsSupplyFull = function(gameState, ent)
 {
 	return ent.isFull() === true ||
 		ent.resourceSupplyNumGatherers() + gameState.ai.HQ.GetTCGatherer(ent.id()) >= ent.maxGatherers();
@@ -264,24 +264,24 @@ PETRA.IsSupplyFull = function(gameState, ent)
  * If nothing found, return the base[0] for units and undefined for structures.
  * If exclude is given, we exclude the base with ID = exclude.
  */
-PETRA.getBestBase = function(gameState, ent, onlyConstructedBase = false, exclude = false)
+KIARA.getBestBase = function(gameState, ent, onlyConstructedBase = false, exclude = false)
 {
 	let pos = ent.position();
 	let accessIndex;
 	if (!pos)
 	{
-		let holder = PETRA.getHolder(gameState, ent);
+		let holder = KIARA.getHolder(gameState, ent);
 		if (!holder || !holder.position())
 		{
-			API3.warn("Petra error: entity without position, but not garrisoned");
-			PETRA.dumpEntity(ent);
+			API3.warn("Kiara error: entity without position, but not garrisoned");
+			KIARA.dumpEntity(ent);
 			return gameState.ai.HQ.baseManagers[0];
 		}
 		pos = holder.position();
-		accessIndex = PETRA.getLandAccess(gameState, holder);
+		accessIndex = KIARA.getLandAccess(gameState, holder);
 	}
 	else
-		accessIndex = PETRA.getLandAccess(gameState, ent);
+		accessIndex = KIARA.getLandAccess(gameState, ent);
 
 	let distmin = Math.min();
 	let dist;
@@ -324,7 +324,7 @@ PETRA.getBestBase = function(gameState, ent, onlyConstructedBase = false, exclud
 	return bestbase;
 };
 
-PETRA.getHolder = function(gameState, ent)
+KIARA.getHolder = function(gameState, ent)
 {
 	for (let holder of gameState.getEntities().values())
 	{
@@ -335,7 +335,7 @@ PETRA.getHolder = function(gameState, ent)
 };
 
 /** return the template of the built foundation if a foundation, otherwise return the entity itself */
-PETRA.getBuiltEntity = function(gameState, ent)
+KIARA.getBuiltEntity = function(gameState, ent)
 {
 	if (ent.foundationProgress() !== undefined)
 		return gameState.getBuiltTemplate(ent.templateName());
@@ -347,7 +347,7 @@ PETRA.getBuiltEntity = function(gameState, ent)
  * return true if it is not worth finishing this building (it would surely decay)
  * TODO implement the other conditions
  */
-PETRA.isNotWorthBuilding = function(gameState, ent)
+KIARA.isNotWorthBuilding = function(gameState, ent)
 {
 	if (gameState.ai.HQ.territoryMap.getOwner(ent.position()) !== PlayerID)
 	{
@@ -361,7 +361,7 @@ PETRA.isNotWorthBuilding = function(gameState, ent)
 /**
  * Check if the straight line between the two positions crosses an enemy territory
  */
-PETRA.isLineInsideEnemyTerritory = function(gameState, pos1, pos2, step=70)
+KIARA.isLineInsideEnemyTerritory = function(gameState, pos1, pos2, step=70)
 {
 	let n = Math.floor(Math.sqrt(API3.SquareVectorDistance(pos1, pos2))/step) + 1;
 	let stepx = (pos2[0] - pos1[0]) / n;
@@ -376,7 +376,7 @@ PETRA.isLineInsideEnemyTerritory = function(gameState, pos1, pos2, step=70)
 	return false;
 };
 
-PETRA.gatherTreasure = function(gameState, ent, water = false)
+KIARA.gatherTreasure = function(gameState, ent, water = false)
 {
 	if (!gameState.ai.HQ.treasures.hasEntities())
 		return false;
@@ -387,18 +387,18 @@ PETRA.gatherTreasure = function(gameState, ent, water = false)
 		return false;
 	let treasureFound;
 	let distmin = Math.min();
-	let access = water ? PETRA.getSeaAccess(gameState, ent) : PETRA.getLandAccess(gameState, ent);
+	let access = water ? KIARA.getSeaAccess(gameState, ent) : KIARA.getLandAccess(gameState, ent);
 	for (let treasure of gameState.ai.HQ.treasures.values())
 	{
-		if (PETRA.IsSupplyFull(gameState, treasure))
+		if (KIARA.IsSupplyFull(gameState, treasure))
 			continue;
 		// let some time for the previous gatherer to reach the treasure before trying again
 		let lastGathered = treasure.getMetadata(PlayerID, "lastGathered");
 		if (lastGathered && gameState.ai.elapsedTime - lastGathered < 20)
 			continue;
-		if (!water && access != PETRA.getLandAccess(gameState, treasure))
+		if (!water && access != KIARA.getLandAccess(gameState, treasure))
 			continue;
-		if (water && access != PETRA.getSeaAccess(gameState, treasure))
+		if (water && access != KIARA.getSeaAccess(gameState, treasure))
 			continue;
 		let territoryOwner = gameState.ai.HQ.territoryMap.getOwner(treasure.position());
 		if (territoryOwner != 0 && !gameState.isPlayerAlly(territoryOwner))
@@ -420,7 +420,7 @@ PETRA.gatherTreasure = function(gameState, ent, water = false)
 	return true;
 };
 
-PETRA.dumpEntity = function(ent)
+KIARA.dumpEntity = function(ent)
 {
 	if (!ent)
 		return;

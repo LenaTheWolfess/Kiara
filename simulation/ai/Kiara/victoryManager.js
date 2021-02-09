@@ -5,7 +5,7 @@
  *   in wonder, train military guards.
  */
 
-PETRA.VictoryManager = function(Config)
+KIARA.VictoryManager = function(Config)
 {
 	this.Config = Config;
 	this.criticalEnts = new Map();
@@ -21,7 +21,7 @@ PETRA.VictoryManager = function(Config)
 /**
  * Cache the ids of any inital victory-critical entities.
  */
-PETRA.VictoryManager.prototype.init = function(gameState)
+KIARA.VictoryManager.prototype.init = function(gameState)
 {
 	if (gameState.getVictoryConditions().has("wonder"))
 	{
@@ -60,7 +60,7 @@ PETRA.VictoryManager.prototype.init = function(gameState)
  * If it is less than 40%, try to garrison in the closest possible structure
  * If the hero cannot garrison, retreat it to the closest base
  */
-PETRA.VictoryManager.prototype.checkEvents = function(gameState, events)
+KIARA.VictoryManager.prototype.checkEvents = function(gameState, events)
 {
 	if (gameState.getVictoryConditions().has("wonder"))
 	{
@@ -304,7 +304,7 @@ PETRA.VictoryManager.prototype.checkEvents = function(gameState, events)
 	}
 };
 
-PETRA.VictoryManager.prototype.removeCriticalEnt = function(gameState, criticalEntId)
+KIARA.VictoryManager.prototype.removeCriticalEnt = function(gameState, criticalEntId)
 {
 	for (let [guardId, role] of this.criticalEnts.get(criticalEntId).guards)
 	{
@@ -330,7 +330,7 @@ PETRA.VictoryManager.prototype.removeCriticalEnt = function(gameState, criticalE
 /**
  * Train more healers to be later affected to critical entities if needed
  */
-PETRA.VictoryManager.prototype.manageCriticalEntHealers = function(gameState, queues)
+KIARA.VictoryManager.prototype.manageCriticalEntHealers = function(gameState, queues)
 {
 	if (gameState.ai.HQ.saveResources || queues.healer.hasQueuedUnits() ||
 	    !gameState.getOwnEntitiesByClass("Temple", true).hasEntities() ||
@@ -342,7 +342,7 @@ PETRA.VictoryManager.prototype.manageCriticalEntHealers = function(gameState, qu
 		if (data.healersAssigned === undefined || data.healersAssigned >= this.healersPerCriticalEnt)
 			continue;
 		let template = gameState.applyCiv("units/{civ}/support_healer_b");
-		queues.healer.addPlan(new PETRA.TrainingPlan(gameState, template, { "role": "criticalEntHealer", "base": 0 }, 1, 1));
+		queues.healer.addPlan(new KIARA.TrainingPlan(gameState, template, { "role": "criticalEntHealer", "base": 0 }, 1, 1));
 		return;
 	}
 };
@@ -352,7 +352,7 @@ PETRA.VictoryManager.prototype.manageCriticalEntHealers = function(gameState, qu
  * If we have too low a population and require units for other needs, remove guards so they can be reassigned.
  * TODO: Swap citizen soldier guards with champions if they become available.
  */
-PETRA.VictoryManager.prototype.manageCriticalEntGuards = function(gameState)
+KIARA.VictoryManager.prototype.manageCriticalEntGuards = function(gameState)
 {
 	let numWorkers = gameState.getOwnEntitiesByRole("worker", true).length;
 	if (numWorkers < 20)
@@ -439,12 +439,12 @@ PETRA.VictoryManager.prototype.manageCriticalEntGuards = function(gameState)
 	}
 };
 
-PETRA.VictoryManager.prototype.tryAssignMilitaryGuard = function(gameState, guardEnt, criticalEnt, checkForSameAccess)
+KIARA.VictoryManager.prototype.tryAssignMilitaryGuard = function(gameState, guardEnt, criticalEnt, checkForSameAccess)
 {
 	if (guardEnt.getMetadata(PlayerID, "plan") !== undefined ||
 	    guardEnt.getMetadata(PlayerID, "transport") !== undefined || this.criticalEnts.has(guardEnt.id()) ||
 	    checkForSameAccess && (!guardEnt.position() || !criticalEnt.position() ||
-	    PETRA.getLandAccess(gameState, criticalEnt) != PETRA.getLandAccess(gameState, guardEnt)))
+	    KIARA.getLandAccess(gameState, criticalEnt) != KIARA.getLandAccess(gameState, guardEnt)))
 		return false;
 
 	if (!this.assignGuardToCriticalEnt(gameState, guardEnt, criticalEnt.id()))
@@ -455,7 +455,7 @@ PETRA.VictoryManager.prototype.tryAssignMilitaryGuard = function(gameState, guar
 	return true;
 };
 
-PETRA.VictoryManager.prototype.pickCriticalEntRetreatLocation = function(gameState, criticalEnt, emergency)
+KIARA.VictoryManager.prototype.pickCriticalEntRetreatLocation = function(gameState, criticalEnt, emergency)
 {
 	gameState.ai.HQ.defenseManager.garrisonAttackedUnit(gameState, criticalEnt, emergency);
 	let plan = criticalEnt.getMetadata(PlayerID, "plan");
@@ -469,8 +469,8 @@ PETRA.VictoryManager.prototype.pickCriticalEntRetreatLocation = function(gameSta
 	// Couldn't find a place to garrison, so the ent will flee from attacks
 	if (!criticalEnt.hasClass("Relic") && criticalEnt.getStance() != "passive")
 		criticalEnt.setStance("passive");
-	let accessIndex = PETRA.getLandAccess(gameState, criticalEnt);
-	let bestBase = PETRA.getBestBase(gameState, criticalEnt, true);
+	let accessIndex = KIARA.getLandAccess(gameState, criticalEnt);
+	let bestBase = KIARA.getBestBase(gameState, criticalEnt, true);
 	if (bestBase.accessIndex == accessIndex)
 	{
 		let bestBasePos = bestBase.anchor.position();
@@ -486,7 +486,7 @@ PETRA.VictoryManager.prototype.pickCriticalEntRetreatLocation = function(gameSta
  * which will be used once its transport has finished.
  * Return false if the guardEnt is not a valid guard unit (i.e. cannot guard or is being transported).
  */
-PETRA.VictoryManager.prototype.assignGuardToCriticalEnt = function(gameState, guardEnt, criticalEntId)
+KIARA.VictoryManager.prototype.assignGuardToCriticalEnt = function(gameState, guardEnt, criticalEntId)
 {
 	if (guardEnt.getMetadata(PlayerID, "transport") !== undefined || !guardEnt.canGuard())
 		return false;
@@ -541,11 +541,11 @@ PETRA.VictoryManager.prototype.assignGuardToCriticalEnt = function(gameState, gu
 	if (guardEnt.getMetadata(PlayerID, "guardedEnt") != criticalEntId)
 		guardEnt.setMetadata(PlayerID, "guardedEnt", criticalEntId);
 
-	let guardEntAccess = PETRA.getLandAccess(gameState, guardEnt);
-	let criticalEntAccess = PETRA.getLandAccess(gameState, criticalEnt);
+	let guardEntAccess = KIARA.getLandAccess(gameState, guardEnt);
+	let criticalEntAccess = KIARA.getLandAccess(gameState, criticalEnt);
 	if (guardEntAccess == criticalEntAccess)
 	{
-		let queued = PETRA.returnResources(gameState, guardEnt);
+		let queued = KIARA.returnResources(gameState, guardEnt);
 		guardEnt.guard(criticalEnt, queued);
 		let guardRole = guardEnt.getMetadata(PlayerID, "role") == "criticalEntHealer" ? "healer" : "guard";
 		this.criticalEnts.get(criticalEntId).guards.set(guardEnt.id(), guardRole);
@@ -561,14 +561,14 @@ PETRA.VictoryManager.prototype.assignGuardToCriticalEnt = function(gameState, gu
 	return true;
 };
 
-PETRA.VictoryManager.prototype.resetCaptureGaiaRelic = function(gameState)
+KIARA.VictoryManager.prototype.resetCaptureGaiaRelic = function(gameState)
 {
 	// Do not capture gaia relics too frequently as the ai has access to the entire map
 	this.tryCaptureGaiaRelicLapseTime = gameState.ai.elapsedTime + 240 - 30 * (this.Config.difficulty - 3);
 	this.tryCaptureGaiaRelic = false;
 };
 
-PETRA.VictoryManager.prototype.update = function(gameState, events, queues)
+KIARA.VictoryManager.prototype.update = function(gameState, events, queues)
 {
 	// Wait a turn for trigger scripts to spawn any critical ents (i.e. in regicide)
 	if (gameState.ai.playedTurn == 1)
@@ -648,7 +648,7 @@ PETRA.VictoryManager.prototype.update = function(gameState, events, queues)
 /**
  * Send an expedition to capture a gaia relic, or reinforce an existing one.
  */
-PETRA.VictoryManager.prototype.captureGaiaRelic = function(gameState, relic)
+KIARA.VictoryManager.prototype.captureGaiaRelic = function(gameState, relic)
 {
 	let capture = -relic.defaultRegenRate();
 	let sumCapturePoints = relic.capturePoints().reduce((a, b) => a + b);
@@ -659,13 +659,13 @@ PETRA.VictoryManager.prototype.captureGaiaRelic = function(gameState, relic)
 		if (!attack)
 			continue;
 		for (let ent of attack.unitCollection.values())
-			capture += ent.captureStrength() * PETRA.getAttackBonus(ent, relic, "Capture");
+			capture += ent.captureStrength() * KIARA.getAttackBonus(ent, relic, "Capture");
 	}
 	// No need to make a new attack if already enough units
 	if (capture > sumCapturePoints / 50)
 		return;
 	let relicPosition = relic.position();
-	let access = PETRA.getLandAccess(gameState, relic);
+	let access = KIARA.getLandAccess(gameState, relic);
 	let units = gameState.getOwnUnits().filter(ent => {
 		if (!ent.position() || !ent.canCapture(relic))
 			return false;
@@ -682,14 +682,14 @@ PETRA.VictoryManager.prototype.captureGaiaRelic = function(gameState, relic)
 			if (attack && (attack.state != "unexecuted" || attack.type == "Raid"))
 				return false;
 		}
-		if (PETRA.getLandAccess(gameState, ent) != access)
+		if (KIARA.getLandAccess(gameState, ent) != access)
 			return false;
 		return true;
 	}).filterNearest(relicPosition);
 	let expedition = [];
 	for (let ent of units.values())
 	{
-		capture += ent.captureStrength() * PETRA.getAttackBonus(ent, relic, "Capture");
+		capture += ent.captureStrength() * KIARA.getAttackBonus(ent, relic, "Capture");
 		expedition.push(ent);
 		if (capture > sumCapturePoints / 25)
 			break;
@@ -712,7 +712,7 @@ PETRA.VictoryManager.prototype.captureGaiaRelic = function(gameState, relic)
 	this.targetedGaiaRelics.get(relic.id()).push(plan);
 };
 
-PETRA.VictoryManager.prototype.abortCaptureGaiaRelic = function(gameState, relicId)
+KIARA.VictoryManager.prototype.abortCaptureGaiaRelic = function(gameState, relicId)
 {
 	for (let plan of this.targetedGaiaRelics.get(relicId))
 	{
@@ -723,7 +723,7 @@ PETRA.VictoryManager.prototype.abortCaptureGaiaRelic = function(gameState, relic
 	this.targetedGaiaRelics.delete(relicId);
 };
 
-PETRA.VictoryManager.prototype.Serialize = function()
+KIARA.VictoryManager.prototype.Serialize = function()
 {
 	return {
 		"criticalEnts": this.criticalEnts,
@@ -735,7 +735,7 @@ PETRA.VictoryManager.prototype.Serialize = function()
 	};
 };
 
-PETRA.VictoryManager.prototype.Deserialize = function(data)
+KIARA.VictoryManager.prototype.Deserialize = function(data)
 {
 	for (let key in data)
 		this[key] = data[key];

@@ -1,7 +1,7 @@
 /**
  * Manage the trade
  */
-PETRA.TradeManager = function(Config)
+KIARA.TradeManager = function(Config)
 {
 	this.Config = Config;
 	this.tradeRoute = undefined;
@@ -11,25 +11,25 @@ PETRA.TradeManager = function(Config)
 	this.warnedAllies = {};
 };
 
-PETRA.TradeManager.prototype.init = function(gameState)
+KIARA.TradeManager.prototype.init = function(gameState)
 {
 	this.traders = gameState.getOwnUnits().filter(API3.Filters.byMetadata(PlayerID, "role", "trader"));
 	this.traders.registerUpdates();
 	this.minimalGain = gameState.ai.HQ.navalMap ? 3 : 5;
 };
 
-PETRA.TradeManager.prototype.hasTradeRoute = function()
+KIARA.TradeManager.prototype.hasTradeRoute = function()
 {
 	return this.tradeRoute !== undefined;
 };
 
-PETRA.TradeManager.prototype.assignTrader = function(ent)
+KIARA.TradeManager.prototype.assignTrader = function(ent)
 {
 	ent.setMetadata(PlayerID, "role", "trader");
 	this.traders.updateEnt(ent);
 };
 
-PETRA.TradeManager.prototype.trainMoreTraders = function(gameState, queues)
+KIARA.TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 {
 	if (!this.hasTradeRoute() || queues.trader.hasQueuedUnits())
 		return;
@@ -100,18 +100,18 @@ PETRA.TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 	if (!gameState.getTemplate(template))
 	{
 		if (this.Config.debug > 0)
-			API3.warn("Petra error: trying to train " + template + " for civ " +
+			API3.warn("Kiara error: trying to train " + template + " for civ " +
 			          gameState.getPlayerCiv() + " but no template found.");
 		return;
 	}
-	queues.trader.addPlan(new PETRA.TrainingPlan(gameState, template, metadata, 1, 1));
+	queues.trader.addPlan(new KIARA.TrainingPlan(gameState, template, metadata, 1, 1));
 };
 
-PETRA.TradeManager.prototype.updateTrader = function(gameState, ent)
+KIARA.TradeManager.prototype.updateTrader = function(gameState, ent)
 {
 	if (ent.hasClass("Ship") && gameState.ai.playedTurn % 5 == 0 &&
 	    !ent.unitAIState().startsWith("INDIVIDUAL.GATHER") &&
-	    PETRA.gatherTreasure(gameState, ent, true))
+	    KIARA.gatherTreasure(gameState, ent, true))
 		return;
 
 	if (!this.hasTradeRoute() || !ent.isIdle() || !ent.position())
@@ -122,7 +122,7 @@ PETRA.TradeManager.prototype.updateTrader = function(gameState, ent)
 	// TODO if the trader is idle and has workOrders, restore them to avoid losing the current gain
 
 	Engine.ProfileStart("Trade Manager");
-	let access = ent.hasClass("Ship") ? PETRA.getSeaAccess(gameState, ent) : PETRA.getLandAccess(gameState, ent);
+	let access = ent.hasClass("Ship") ? KIARA.getSeaAccess(gameState, ent) : KIARA.getLandAccess(gameState, ent);
 	let route = this.checkRoutes(gameState, access);
 	if (!route)
 	{
@@ -155,7 +155,7 @@ PETRA.TradeManager.prototype.updateTrader = function(gameState, ent)
 	Engine.ProfileStop();
 };
 
-PETRA.TradeManager.prototype.setTradingGoods = function(gameState)
+KIARA.TradeManager.prototype.setTradingGoods = function(gameState)
 {
 	let resTradeCodes = Resources.GetTradableCodes();
 	if (!resTradeCodes.length)
@@ -212,7 +212,7 @@ PETRA.TradeManager.prototype.setTradingGoods = function(gameState)
  * Try to barter unneeded resources for needed resources.
  * only once per turn because the info is not updated within a turn
  */
-PETRA.TradeManager.prototype.performBarter = function(gameState)
+KIARA.TradeManager.prototype.performBarter = function(gameState)
 {
 	let barterers = gameState.getOwnEntitiesByClass("Barter", true).filter(API3.Filters.isBuilt()).toEntityArray();
 	if (barterers.length == 0)
@@ -329,7 +329,7 @@ PETRA.TradeManager.prototype.performBarter = function(gameState)
 	return false;
 };
 
-PETRA.TradeManager.prototype.checkEvents = function(gameState, events)
+KIARA.TradeManager.prototype.checkEvents = function(gameState, events)
 {
 	// check if one market from a traderoute is renamed, change the route accordingly
 	for (let evt of events.EntityRenamed)
@@ -398,7 +398,7 @@ PETRA.TradeManager.prototype.checkEvents = function(gameState, events)
 	return false;
 };
 
-PETRA.TradeManager.prototype.activateProspection = function(gameState)
+KIARA.TradeManager.prototype.activateProspection = function(gameState)
 {
 	this.routeProspection = true;
 	gameState.ai.HQ.buildManager.setBuildable(gameState.applyCiv("structures/{civ}/market"));
@@ -409,7 +409,7 @@ PETRA.TradeManager.prototype.activateProspection = function(gameState)
  * fills the best trade route in this.tradeRoute and the best potential route in this.potentialTradeRoute
  * If an index is given, it returns the best route with this index or the best land route if index is a land index
  */
-PETRA.TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
+KIARA.TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 {
 	// If we cannot trade, do not bother checking routes.
 	if (!Resources.GetTradableCodes().length)
@@ -443,21 +443,21 @@ PETRA.TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 	{
 		if (!m1.position())
 			continue;
-		let access1 = PETRA.getLandAccess(gameState, m1);
-		let sea1 = m1.hasClass("Naval") ? PETRA.getSeaAccess(gameState, m1) : undefined;
+		let access1 = KIARA.getLandAccess(gameState, m1);
+		let sea1 = m1.hasClass("Naval") ? KIARA.getSeaAccess(gameState, m1) : undefined;
 		for (let m2 of market2.values())
 		{
 			if (onlyOurs && m1.id() >= m2.id())
 				continue;
 			if (!m2.position())
 				continue;
-			let access2 = PETRA.getLandAccess(gameState, m2);
-			let sea2 = m2.hasClass("Naval") ? PETRA.getSeaAccess(gameState, m2) : undefined;
+			let access2 = KIARA.getLandAccess(gameState, m2);
+			let sea2 = m2.hasClass("Naval") ? KIARA.getSeaAccess(gameState, m2) : undefined;
 			let land = access1 == access2 ? access1 : undefined;
 			let sea = sea1 && sea1 == sea2 ? sea1 : undefined;
 			if (!land && !sea)
 				continue;
-			if (land && PETRA.isLineInsideEnemyTerritory(gameState, m1.position(), m2.position()))
+			if (land && KIARA.isLineInsideEnemyTerritory(gameState, m1.position(), m2.position()))
 				continue;
 			let gainMultiplier;
 			if (land && traderTemplatesGains.landGainMultiplier)
@@ -531,7 +531,7 @@ PETRA.TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 			owner = this.tradeRoute.target.owner();
 		if (owner != PlayerID && !this.warnedAllies[owner])
 		{	// Warn an ally that we have a trade route with him
-			PETRA.chatNewTradeRoute(gameState, owner);
+			KIARA.chatNewTradeRoute(gameState, owner);
 			this.warnedAllies[owner] = true;
 		}
 	}
@@ -548,7 +548,7 @@ PETRA.TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 };
 
 /** Called when a market was built or destroyed, and checks if trader orders should be changed */
-PETRA.TradeManager.prototype.checkTrader = function(gameState, ent)
+KIARA.TradeManager.prototype.checkTrader = function(gameState, ent)
 {
 	let presentRoute = ent.getMetadata(PlayerID, "route");
 	if (!presentRoute)
@@ -561,7 +561,7 @@ PETRA.TradeManager.prototype.checkTrader = function(gameState, ent)
 		return;
 	}
 
-	let access = ent.hasClass("Ship") ? PETRA.getSeaAccess(gameState, ent) : PETRA.getLandAccess(gameState, ent);
+	let access = ent.hasClass("Ship") ? KIARA.getSeaAccess(gameState, ent) : KIARA.getLandAccess(gameState, ent);
 	let possibleRoute = this.checkRoutes(gameState, access);
 	// Warning:  presentRoute is from metadata, so contains entity ids
 	if (!possibleRoute ||
@@ -572,7 +572,7 @@ PETRA.TradeManager.prototype.checkTrader = function(gameState, ent)
 		ent.setMetadata(PlayerID, "route", undefined);
 		if (!possibleRoute && !ent.hasClass("Ship"))
 		{
-			let closestBase = PETRA.getBestBase(gameState, ent, true);
+			let closestBase = KIARA.getBestBase(gameState, ent, true);
 			if (closestBase.accessIndex == access)
 			{
 				let closestBasePos = closestBase.anchor.position();
@@ -584,7 +584,7 @@ PETRA.TradeManager.prototype.checkTrader = function(gameState, ent)
 	}
 };
 
-PETRA.TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
+KIARA.TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
 {
 	if (queues.economicBuilding.hasQueuedUnitsWithClass("Trade") || queues.dock.hasQueuedUnitsWithClass("Trade"))
 		return;
@@ -622,13 +622,13 @@ PETRA.TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
 
 	if (!this.tradeRoute)
 		gameState.ai.queueManager.changePriority("economicBuilding", 2 * this.Config.priorities.economicBuilding);
-	let plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/market");
+	let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/market");
 	if (!this.tradeRoute)
 		plan.queueToReset = "economicBuilding";
 	queues.economicBuilding.addPlan(plan);
 };
 
-PETRA.TradeManager.prototype.isNewMarketWorth = function(expectedGain)
+KIARA.TradeManager.prototype.isNewMarketWorth = function(expectedGain)
 {
 	if (!Resources.GetTradableCodes().length)
 		return false;
@@ -640,7 +640,7 @@ PETRA.TradeManager.prototype.isNewMarketWorth = function(expectedGain)
 	return true;
 };
 
-PETRA.TradeManager.prototype.update = function(gameState, events, queues)
+KIARA.TradeManager.prototype.update = function(gameState, events, queues)
 {
 	if (gameState.ai.HQ.canBarter && Resources.GetBarterableCodes().length)
 		this.performBarter(gameState);
@@ -669,7 +669,7 @@ PETRA.TradeManager.prototype.update = function(gameState, events, queues)
 		this.prospectForNewMarket(gameState, queues);
 };
 
-PETRA.TradeManager.prototype.routeEntToId = function(route)
+KIARA.TradeManager.prototype.routeEntToId = function(route)
 {
 	if (!route)
 		return undefined;
@@ -689,7 +689,7 @@ PETRA.TradeManager.prototype.routeEntToId = function(route)
 	return ret;
 };
 
-PETRA.TradeManager.prototype.routeIdToEnt = function(gameState, route)
+KIARA.TradeManager.prototype.routeIdToEnt = function(gameState, route)
 {
 	if (!route)
 		return undefined;
@@ -709,7 +709,7 @@ PETRA.TradeManager.prototype.routeIdToEnt = function(gameState, route)
 	return ret;
 };
 
-PETRA.TradeManager.prototype.Serialize = function()
+KIARA.TradeManager.prototype.Serialize = function()
 {
 	return {
 		"tradeRoute": this.routeEntToId(this.tradeRoute),
@@ -720,7 +720,7 @@ PETRA.TradeManager.prototype.Serialize = function()
 	};
 };
 
-PETRA.TradeManager.prototype.Deserialize = function(gameState, data)
+KIARA.TradeManager.prototype.Deserialize = function(gameState, data)
 {
 	for (let key in data)
 	{

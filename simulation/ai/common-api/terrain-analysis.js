@@ -399,6 +399,8 @@ m.SharedScript.prototype.createResourceMaps = function()
 	{
 		if (!ent || !ent.position() || !ent.resourceSupplyType() || ent.resourceSupplyType().generic === "treasure")
 			continue;
+		if (ent.resourceSupplyType().generic === "food" && ent.resourceSupplyType().specific !== "fruit")
+			continue;
 		let resource = ent.resourceSupplyType().generic;
 		if (!this.resourceMaps[resource])
 			continue;
@@ -441,6 +443,8 @@ m.SharedScript.prototype.updateResourceMaps = function(events)
 		let ent = e.entityObj;
 		if (!ent || !ent.position() || !ent.resourceSupplyType() || ent.resourceSupplyType().generic === "treasure")
 			continue;
+		if (ent.resourceSupplyType().generic === "food" && ent.resourceSupplyType().specific !== "fruit")
+			continue;
 		let resource = ent.resourceSupplyType().generic;
 		if (!this.resourceMaps[resource])
 			continue;
@@ -459,6 +463,8 @@ m.SharedScript.prototype.updateResourceMaps = function(events)
 			continue;
 		let ent = this._entities.get(e.entity);
 		if (!ent || !ent.position() || !ent.resourceSupplyType() || ent.resourceSupplyType().generic === "treasure")
+			continue;
+		if (ent.resourceSupplyType().generic === "food" && ent.resourceSupplyType().specific !== "fruit")
 			continue;
 		let resource = ent.resourceSupplyType().generic;
 		if (!this.resourceMaps[resource])

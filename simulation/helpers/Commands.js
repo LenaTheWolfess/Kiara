@@ -160,11 +160,9 @@ var g_Commands = {
 	{
 		// Only used by the AI
 		for (let ent of data.entities)
-		{
-			var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
-			if (cmpUnitAI)
+		GetFormationUnitAIs([data.entities[ent]], player, cmd, data.formation).forEach(cmpUnitAI => {
 				cmpUnitAI.WalkToPointRange(cmd.x, cmd.z, cmd.min, cmd.max, cmd.queued);
-		}
+			});
 	},
 
 	"attack-walk": function(player, cmd, data)
@@ -183,6 +181,13 @@ var g_Commands = {
 			GetFormationUnitAIs([data.entities[ent]], player, cmd, data.formation).forEach(cmpUnitAI => {
 				cmpUnitAI.WalkAndFight(cmd.targetPositions[ent].x, cmd.targetPositions[ent].y, cmd.targetClasses, allowCapture, cmd.queued);
 			});
+	},
+
+	"regroup": function(player, cmd, data)
+	{
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation, true).forEach(cmpUnitAI => {
+			cmpUnitAI.MoveIntoFormation(cmd);
+		});
 	},
 
 	"attack": function(player, cmd, data)

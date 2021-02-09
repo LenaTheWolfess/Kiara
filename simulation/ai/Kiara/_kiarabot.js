@@ -1,8 +1,8 @@
 Engine.IncludeModule("common-api");
 
-var PETRA = {};
+var KIARA = {};
 
-PETRA.PetraBot = function(settings)
+KIARA.KiaraBot = function(settings)
 {
 	API3.BaseAI.call(this, settings);
 
@@ -16,14 +16,14 @@ PETRA.PetraBot = function(settings)
 		"transports": 1	// transport plans start at 1 because 0 might be used as none
 	};
 
-	this.Config = new PETRA.Config(settings.difficulty, settings.behavior);
+	this.Config = new KIARA.Config(settings.difficulty, settings.behavior);
 
 	this.savedEvents = {};
 };
 
-PETRA.PetraBot.prototype = Object.create(API3.BaseAI.prototype);
+KIARA.KiaraBot.prototype = Object.create(API3.BaseAI.prototype);
 
-PETRA.PetraBot.prototype.CustomInit = function(gameState)
+KIARA.KiaraBot.prototype.CustomInit = function(gameState)
 {
 	if (this.isDeserialized)
 	{
@@ -51,11 +51,11 @@ PETRA.PetraBot.prototype.CustomInit = function(gameState)
 
 		this.Config.Deserialize(this.data.config);
 
-		this.queueManager = new PETRA.QueueManager(this.Config, {});
+		this.queueManager = new KIARA.QueueManager(this.Config, {});
 		this.queueManager.Deserialize(gameState, this.data.queueManager);
 		this.queues = this.queueManager.queues;
 
-		this.HQ = new PETRA.HQ(this.Config);
+		this.HQ = new KIARA.HQ(this.Config);
 		this.HQ.init(gameState, this.queues);
 		this.HQ.Deserialize(gameState, this.data.HQ);
 
@@ -73,11 +73,11 @@ PETRA.PetraBot.prototype.CustomInit = function(gameState)
 		// this.queues can only be modified by the queue manager or things will go awry.
 		this.queues = {};
 		for (let i in this.Config.priorities)
-			this.queues[i] = new PETRA.Queue();
+			this.queues[i] = new KIARA.Queue();
 
-		this.queueManager = new PETRA.QueueManager(this.Config, this.queues);
+		this.queueManager = new KIARA.QueueManager(this.Config, this.queues);
 
-		this.HQ = new PETRA.HQ(this.Config);
+		this.HQ = new KIARA.HQ(this.Config);
 
 		this.HQ.init(gameState, this.queues);
 
@@ -86,7 +86,7 @@ PETRA.PetraBot.prototype.CustomInit = function(gameState)
 	}
 };
 
-PETRA.PetraBot.prototype.OnUpdate = function(sharedScript)
+KIARA.KiaraBot.prototype.OnUpdate = function(sharedScript)
 {
 	if (this.gameFinished)
 		return;
@@ -105,7 +105,7 @@ PETRA.PetraBot.prototype.OnUpdate = function(sharedScript)
 	this.elapsedTime = this.gameState.getTimeElapsed() / 1000;
 	if (!this.playedTurn || (this.turn + this.player) % 8 == 5)
 	{
-		Engine.ProfileStart("PetraBot bot (player " + this.player +")");
+		Engine.ProfileStart("KiaraBot bot (player " + this.player +")");
 
 		this.playedTurn++;
 
@@ -128,7 +128,7 @@ PETRA.PetraBot.prototype.OnUpdate = function(sharedScript)
 	this.turn++;
 };
 
-PETRA.PetraBot.prototype.Serialize = function()
+KIARA.KiaraBot.prototype.Serialize = function()
 {
 	let savedEvents = {};
 	for (let key in this.savedEvents)
@@ -159,7 +159,7 @@ PETRA.PetraBot.prototype.Serialize = function()
 	};
 };
 
-PETRA.PetraBot.prototype.Deserialize = function(data, sharedScript)
+KIARA.KiaraBot.prototype.Deserialize = function(data, sharedScript)
 {
 	this.isDeserialized = true;
 	this.data = data;

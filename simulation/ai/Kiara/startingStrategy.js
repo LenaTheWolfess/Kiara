@@ -3,7 +3,7 @@
  * depending on the initial conditions
  */
 
-PETRA.HQ.prototype.gameAnalysis = function(gameState)
+KIARA.HQ.prototype.gameAnalysis = function(gameState)
 {
 	// Analysis of the terrain and the different access regions
 	if (!this.regionAnalysis(gameState))
@@ -19,7 +19,7 @@ PETRA.HQ.prototype.gameAnalysis = function(gameState)
 	this.structureAnalysis(gameState);
 
 	// Let's get our initial situation here.
-	let nobase = new PETRA.BaseManager(gameState, this.Config);
+	let nobase = new KIARA.BaseManager(gameState, this.Config);
 	nobase.init(gameState);
 	nobase.accessIndex = 0;
 	this.baseManagers.push(nobase);   // baseManagers[0] will deal with unit/structure without base
@@ -61,7 +61,7 @@ PETRA.HQ.prototype.gameAnalysis = function(gameState)
 /**
  * Assign the starting entities to the different bases
  */
-PETRA.HQ.prototype.assignStartingEntities = function(gameState)
+KIARA.HQ.prototype.assignStartingEntities = function(gameState)
 {
 	for (let ent of gameState.getOwnEntities().values())
 	{
@@ -74,7 +74,7 @@ PETRA.HQ.prototype.assignStartingEntities = function(gameState)
 		{
 			// TODO should support recursive garrisoning. Make a warning for now
 			if (ent.isGarrisonHolder() && ent.garrisoned().length)
-				API3.warn("Petra warning: support for garrisoned units inside garrisoned holders not yet implemented");
+				API3.warn("Kiara warning: support for garrisoned units inside garrisoned holders not yet implemented");
 			continue;
 		}
 
@@ -112,7 +112,7 @@ PETRA.HQ.prototype.assignStartingEntities = function(gameState)
 			if (ent.hasClass("Structure") && !ent.decaying() && ent.resourceDropsiteTypes())
 				bestbase = this.createBase(gameState, ent, "anchorless");
 			else
-				bestbase = PETRA.getBestBase(gameState, ent) || this.baseManagers[0];
+				bestbase = KIARA.getBestBase(gameState, ent) || this.baseManagers[0];
 			bestbase.assignEntity(gameState, ent);
 		}
 		// now assign entities garrisoned inside this entity
@@ -136,7 +136,7 @@ PETRA.HQ.prototype.assignStartingEntities = function(gameState)
  * determine the main land Index (or water index if none)
  * as well as the list of allowed (land andf water) regions
  */
-PETRA.HQ.prototype.regionAnalysis = function(gameState)
+KIARA.HQ.prototype.regionAnalysis = function(gameState)
 {
 	let accessibility = gameState.ai.accessibility;
 	let landIndex;
@@ -171,7 +171,7 @@ PETRA.HQ.prototype.regionAnalysis = function(gameState)
 	}
 	if (!landIndex && !seaIndex)
 	{
-		API3.warn("Petra error: it does not know how to interpret this map");
+		API3.warn("Kiara error: it does not know how to interpret this map");
 		return false;
 	}
 
@@ -230,7 +230,7 @@ PETRA.HQ.prototype.regionAnalysis = function(gameState)
  * load units and buildings from the config files
  * TODO: change that to something dynamic
  */
-PETRA.HQ.prototype.structureAnalysis = function(gameState)
+KIARA.HQ.prototype.structureAnalysis = function(gameState)
 {
 	let civref = gameState.playerData.civ;
 	let civ = civref in this.Config.buildings ? civref : 'default';
@@ -244,7 +244,7 @@ PETRA.HQ.prototype.structureAnalysis = function(gameState)
  * build our first base
  * if not enough resource, try first to do a dock
  */
-PETRA.HQ.prototype.buildFirstBase = function(gameState)
+KIARA.HQ.prototype.buildFirstBase = function(gameState)
 {
 	if (gameState.ai.queues.civilCentre.hasQueuedUnits())
 		return;
@@ -266,7 +266,7 @@ PETRA.HQ.prototype.buildFirstBase = function(gameState)
 				continue;
 			// If we can get a treasure around, just do it
 			if (ent.isIdle())
-				PETRA.gatherTreasure(gameState, ent);
+				KIARA.gatherTreasure(gameState, ent);
 			// Then count the resources from the treasures being collected
 			let supplyId = ent.getMetadata(PlayerID, "supply");
 			if (!supplyId)
@@ -306,12 +306,12 @@ PETRA.HQ.prototype.buildFirstBase = function(gameState)
 	{
 		if (!ent.hasClass("Worker"))
 			continue;
-		if (PETRA.isFastMoving(ent))
+		if (KIARA.isFastMoving(ent))
 			continue;
 		let pos = ent.position();
 		if (!pos)
 		{
-			let holder = PETRA.getHolder(gameState, ent);
+			let holder = KIARA.getHolder(gameState, ent);
 			if (!holder || !holder.position())
 				continue;
 			pos = holder.position();
@@ -345,10 +345,10 @@ PETRA.HQ.prototype.buildFirstBase = function(gameState)
 	if (goal == "dock")
 	{
 		let sea = startingPoint[imax].sea > 1 ? startingPoint[imax].sea : undefined;
-		gameState.ai.queues.dock.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/dock", { "sea": sea, "proximity": startingPoint[imax].pos }));
+		gameState.ai.queues.dock.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/dock", { "sea": sea, "proximity": startingPoint[imax].pos }));
 	}
 	else
-		gameState.ai.queues.civilCentre.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/civil_centre", { "base": -1, "resource": "wood", "proximity": startingPoint[imax].pos }));
+		gameState.ai.queues.civilCentre.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/civil_centre", { "base": -1, "resource": "wood", "proximity": startingPoint[imax].pos }));
 };
 
 /**
@@ -356,7 +356,7 @@ PETRA.HQ.prototype.buildFirstBase = function(gameState)
  *   - if one of our allies has a cc, affect a small fraction of our army for his defense, the rest will attack
  *   - otherwise all units will attack
  */
-PETRA.HQ.prototype.dispatchUnits = function(gameState)
+KIARA.HQ.prototype.dispatchUnits = function(gameState)
 {
 	let allycc = gameState.getExclusiveAllyEntities().filter(API3.Filters.byClass("CivCentre")).toEntityArray();
 	if (allycc.length)
@@ -373,10 +373,10 @@ PETRA.HQ.prototype.dispatchUnits = function(gameState)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
 				return;
-			let access = PETRA.getLandAccess(gameState, ent);
+			let access = KIARA.getLandAccess(gameState, ent);
 			for (let cc of allycc)
 			{
-				if (!cc.position() || PETRA.getLandAccess(gameState, cc) != access)
+				if (!cc.position() || KIARA.getLandAccess(gameState, cc) != access)
 					continue;
 				--num;
 				--num1;
@@ -392,10 +392,10 @@ PETRA.HQ.prototype.dispatchUnits = function(gameState)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
 				return;
-			let access = PETRA.getLandAccess(gameState, ent);
+			let access = KIARA.getLandAccess(gameState, ent);
 			for (let cc of allycc)
 			{
-				if (!cc.position() || PETRA.getLandAccess(gameState, cc) != access)
+				if (!cc.position() || KIARA.getLandAccess(gameState, cc) != access)
 					continue;
 				--num;
 				--num2;
@@ -411,10 +411,10 @@ PETRA.HQ.prototype.dispatchUnits = function(gameState)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
 				return;
-			let access = PETRA.getLandAccess(gameState, ent);
+			let access = KIARA.getLandAccess(gameState, ent);
 			for (let cc of allycc)
 			{
-				if (!cc.position() || PETRA.getLandAccess(gameState, cc) != access)
+				if (!cc.position() || KIARA.getLandAccess(gameState, cc) != access)
 					continue;
 				if (!ent.hasClass("Support"))
 					--num;
@@ -432,7 +432,7 @@ PETRA.HQ.prototype.dispatchUnits = function(gameState)
  *   - if on a small island, favor fishing
  *   - count the available wood resource, and allow rushes only if enough (we should otherwise favor expansion)
  */
-PETRA.HQ.prototype.configFirstBase = function(gameState)
+KIARA.HQ.prototype.configFirstBase = function(gameState)
 {
 	if (this.baseManagers.length < 2)
 		return;
@@ -560,7 +560,7 @@ PETRA.HQ.prototype.configFirstBase = function(gameState)
 				let cost = new API3.Resources(gameState.getTemplate(template).cost());
 				gameState.ai.queueManager.setAccounts(gameState, cost, "dropsites");
 			}
-			gameState.ai.queues.dropsites.addPlan(new PETRA.ConstructionPlan(gameState, template, { "base": this.baseManagers[1].ID }, newDP.pos));
+			gameState.ai.queues.dropsites.addPlan(new KIARA.ConstructionPlan(gameState, template, { "base": this.baseManagers[1].ID }, newDP.pos));
 		}
 	}
 	// and build immediately a corral if needed
@@ -568,6 +568,6 @@ PETRA.HQ.prototype.configFirstBase = function(gameState)
 	{
 		template = gameState.applyCiv("structures/{civ}/corral");
 		if (!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() && this.canBuild(gameState, template))
-			gameState.ai.queues.corral.addPlan(new PETRA.ConstructionPlan(gameState, template, { "base": this.baseManagers[1].ID }));
+			gameState.ai.queues.corral.addPlan(new KIARA.ConstructionPlan(gameState, template, { "base": this.baseManagers[1].ID }));
 	}
 };

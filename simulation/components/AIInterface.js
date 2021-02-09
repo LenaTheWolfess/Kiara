@@ -11,6 +11,7 @@ AIInterface.prototype.EventNames = [
 	"DiplomacyChanged",
 	"TrainingStarted",
 	"TrainingFinished",
+	"ResearchFinished",
 	"AIMetadata",
 	"PlayerDefeated",
 	"EntityRenamed",
@@ -86,6 +87,7 @@ AIInterface.prototype.Disable = function()
 	this.OnGlobalTributeExchanged = nop;
 	this.OnTemplateModification = nop;
 	this.OnGlobalValueModification = nop;
+	this.OnGlobalResearchFinished = nop;
 };
 
 AIInterface.prototype.GetNonEntityRepresentation = function()
@@ -183,6 +185,11 @@ AIInterface.prototype.OnDiplomacyChanged = function(msg)
 AIInterface.prototype.OnGlobalPlayerDefeated = function(msg)
 {
 	this.events.PlayerDefeated.push(msg);
+};
+
+AIInterface.prototype.OnGlobalResearchFinished = function(msg)
+{
+	this.events.ResearchFinished.push(msg);
 };
 
 AIInterface.prototype.OnGlobalEntityRenamed = function(msg)

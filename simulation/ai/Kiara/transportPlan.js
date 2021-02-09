@@ -20,7 +20,7 @@
  *   transporter = this.ID
  */
 
-PETRA.TransportPlan = function(gameState, units, startIndex, endIndex, endPos, ship)
+KIARA.TransportPlan = function(gameState, units, startIndex, endIndex, endPos, ship)
 {
 	this.ID = gameState.ai.uniqueIDs.transports++;
 	this.debug = gameState.ai.Config.debug;
@@ -74,7 +74,7 @@ PETRA.TransportPlan = function(gameState, units, startIndex, endIndex, endPos, s
 	return true;
 };
 
-PETRA.TransportPlan.prototype.init = function(gameState)
+KIARA.TransportPlan.prototype.init = function(gameState)
 {
 	this.units = gameState.getOwnUnits().filter(API3.Filters.byMetadata(PlayerID, "transport", this.ID));
 	this.ships = gameState.ai.HQ.navalManager.ships.filter(API3.Filters.byMetadata(PlayerID, "transporter", this.ID));
@@ -88,7 +88,7 @@ PETRA.TransportPlan.prototype.init = function(gameState)
 };
 
 /** count available slots */
-PETRA.TransportPlan.prototype.countFreeSlots = function()
+KIARA.TransportPlan.prototype.countFreeSlots = function()
 {
 	let slots = 0;
 	for (let ship of this.transportShips.values())
@@ -96,7 +96,7 @@ PETRA.TransportPlan.prototype.countFreeSlots = function()
 	return slots;
 };
 
-PETRA.TransportPlan.prototype.countFreeSlotsOnShip = function(ship)
+KIARA.TransportPlan.prototype.countFreeSlotsOnShip = function(ship)
 {
 	if (ship.hitpoints() < ship.garrisonEjectHealth() * ship.maxHitpoints())
 		return 0;
@@ -105,7 +105,7 @@ PETRA.TransportPlan.prototype.countFreeSlotsOnShip = function(ship)
 	return Math.max(ship.garrisonMax() - occupied, 0);
 };
 
-PETRA.TransportPlan.prototype.assignUnitToShip = function(gameState, ent)
+KIARA.TransportPlan.prototype.assignUnitToShip = function(gameState, ent)
 {
 	if (this.needTransportShips)
 		return;
@@ -137,7 +137,7 @@ PETRA.TransportPlan.prototype.assignUnitToShip = function(gameState, ent)
 		this.needSplit.push(ent);
 };
 
-PETRA.TransportPlan.prototype.assignShip = function(gameState)
+KIARA.TransportPlan.prototype.assignShip = function(gameState)
 {
 	let pos;
 	// choose a unit of this plan not yet assigned to a ship
@@ -177,7 +177,7 @@ PETRA.TransportPlan.prototype.assignShip = function(gameState)
 };
 
 /** add a unit to this plan */
-PETRA.TransportPlan.prototype.addUnit = function(unit, endPos)
+KIARA.TransportPlan.prototype.addUnit = function(unit, endPos)
 {
 	unit.setMetadata(PlayerID, "transport", this.ID);
 	unit.setMetadata(PlayerID, "endPos", endPos);
@@ -185,7 +185,7 @@ PETRA.TransportPlan.prototype.addUnit = function(unit, endPos)
 };
 
 /** remove a unit from this plan, if not yet on board */
-PETRA.TransportPlan.prototype.removeUnit = function(gameState, unit)
+KIARA.TransportPlan.prototype.removeUnit = function(gameState, unit)
 {
 	let shipId = unit.getMetadata(PlayerID, "onBoard");
 	if (shipId == "onBoard")
@@ -209,11 +209,11 @@ PETRA.TransportPlan.prototype.removeUnit = function(gameState, unit)
 	}
 };
 
-PETRA.TransportPlan.prototype.releaseShip = function(ship)
+KIARA.TransportPlan.prototype.releaseShip = function(ship)
 {
 	if (ship.getMetadata(PlayerID, "transporter") != this.ID)
 	{
-		API3.warn(" Petra: try removing a transporter ship with " + ship.getMetadata(PlayerID, "transporter") +
+		API3.warn(" Kiara: try removing a transporter ship with " + ship.getMetadata(PlayerID, "transporter") +
 		          " from " + this.ID + " and stance " + ship.getStance());
 		return;
 	}
@@ -227,7 +227,7 @@ PETRA.TransportPlan.prototype.releaseShip = function(ship)
 		ship.setMetadata(PlayerID, "role", "trader");
 };
 
-PETRA.TransportPlan.prototype.releaseAll = function()
+KIARA.TransportPlan.prototype.releaseAll = function()
 {
 	for (let ship of this.ships.values())
 		this.releaseShip(ship);
@@ -247,7 +247,7 @@ PETRA.TransportPlan.prototype.releaseAll = function()
 };
 
 /** TODO not currently used ... to be fixed */
-PETRA.TransportPlan.prototype.cancelTransport = function(gameState)
+KIARA.TransportPlan.prototype.cancelTransport = function(gameState)
 {
 	let ent = this.units.toEntityArray()[0];
 	let base = gameState.ai.HQ.getBaseByID(ent.getMetadata(PlayerID, "base"));
@@ -279,7 +279,7 @@ PETRA.TransportPlan.prototype.cancelTransport = function(gameState)
  * - then the plan is cleared
  */
 
-PETRA.TransportPlan.prototype.update = function(gameState)
+KIARA.TransportPlan.prototype.update = function(gameState)
 {
 	if (this.state == "boarding")
 		this.onBoarding(gameState);
@@ -289,7 +289,7 @@ PETRA.TransportPlan.prototype.update = function(gameState)
 	return this.units.length;
 };
 
-PETRA.TransportPlan.prototype.onBoarding = function(gameState)
+KIARA.TransportPlan.prototype.onBoarding = function(gameState)
 {
 	let ready = true;
 	let time = gameState.ai.elapsedTime;
@@ -429,7 +429,7 @@ PETRA.TransportPlan.prototype.onBoarding = function(gameState)
 };
 
 /** tell if a unit is garrisoned in one of the ships of this plan, and update its metadata if yes */
-PETRA.TransportPlan.prototype.isOnBoard = function(ent)
+KIARA.TransportPlan.prototype.isOnBoard = function(ent)
 {
 	for (let ship of this.transportShips.values())
 	{
@@ -442,7 +442,7 @@ PETRA.TransportPlan.prototype.isOnBoard = function(ent)
 };
 
 /** when avoidEnnemy is true, we try to not board/unboard in ennemy territory */
-PETRA.TransportPlan.prototype.getBoardingPos = function(gameState, ship, landIndex, seaIndex, destination, avoidEnnemy)
+KIARA.TransportPlan.prototype.getBoardingPos = function(gameState, ship, landIndex, seaIndex, destination, avoidEnnemy)
 {
 	if (!gameState.ai.HQ.navalManager.landingZones[landIndex])
 	{
@@ -505,7 +505,7 @@ PETRA.TransportPlan.prototype.getBoardingPos = function(gameState, ship, landInd
 	return posmin;
 };
 
-PETRA.TransportPlan.prototype.onSailing = function(gameState)
+KIARA.TransportPlan.prototype.onSailing = function(gameState)
 {
 	// Check that the units recovered on the previous turn have been reloaded
 	for (let recov of this.recovered)
@@ -523,7 +523,7 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 		if (this.debug > 1)
 			API3.warn(">>> transport " + this.ID + " reloading failed ... <<<");
 		// destroy the unit if inaccessible otherwise leave it there
-		let index = PETRA.getLandAccess(gameState, ent);
+		let index = KIARA.getLandAccess(gameState, ent);
 		if (gameState.ai.HQ.landRegions[index])
 		{
 			if (this.debug > 1)
@@ -559,19 +559,19 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 					ent.setMetadata(PlayerID, "onBoard", "onBoard");
 				else
 				{
-					API3.warn("Petra transportPlan problem: unit not on ship without position ???");
+					API3.warn("Kiara transportPlan problem: unit not on ship without position ???");
 					this.resetUnit(gameState, ent);
 					ent.destroy();
 				}
 			}
 			else
 			{
-				API3.warn("Petra transportPlan problem: unit on ship, but no ship ???");
+				API3.warn("Kiara transportPlan problem: unit on ship, but no ship ???");
 				this.resetUnit(gameState, ent);
 				ent.destroy();
 			}
 		}
-		else if (PETRA.getLandAccess(gameState, ent) != this.endIndex)
+		else if (KIARA.getLandAccess(gameState, ent) != this.endIndex)
 		{
 			// unit unloaded on a wrong region - try to regarrison it and move a bit the ship
 			if (this.debug > 1)
@@ -675,7 +675,7 @@ PETRA.TransportPlan.prototype.onSailing = function(gameState)
 	}
 };
 
-PETRA.TransportPlan.prototype.resetUnit = function(gameState, ent)
+KIARA.TransportPlan.prototype.resetUnit = function(gameState, ent)
 {
 	ent.setMetadata(PlayerID, "transport", undefined);
 	ent.setMetadata(PlayerID, "onBoard", undefined);
@@ -695,7 +695,7 @@ PETRA.TransportPlan.prototype.resetUnit = function(gameState, ent)
 	}
 };
 
-PETRA.TransportPlan.prototype.Serialize = function()
+KIARA.TransportPlan.prototype.Serialize = function()
 {
 	return {
 		"ID": this.ID,
@@ -714,7 +714,7 @@ PETRA.TransportPlan.prototype.Serialize = function()
 	};
 };
 
-PETRA.TransportPlan.prototype.Deserialize = function(data)
+KIARA.TransportPlan.prototype.Deserialize = function(data)
 {
 	for (let key in data)
 		this[key] = data[key];

@@ -1,6 +1,6 @@
-PETRA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 5)
+KIARA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 5)
 {
-	if (!PETRA.QueuePlan.call(this, gameState, type, metadata))
+	if (!KIARA.QueuePlan.call(this, gameState, type, metadata))
 	{
 		API3.warn(" Plan training " + type + " canceled");
 		return false;
@@ -18,9 +18,9 @@ PETRA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 
 	return true;
 };
 
-PETRA.TrainingPlan.prototype = Object.create(PETRA.QueuePlan.prototype);
+KIARA.TrainingPlan.prototype = Object.create(KIARA.QueuePlan.prototype);
 
-PETRA.TrainingPlan.prototype.canStart = function(gameState)
+KIARA.TrainingPlan.prototype.canStart = function(gameState)
 {
 	this.trainers = this.getBestTrainers(gameState);
 	if (!this.trainers)
@@ -29,7 +29,7 @@ PETRA.TrainingPlan.prototype.canStart = function(gameState)
 	return true;
 };
 
-PETRA.TrainingPlan.prototype.getBestTrainers = function(gameState)
+KIARA.TrainingPlan.prototype.getBestTrainers = function(gameState)
 {
 	if (this.metadata && this.metadata.trainer)
 	{
@@ -63,7 +63,7 @@ PETRA.TrainingPlan.prototype.getBestTrainers = function(gameState)
 	return trainers;
 };
 
-PETRA.TrainingPlan.prototype.start = function(gameState)
+KIARA.TrainingPlan.prototype.start = function(gameState)
 {
 	if (this.metadata && this.metadata.trainer)
 	{
@@ -129,13 +129,13 @@ PETRA.TrainingPlan.prototype.start = function(gameState)
 	this.onStart(gameState);
 };
 
-PETRA.TrainingPlan.prototype.addItem = function(amount = 1)
+KIARA.TrainingPlan.prototype.addItem = function(amount = 1)
 {
 	this.number += amount;
 };
 
 /** Find the promoted types corresponding to this.type */
-PETRA.TrainingPlan.prototype.promotedTypes = function(gameState)
+KIARA.TrainingPlan.prototype.promotedTypes = function(gameState)
 {
 	let types = [];
 	let promotion = this.template.promotion();
@@ -164,7 +164,7 @@ PETRA.TrainingPlan.prototype.promotedTypes = function(gameState)
 	return types;
 };
 
-PETRA.TrainingPlan.prototype.Serialize = function()
+KIARA.TrainingPlan.prototype.Serialize = function()
 {
 	return {
 		"category": this.category,
@@ -177,7 +177,7 @@ PETRA.TrainingPlan.prototype.Serialize = function()
 	};
 };
 
-PETRA.TrainingPlan.prototype.Deserialize = function(gameState, data)
+KIARA.TrainingPlan.prototype.Deserialize = function(gameState, data)
 {
 	for (let key in data)
 		this[key] = data[key];

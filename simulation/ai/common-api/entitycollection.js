@@ -155,6 +155,18 @@ m.EntityCollection.prototype.moveToRange = function(x, z, min, max, queued = fal
 	return this;
 };
 
+m.EntityCollection.prototype.regroup = function(queued = false)
+{
+	Engine.PostCommand(PlayerID, {"type": "regroup", "entities": this.toIdArray(), "queued": queued});
+	return this;
+};
+
+m.EntityCollection.prototype.form = function(name , queued = false)
+{
+	Engine.PostCommand(PlayerID, {"type": "formation", "entities": this.toIdArray(), "formation": name, "queued": queued});
+	return this;
+};
+
 m.EntityCollection.prototype.attackMove = function(x, z, targetClasses, allowCapture = true, queued = false)
 {
 	Engine.PostCommand(PlayerID, { "type": "attack-walk", "entities": this.toIdArray(), "x": x, "z": z,
@@ -192,6 +204,11 @@ m.EntityCollection.prototype.setStance = function(stance)
 {
 	Engine.PostCommand(PlayerID, { "type": "stance", "entities": this.toIdArray(), "name": stance, "queued": false });
 	return this;
+};
+
+m.EntityCollection.prototype.stopMoving = function()
+{
+	Engine.PostCommand(PlayerID, { "type": "stop", "entities": this.toIdArray(), "queued": false });
 };
 
 /** Returns the average position of all units */

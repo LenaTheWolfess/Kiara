@@ -6,14 +6,14 @@
  * Futhermore garrison units have a metadata garrisonType describing its reason (protection, transport, ...)
  */
 
-PETRA.GarrisonManager = function(Config)
+KIARA.GarrisonManager = function(Config)
 {
 	this.Config = Config;
 	this.holders = new Map();
 	this.decayingStructures = new Map();
 };
 
-PETRA.GarrisonManager.prototype.update = function(gameState, events)
+KIARA.GarrisonManager.prototype.update = function(gameState, events)
 {
 	// First check for possible upgrade of a structure
 	for (let evt of events.EntityRenamed)
@@ -106,10 +106,10 @@ PETRA.GarrisonManager.prototype.update = function(gameState, events)
 				{
 					if (gameState.ai.Config.debug > 0)
 					{
-						API3.warn("Petra garrison error: unit " + ent.id() + " (" + ent.genericName() +
+						API3.warn("Kiara garrison error: unit " + ent.id() + " (" + ent.genericName() +
 							  ") is expected to garrison in " + id + " (" + holder.genericName() +
 							  "), but has no such garrison order " + uneval(ent.unitAIOrderData()));
-						PETRA.dumpEntity(ent);
+						KIARA.dumpEntity(ent);
 					}
 					list.splice(j--, 1);
 				}
@@ -145,7 +145,7 @@ PETRA.GarrisonManager.prototype.update = function(gameState, events)
 					continue;
 				if (ent.hasClass("Structure"))
 					around.defenseStructure = true;
-				else if (PETRA.isSiegeUnit(ent))
+				else if (KIARA.isSiegeUnit(ent))
 				{
 					if (ent.attackTypes().indexOf("Melee") !== -1)
 						around.meleeSiege = true;
@@ -199,7 +199,7 @@ PETRA.GarrisonManager.prototype.update = function(gameState, events)
 };
 
 /** TODO should add the units garrisoned inside garrisoned units */
-PETRA.GarrisonManager.prototype.numberOfGarrisonedUnits = function(holder)
+KIARA.GarrisonManager.prototype.numberOfGarrisonedUnits = function(holder)
 {
 	if (!this.holders.has(holder.id()))
 		return holder.garrisoned().length;
@@ -207,7 +207,7 @@ PETRA.GarrisonManager.prototype.numberOfGarrisonedUnits = function(holder)
 	return holder.garrisoned().length + this.holders.get(holder.id()).list.length;
 };
 
-PETRA.GarrisonManager.prototype.allowMelee = function(holder)
+KIARA.GarrisonManager.prototype.allowMelee = function(holder)
 {
 	if (!this.holders.has(holder.id()))
 		return undefined;
@@ -216,7 +216,7 @@ PETRA.GarrisonManager.prototype.allowMelee = function(holder)
 };
 
 /** This is just a pre-garrison state, while the entity walk to the garrison holder */
-PETRA.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type)
+KIARA.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type)
 {
 	if (this.numberOfGarrisonedUnits(holder) >= holder.garrisonMax() || !ent.canGarrison())
 		return;
@@ -247,7 +247,7 @@ PETRA.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type
  This function is for internal use inside garrisonManager. From outside, you should also update
  the holder and then using cancelGarrison should be the preferred solution
  */
-PETRA.GarrisonManager.prototype.leaveGarrison = function(ent)
+KIARA.GarrisonManager.prototype.leaveGarrison = function(ent)
 {
 	ent.setMetadata(PlayerID, "subrole", undefined);
 	if (ent.getMetadata(PlayerID, "plan") === -2)
@@ -258,7 +258,7 @@ PETRA.GarrisonManager.prototype.leaveGarrison = function(ent)
 };
 
 /** Cancel a pre-garrison state */
-PETRA.GarrisonManager.prototype.cancelGarrison = function(ent)
+KIARA.GarrisonManager.prototype.cancelGarrison = function(ent)
 {
 	ent.stopMoving();
 	this.leaveGarrison(ent);
@@ -271,7 +271,7 @@ PETRA.GarrisonManager.prototype.cancelGarrison = function(ent)
 		list.splice(index, 1);
 };
 
-PETRA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
+KIARA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 {
 	switch (ent.getMetadata(PlayerID, "garrisonType"))
 	{
@@ -296,8 +296,8 @@ PETRA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 		if (ent.attackTypes() && ent.attackTypes().indexOf("Melee") !== -1)
 			return false;
 		if (around.unit)
-			return ent.hasClass("Support") || PETRA.isSiegeUnit(ent);	// only ranged siege here and below as melee siege already released above
-		if (PETRA.isSiegeUnit(ent))
+			return ent.hasClass("Support") || KIARA.isSiegeUnit(ent);	// only ranged siege here and below as melee siege already released above
+		if (KIARA.isSiegeUnit(ent))
 			return around.meleeSiege;
 		return holder.buffHeal() && ent.needsHeal();
 	case 'decay':
@@ -321,7 +321,7 @@ PETRA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 };
 
 /** Add this holder in the list managed by the garrisonManager */
-PETRA.GarrisonManager.prototype.registerHolder = function(gameState, holder)
+KIARA.GarrisonManager.prototype.registerHolder = function(gameState, holder)
 {
 	if (this.holders.has(holder.id()))    // already registered
 		return;
@@ -334,7 +334,7 @@ PETRA.GarrisonManager.prototype.registerHolder = function(gameState, holder)
  * do it only for structures useful for defense, except if we are expanding (justCaptured=true)
  * in which case we also do it for structures useful for unit trainings (TODO only Barracks are done)
  */
-PETRA.GarrisonManager.prototype.addDecayingStructure = function(gameState, entId, justCaptured)
+KIARA.GarrisonManager.prototype.addDecayingStructure = function(gameState, entId, justCaptured)
 {
 	if (this.decayingStructures.has(entId))
 		return true;
@@ -348,19 +348,19 @@ PETRA.GarrisonManager.prototype.addDecayingStructure = function(gameState, entId
 	return true;
 };
 
-PETRA.GarrisonManager.prototype.removeDecayingStructure = function(entId)
+KIARA.GarrisonManager.prototype.removeDecayingStructure = function(entId)
 {
 	if (!this.decayingStructures.has(entId))
 		return;
 	this.decayingStructures.delete(entId);
 };
 
-PETRA.GarrisonManager.prototype.Serialize = function()
+KIARA.GarrisonManager.prototype.Serialize = function()
 {
 	return { "holders": this.holders, "decayingStructures": this.decayingStructures };
 };
 
-PETRA.GarrisonManager.prototype.Deserialize = function(data)
+KIARA.GarrisonManager.prototype.Deserialize = function(data)
 {
 	for (let key in data)
 		this[key] = data[key];

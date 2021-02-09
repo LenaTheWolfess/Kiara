@@ -4,7 +4,7 @@
  * It also takes care of the structures we can't currently build and should not try to build endlessly.
  */
 
-PETRA.BuildManager = function()
+KIARA.BuildManager = function()
 {
 	// List of buildings we have builders for, with number of possible builders.
 	this.builderCounters = new Map();
@@ -14,14 +14,14 @@ PETRA.BuildManager = function()
 };
 
 /** Initialization at start of game */
-PETRA.BuildManager.prototype.init = function(gameState)
+KIARA.BuildManager.prototype.init = function(gameState)
 {
 	let civ = gameState.getPlayerCiv();
 	for (let ent of gameState.getOwnUnits().values())
 		this.incrementBuilderCounters(civ, ent, 1);
 };
 
-PETRA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment)
+KIARA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment)
 {
 	for (let buildable of ent.buildableEntities(civ))
 	{
@@ -30,7 +30,7 @@ PETRA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, incre
 			let count = this.builderCounters.get(buildable) + increment;
 			if (count < 0)
 			{
-				API3.warn(" Petra error in incrementBuilderCounters for " + buildable + " with count < 0");
+				API3.warn(" Kiara error in incrementBuilderCounters for " + buildable + " with count < 0");
 				continue;
 			}
 			this.builderCounters.set(buildable, count);
@@ -38,12 +38,12 @@ PETRA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, incre
 		else if (increment > 0)
 			this.builderCounters.set(buildable, increment);
 		else
-			API3.warn(" Petra error in incrementBuilderCounters for " + buildable + " not yet set");
+			API3.warn(" Kiara error in incrementBuilderCounters for " + buildable + " not yet set");
 	}
 };
 
 /** Update the builders counters */
-PETRA.BuildManager.prototype.checkEvents = function(gameState, events)
+KIARA.BuildManager.prototype.checkEvents = function(gameState, events)
 {
 	this.elapsedTime = gameState.ai.elapsedTime;
 	let civ = gameState.getPlayerCiv();
@@ -101,7 +101,7 @@ PETRA.BuildManager.prototype.checkEvents = function(gameState, events)
  * Get the first buildable structure with a given class
  * TODO when several available, choose the best one
  */
-PETRA.BuildManager.prototype.findStructureWithClass = function(gameState, classes)
+KIARA.BuildManager.prototype.findStructureWithClass = function(gameState, classes)
 {
 	for (let [templateName, count] of this.builderCounters)
 	{
@@ -116,25 +116,25 @@ PETRA.BuildManager.prototype.findStructureWithClass = function(gameState, classe
 	return undefined;
 };
 
-PETRA.BuildManager.prototype.hasBuilder = function(template)
+KIARA.BuildManager.prototype.hasBuilder = function(template)
 {
 	let numBuilders = this.builderCounters.get(template);
 	return numBuilders && numBuilders > 0;
 };
 
-PETRA.BuildManager.prototype.isUnbuildable = function(gameState, template)
+KIARA.BuildManager.prototype.isUnbuildable = function(gameState, template)
 {
 	return this.unbuildables.has(template) && this.unbuildables.get(template).time > gameState.ai.elapsedTime;
 };
 
-PETRA.BuildManager.prototype.setBuildable = function(template)
+KIARA.BuildManager.prototype.setBuildable = function(template)
 {
 	if (this.unbuildables.has(template))
 		this.unbuildables.delete(template);
 };
 
 /** Time is the duration in second that we will wait before checking again if it is buildable */
-PETRA.BuildManager.prototype.setUnbuildable = function(gameState, template, time = 90, reason = "room")
+KIARA.BuildManager.prototype.setUnbuildable = function(gameState, template, time = 90, reason = "room")
 {
 	if (!this.unbuildables.has(template))
 		this.unbuildables.set(template, { "reason": reason, "time": gameState.ai.elapsedTime + time });
@@ -150,7 +150,7 @@ PETRA.BuildManager.prototype.setUnbuildable = function(gameState, template, time
 };
 
 /** Return the number of unbuildables due to missing room */
-PETRA.BuildManager.prototype.numberMissingRoom = function(gameState)
+KIARA.BuildManager.prototype.numberMissingRoom = function(gameState)
 {
 	let num = 0;
 	for (let unbuildable of this.unbuildables.values())
@@ -160,14 +160,14 @@ PETRA.BuildManager.prototype.numberMissingRoom = function(gameState)
 };
 
 /** Reset the unbuildables due to missing room */
-PETRA.BuildManager.prototype.resetMissingRoom = function(gameState)
+KIARA.BuildManager.prototype.resetMissingRoom = function(gameState)
 {
 	for (let [key, unbuildable] of this.unbuildables)
 		if (unbuildable.reason == "room")
 			this.unbuildables.delete(key);
 };
 
-PETRA.BuildManager.prototype.Serialize = function()
+KIARA.BuildManager.prototype.Serialize = function()
 {
 	return {
 		"builderCounters": this.builderCounters,
@@ -175,7 +175,7 @@ PETRA.BuildManager.prototype.Serialize = function()
 	};
 };
 
-PETRA.BuildManager.prototype.Deserialize = function(data)
+KIARA.BuildManager.prototype.Deserialize = function(data)
 {
 	for (let key in data)
 		this[key] = data[key];

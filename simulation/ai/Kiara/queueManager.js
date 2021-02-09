@@ -19,7 +19,7 @@
  * This system should be improved. It's probably not flexible enough.
  */
 
-PETRA.QueueManager = function(Config, queues)
+KIARA.QueueManager = function(Config, queues)
 {
 	this.Config = Config;
 	this.queues = queues;
@@ -39,7 +39,7 @@ PETRA.QueueManager = function(Config, queues)
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
 };
 
-PETRA.QueueManager.prototype.getAvailableResources = function(gameState)
+KIARA.QueueManager.prototype.getAvailableResources = function(gameState)
 {
 	let resources = gameState.getResources();
 	for (let key in this.queues)
@@ -47,7 +47,7 @@ PETRA.QueueManager.prototype.getAvailableResources = function(gameState)
 	return resources;
 };
 
-PETRA.QueueManager.prototype.getTotalAccountedResources = function()
+KIARA.QueueManager.prototype.getTotalAccountedResources = function()
 {
 	let resources = new API3.Resources();
 	for (let key in this.queues)
@@ -55,7 +55,7 @@ PETRA.QueueManager.prototype.getTotalAccountedResources = function()
 	return resources;
 };
 
-PETRA.QueueManager.prototype.currentNeeds = function(gameState)
+KIARA.QueueManager.prototype.currentNeeds = function(gameState)
 {
 	let needed = new API3.Resources();
 	// queueArrays because it's faster.
@@ -77,7 +77,7 @@ PETRA.QueueManager.prototype.currentNeeds = function(gameState)
 
 // calculate the gather rates we'd want to be able to start all elements in our queues
 // TODO: many things.
-PETRA.QueueManager.prototype.wantedGatherRates = function(gameState)
+KIARA.QueueManager.prototype.wantedGatherRates = function(gameState)
 {
 	// default values for first turn when we have not yet set our queues.
 	if (gameState.ai.playedTurn === 0)
@@ -154,7 +154,7 @@ PETRA.QueueManager.prototype.wantedGatherRates = function(gameState)
 	return rates;
 };
 
-PETRA.QueueManager.prototype.printQueues = function(gameState)
+KIARA.QueueManager.prototype.printQueues = function(gameState)
 {
 	let numWorkers = 0;
 	gameState.getOwnUnits().forEach(ent => {
@@ -190,7 +190,7 @@ PETRA.QueueManager.prototype.printQueues = function(gameState)
 	API3.warn("------------------------------------");
 };
 
-PETRA.QueueManager.prototype.clear = function()
+KIARA.QueueManager.prototype.clear = function()
 {
 	for (let i in this.queues)
 		this.queues[i].empty();
@@ -199,7 +199,7 @@ PETRA.QueueManager.prototype.clear = function()
 /**
  * set accounts of queue i from the unaccounted resources
  */
-PETRA.QueueManager.prototype.setAccounts = function(gameState, cost, i)
+KIARA.QueueManager.prototype.setAccounts = function(gameState, cost, i)
 {
 	let available = this.getAvailableResources(gameState);
 	for (let res of Resources.GetCodes())
@@ -213,7 +213,7 @@ PETRA.QueueManager.prototype.setAccounts = function(gameState, cost, i)
 /**
  * transfer accounts from queue i to queue j
  */
-PETRA.QueueManager.prototype.transferAccounts = function(cost, i, j)
+KIARA.QueueManager.prototype.transferAccounts = function(cost, i, j)
 {
 	for (let res of Resources.GetCodes())
 	{
@@ -228,7 +228,7 @@ PETRA.QueueManager.prototype.transferAccounts = function(cost, i, j)
 /**
  * distribute the resources between the different queues according to their priorities
  */
-PETRA.QueueManager.prototype.distributeResources = function(gameState)
+KIARA.QueueManager.prototype.distributeResources = function(gameState)
 {
 	let availableRes = this.getAvailableResources(gameState);
 	for (let res of Resources.GetCodes())
@@ -313,11 +313,11 @@ PETRA.QueueManager.prototype.distributeResources = function(gameState)
 			}
 		}
 		if (available < 0)
-			API3.warn("Petra: problem with remaining " + res + " in queueManager " + available);
+			API3.warn("Kiara: problem with remaining " + res + " in queueManager " + available);
 	}
 };
 
-PETRA.QueueManager.prototype.switchResource = function(gameState, res)
+KIARA.QueueManager.prototype.switchResource = function(gameState, res)
 {
 	// We have no available resources, see if we can't "compact" them in one queue.
 	// compare queues 2 by 2, and if one with a higher priority could be completed by our amount, give it.
@@ -354,7 +354,7 @@ PETRA.QueueManager.prototype.switchResource = function(gameState, res)
 };
 
 // Start the next item in the queue if we can afford it.
-PETRA.QueueManager.prototype.startNextItems = function(gameState)
+KIARA.QueueManager.prototype.startNextItems = function(gameState)
 {
 	for (let q of this.queueArrays)
 	{
@@ -383,7 +383,7 @@ PETRA.QueueManager.prototype.startNextItems = function(gameState)
 	}
 };
 
-PETRA.QueueManager.prototype.update = function(gameState)
+KIARA.QueueManager.prototype.update = function(gameState)
 {
 	Engine.ProfileStart("Queue Manager");
 
@@ -412,7 +412,7 @@ PETRA.QueueManager.prototype.update = function(gameState)
 };
 
 // Recovery system: if short of workers after an attack, pause (and reset) some queues to favor worker training
-PETRA.QueueManager.prototype.checkPausedQueues = function(gameState)
+KIARA.QueueManager.prototype.checkPausedQueues = function(gameState)
 {
 	let numWorkers = gameState.countOwnEntitiesAndQueuedWithRole("worker");
 	let workersMin = Math.min(Math.max(12, 24 * this.Config.popScaling), this.Config.Economy.popPhase2);
@@ -466,14 +466,14 @@ PETRA.QueueManager.prototype.checkPausedQueues = function(gameState)
 	}
 };
 
-PETRA.QueueManager.prototype.canAfford = function(queue, cost)
+KIARA.QueueManager.prototype.canAfford = function(queue, cost)
 {
 	if (!this.accounts[queue])
 		return false;
 	return this.accounts[queue].canAfford(cost);
 };
 
-PETRA.QueueManager.prototype.pauseQueue = function(queue, scrapAccounts)
+KIARA.QueueManager.prototype.pauseQueue = function(queue, scrapAccounts)
 {
 	if (!this.queues[queue])
 		return;
@@ -482,13 +482,13 @@ PETRA.QueueManager.prototype.pauseQueue = function(queue, scrapAccounts)
 		this.accounts[queue].reset();
 };
 
-PETRA.QueueManager.prototype.unpauseQueue = function(queue)
+KIARA.QueueManager.prototype.unpauseQueue = function(queue)
 {
 	if (this.queues[queue])
 		this.queues[queue].paused = false;
 };
 
-PETRA.QueueManager.prototype.pauseAll = function(scrapAccounts, but)
+KIARA.QueueManager.prototype.pauseAll = function(scrapAccounts, but)
 {
 	for (let q in this.queues)
 	{
@@ -500,7 +500,7 @@ PETRA.QueueManager.prototype.pauseAll = function(scrapAccounts, but)
 	}
 };
 
-PETRA.QueueManager.prototype.unpauseAll = function(but)
+KIARA.QueueManager.prototype.unpauseAll = function(but)
 {
 	for (let q in this.queues)
 		if (q != but)
@@ -508,12 +508,12 @@ PETRA.QueueManager.prototype.unpauseAll = function(but)
 };
 
 
-PETRA.QueueManager.prototype.addQueue = function(queueName, priority)
+KIARA.QueueManager.prototype.addQueue = function(queueName, priority)
 {
 	if (this.queues[queueName] !== undefined)
 		return;
 
-	this.queues[queueName] = new PETRA.Queue();
+	this.queues[queueName] = new KIARA.Queue();
 	this.priorities[queueName] = priority;
 	this.accounts[queueName] = new API3.Resources();
 
@@ -524,7 +524,7 @@ PETRA.QueueManager.prototype.addQueue = function(queueName, priority)
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
 };
 
-PETRA.QueueManager.prototype.removeQueue = function(queueName)
+KIARA.QueueManager.prototype.removeQueue = function(queueName)
 {
 	if (this.queues[queueName] === undefined)
 		return;
@@ -540,12 +540,12 @@ PETRA.QueueManager.prototype.removeQueue = function(queueName)
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
 };
 
-PETRA.QueueManager.prototype.getPriority = function(queueName)
+KIARA.QueueManager.prototype.getPriority = function(queueName)
 {
 	return this.priorities[queueName];
 };
 
-PETRA.QueueManager.prototype.changePriority = function(queueName, newPriority)
+KIARA.QueueManager.prototype.changePriority = function(queueName, newPriority)
 {
 	if (this.Config.debug > 1)
 		API3.warn(">>> Priority of queue " + queueName + " changed from " + this.priorities[queueName] + " to " + newPriority);
@@ -555,7 +555,7 @@ PETRA.QueueManager.prototype.changePriority = function(queueName, newPriority)
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
 };
 
-PETRA.QueueManager.prototype.Serialize = function()
+KIARA.QueueManager.prototype.Serialize = function()
 {
 	let accounts = {};
 	let queues = {};
@@ -575,7 +575,7 @@ PETRA.QueueManager.prototype.Serialize = function()
 	};
 };
 
-PETRA.QueueManager.prototype.Deserialize = function(gameState, data)
+KIARA.QueueManager.prototype.Deserialize = function(gameState, data)
 {
 	this.priorities = data.priorities;
 	this.queues = {};
@@ -585,7 +585,7 @@ PETRA.QueueManager.prototype.Deserialize = function(gameState, data)
 	this.queueArrays = [];
 	for (let q in data.queues)
 	{
-		this.queues[q] = new PETRA.Queue();
+		this.queues[q] = new KIARA.Queue();
 		this.queues[q].Deserialize(gameState, data.queues[q]);
 		this.accounts[q] = new API3.Resources();
 		this.accounts[q].Deserialize(data.accounts[q]);

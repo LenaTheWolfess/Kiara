@@ -11,7 +11,7 @@
  *  -planning attacks -> attackManager
  *  -picking new CC locations.
  */
-PETRA.HQ = function(Config)
+KIARA.HQ = function(Config)
 {
 	this.Config = Config;
 	this.phasing = 0;	// existing values: 0 means no, i > 0 means phasing towards phase i
@@ -36,29 +36,29 @@ PETRA.HQ = function(Config)
 	this.extraFortresses = Math.round(Math.max(Math.min(this.Config.difficulty - 1, 2), 0) * this.Config.personality.defensive);
 
 	this.baseManagers = [];
-	this.attackManager = new PETRA.AttackManager(this.Config);
-	this.buildManager = new PETRA.BuildManager();
-	this.defenseManager = new PETRA.DefenseManager(this.Config);
-	this.tradeManager = new PETRA.TradeManager(this.Config);
-	this.navalManager = new PETRA.NavalManager(this.Config);
-	this.researchManager = new PETRA.ResearchManager(this.Config);
-	this.diplomacyManager = new PETRA.DiplomacyManager(this.Config);
-	this.garrisonManager = new PETRA.GarrisonManager(this.Config);
-	this.victoryManager = new PETRA.VictoryManager(this.Config);
+	this.attackManager = new KIARA.AttackManager(this.Config);
+	this.buildManager = new KIARA.BuildManager();
+	this.defenseManager = new KIARA.DefenseManager(this.Config);
+	this.tradeManager = new KIARA.TradeManager(this.Config);
+	this.navalManager = new KIARA.NavalManager(this.Config);
+	this.researchManager = new KIARA.ResearchManager(this.Config);
+	this.diplomacyManager = new KIARA.DiplomacyManager(this.Config);
+	this.garrisonManager = new KIARA.GarrisonManager(this.Config);
+	this.victoryManager = new KIARA.VictoryManager(this.Config);
 
 	this.capturableTargets = new Map();
 	this.capturableTargetsTime = 0;
 };
 
 /** More initialisation for stuff that needs the gameState */
-PETRA.HQ.prototype.init = function(gameState, queues)
+KIARA.HQ.prototype.init = function(gameState, queues)
 {
-	this.territoryMap = PETRA.createTerritoryMap(gameState);
+	this.territoryMap = KIARA.createTerritoryMap(gameState);
 	// initialize base map. Each pixel is a base ID, or 0 if not or not accessible
 	this.basesMap = new API3.Map(gameState.sharedScript, "territory");
 	// create borderMap: flag cells on the border of the map
 	// then this map will be completed with our frontier in updateTerritories
-	this.borderMap = PETRA.createBorderMap(gameState);
+	this.borderMap = KIARA.createBorderMap(gameState);
 	// list of allowed regions
 	this.landRegions = {};
 	// try to determine if we have a water map
@@ -77,7 +77,7 @@ PETRA.HQ.prototype.init = function(gameState, queues)
 /**
  * initialization needed after deserialization (only called when deserialization)
  */
-PETRA.HQ.prototype.postinit = function(gameState)
+KIARA.HQ.prototype.postinit = function(gameState)
 {
 	// Rebuild the base maps from the territory indices of each base
 	this.basesMap = new API3.Map(gameState.sharedScript, "territory");
@@ -111,9 +111,9 @@ PETRA.HQ.prototype.postinit = function(gameState)
  *              "captured"      => captured base with an anchor
  *              "anchorless"    => anchorless base, currently with dock
  */
-PETRA.HQ.prototype.createBase = function(gameState, ent, type)
+KIARA.HQ.prototype.createBase = function(gameState, ent, type)
 {
-	let access = PETRA.getLandAccess(gameState, ent);
+	let access = KIARA.getLandAccess(gameState, ent);
 	let newbase;
 	for (let base of this.baseManagers)
 	{
@@ -150,7 +150,7 @@ PETRA.HQ.prototype.createBase = function(gameState, ent, type)
 
 	if (!newbase)
 	{
-		newbase = new PETRA.BaseManager(gameState, this.Config);
+		newbase = new KIARA.BaseManager(gameState, this.Config);
 		newbase.init(gameState, type);
 		this.baseManagers.push(newbase);
 	}
@@ -170,7 +170,7 @@ PETRA.HQ.prototype.createBase = function(gameState, ent, type)
  * otherwise return undefined
  * for the moment, only the case land-sea-land is supported
  */
-PETRA.HQ.prototype.getSeaBetweenIndices = function(gameState, index1, index2)
+KIARA.HQ.prototype.getSeaBetweenIndices = function(gameState, index1, index2)
 {
 	let path = gameState.ai.accessibility.getTrajectToIndex(index1, index2);
 	if (path && path.length == 3 && gameState.ai.accessibility.regionType[path[1]] == "water")
@@ -186,7 +186,7 @@ PETRA.HQ.prototype.getSeaBetweenIndices = function(gameState, index1, index2)
 };
 
 /** TODO check if the new anchorless bases should be added to addBase */
-PETRA.HQ.prototype.checkEvents = function(gameState, events)
+KIARA.HQ.prototype.checkEvents = function(gameState, events)
 {
 	let addBase = false;
 
@@ -320,7 +320,7 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 			continue;
 		if (ent.hasClass("Unit"))
 		{
-			PETRA.getBestBase(gameState, ent).assignEntity(gameState, ent);
+			KIARA.getBestBase(gameState, ent).assignEntity(gameState, ent);
 			ent.setMetadata(PlayerID, "role", undefined);
 			ent.setMetadata(PlayerID, "subrole", undefined);
 			ent.setMetadata(PlayerID, "plan", undefined);
@@ -336,7 +336,7 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 				ent.setMetadata(PlayerID, "subrole", "idle");
 			}
 			if (ent.hasClass("Ship"))
-				PETRA.setSeaAccess(gameState, ent);
+				KIARA.setSeaAccess(gameState, ent);
 			if (!ent.hasClass("Support") && !ent.hasClass("Ship") && ent.attackTypes() !== undefined)
 				ent.setMetadata(PlayerID, "plan", -1);
 			continue;
@@ -360,7 +360,7 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 			if (!ent.decaying() && ent.resourceDropsiteTypes())
 				base = this.createBase(gameState, ent, "anchorless");
 			else
-				base = PETRA.getBestBase(gameState, ent) || this.baseManagers[0];
+				base = KIARA.getBestBase(gameState, ent) || this.baseManagers[0];
 			base.assignEntity(gameState, ent);
 			if (ent.decaying())
 			{
@@ -427,7 +427,7 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 				let base;
 				if (ent.getMetadata(PlayerID, "base") === undefined)
 				{
-					base = PETRA.getBestBase(gameState, ent);
+					base = KIARA.getBestBase(gameState, ent);
 					base.assignEntity(gameState, ent);
 				}
 				else
@@ -442,12 +442,12 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 					continue;
 				let dropsites = gameState.getOwnDropsites(type.generic);
 				let pos = ent.position();
-				let access = PETRA.getLandAccess(gameState, ent);
+				let access = KIARA.getLandAccess(gameState, ent);
 				let distmin = Math.min();
 				let goal;
 				for (let dropsite of dropsites.values())
 				{
-					if (!dropsite.position() || PETRA.getLandAccess(gameState, dropsite) != access)
+					if (!dropsite.position() || KIARA.getLandAccess(gameState, dropsite) != access)
 						continue;
 					let dist = API3.SquareVectorDistance(pos, dropsite.position());
 					if (dist > distmin)
@@ -534,7 +534,7 @@ PETRA.HQ.prototype.checkEvents = function(gameState, events)
 };
 
 /** Ensure that all requirements are met when phasing up*/
-PETRA.HQ.prototype.checkPhaseRequirements = function(gameState, queues)
+KIARA.HQ.prototype.checkPhaseRequirements = function(gameState, queues)
 {
 	if (gameState.getNumberOfPhases() == this.currentPhase)
 		return;
@@ -559,27 +559,27 @@ PETRA.HQ.prototype.checkPhaseRequirements = function(gameState, queues)
 				if (!gameState.getOwnEntitiesByClass("Market", true).hasEntities() &&
 				    this.canBuild(gameState, "structures/{civ}/market"))
 				{
-					plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/market", { "phaseUp": true });
+					plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/market", { "phaseUp": true });
 					queue = "economicBuilding";
 					break;
 				}
 				if (!gameState.getOwnEntitiesByClass("Temple", true).hasEntities() &&
 				    this.canBuild(gameState, "structures/{civ}/temple"))
 				{
-					plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/temple", { "phaseUp": true });
+					plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/temple", { "phaseUp": true });
 					queue = "economicBuilding";
 					break;
 				}
 				if (!gameState.getOwnEntitiesByClass("Forge", true).hasEntities() &&
 				    this.canBuild(gameState, "structures/{civ}/forge"))
 				{
-					plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/forge", { "phaseUp": true });
+					plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/forge", { "phaseUp": true });
 					queue = "militaryBuilding";
 					break;
 				}
 				if (this.canBuild(gameState, "structures/{civ}/defense_tower"))
 				{
-					plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/defense_tower", { "phaseUp": true });
+					plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/defense_tower", { "phaseUp": true });
 					queue = "defenseBuilding";
 					break;
 				}
@@ -593,7 +593,7 @@ PETRA.HQ.prototype.checkPhaseRequirements = function(gameState, queues)
 			{
 				let structure = this.buildManager.findStructureWithClass(gameState, [entityReq.class]);
 				if (structure && this.canBuild(gameState, structure))
-					plan = new PETRA.ConstructionPlan(gameState, structure, { "phaseUp": true });
+					plan = new KIARA.ConstructionPlan(gameState, structure, { "phaseUp": true });
 			}
 		}
 
@@ -616,12 +616,12 @@ PETRA.HQ.prototype.checkPhaseRequirements = function(gameState, queues)
 };
 
 /** Called by any "phase" research plan once it's started */
-PETRA.HQ.prototype.OnPhaseUp = function(gameState, phase)
+KIARA.HQ.prototype.OnPhaseUp = function(gameState, phase)
 {
 };
 
 /** This code trains citizen workers, trying to keep close to a ratio of worker/soldiers */
-PETRA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
+KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 {
 	// default template
 	let requirementsDef = [ ["costsResource", 1, "food"] ];
@@ -721,13 +721,13 @@ PETRA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 	// If the template variable is empty, the default unit (Support unit) will be used
 	// base "0" means automatic choice of base
 	if (!template && templateDef)
-		queues.villager.addPlan(new PETRA.TrainingPlan(gameState, templateDef, { "role": "worker", "base": 0, "support": true }, size, size));
+		queues.villager.addPlan(new KIARA.TrainingPlan(gameState, templateDef, { "role": "worker", "base": 0, "support": true }, size, size));
 	else if (template)
-		queues.citizenSoldier.addPlan(new PETRA.TrainingPlan(gameState, template, { "role": "worker", "base": 0 }, size, size));
+		queues.citizenSoldier.addPlan(new KIARA.TrainingPlan(gameState, template, { "role": "worker", "base": 0 }, size, size));
 };
 
 /** picks the best template based on parameters and classes */
-PETRA.HQ.prototype.findBestTrainableUnit = function(gameState, classes, requirements)
+KIARA.HQ.prototype.findBestTrainableUnit = function(gameState, classes, requirements)
 {
 	let units;
 	if (classes.indexOf("Hero") != -1)
@@ -772,13 +772,13 @@ PETRA.HQ.prototype.findBestTrainableUnit = function(gameState, classes, requirem
 		{
 			if (param[0] == "strength")
 			{
-				aValue += PETRA.getMaxStrength(a[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance) * param[1];
-				bValue += PETRA.getMaxStrength(b[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance) * param[1];
+				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance) * param[1];
+				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance) * param[1];
 			}
 			else if (param[0] == "siegeStrength")
 			{
-				aValue += PETRA.getMaxStrength(a[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
-				bValue += PETRA.getMaxStrength(b[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
+				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
+				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
 			}
 			else if (param[0] == "speed")
 			{
@@ -813,7 +813,7 @@ PETRA.HQ.prototype.findBestTrainableUnit = function(gameState, classes, requirem
  * returns an entity collection of workers through BaseManager.pickBuilders
  * TODO: when same accessIndex, sort by distance
  */
-PETRA.HQ.prototype.bulkPickWorkers = function(gameState, baseRef, number)
+KIARA.HQ.prototype.bulkPickWorkers = function(gameState, baseRef, number)
 {
 	let accessIndex = baseRef.accessIndex;
 	if (!accessIndex)
@@ -843,7 +843,7 @@ PETRA.HQ.prototype.bulkPickWorkers = function(gameState, baseRef, number)
 	return workers;
 };
 
-PETRA.HQ.prototype.getTotalResourceLevel = function(gameState)
+KIARA.HQ.prototype.getTotalResourceLevel = function(gameState)
 {
 	let total = {};
 	for (let res of Resources.GetCodes())
@@ -859,7 +859,7 @@ PETRA.HQ.prototype.getTotalResourceLevel = function(gameState)
  * Returns the current gather rate
  * This is not per-se exact, it performs a few adjustments ad-hoc to account for travel distance, stuffs like that.
  */
-PETRA.HQ.prototype.GetCurrentGatherRates = function(gameState)
+KIARA.HQ.prototype.GetCurrentGatherRates = function(gameState)
 {
 	if (!this.turnCache.currentRates)
 	{
@@ -882,7 +882,7 @@ PETRA.HQ.prototype.GetCurrentGatherRates = function(gameState)
 /**
  * Returns the wanted gather rate.
  */
-PETRA.HQ.prototype.GetWantedGatherRates = function(gameState)
+KIARA.HQ.prototype.GetWantedGatherRates = function(gameState)
 {
 	if (!this.turnCache.wantedRates)
 		this.turnCache.wantedRates = gameState.ai.queueManager.wantedGatherRates(gameState);
@@ -898,7 +898,7 @@ PETRA.HQ.prototype.GetWantedGatherRates = function(gameState)
  * We compare; we pick the one where the discrepancy is highest.
  * Need to balance long-term needs and possible short-term needs.
  */
-PETRA.HQ.prototype.pickMostNeededResources = function(gameState, allowedResources = [])
+KIARA.HQ.prototype.pickMostNeededResources = function(gameState, allowedResources = [])
 {
 	let wantedRates = this.GetWantedGatherRates(gameState);
 	let currentRates = this.GetCurrentGatherRates(gameState);
@@ -933,7 +933,7 @@ PETRA.HQ.prototype.pickMostNeededResources = function(gameState, allowedResource
  * Returns the best position to build a new Civil Center
  * Whose primary function would be to reach new resources of type "resource".
  */
-PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resource, proximity, fromStrategic)
+KIARA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resource, proximity, fromStrategic)
 {
 	// This builds a map. The procedure is fairly simple. It adds the resource maps
 	//	(which are dynamically updated and are made so that they will facilitate DP placement)
@@ -942,7 +942,7 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 	Engine.ProfileStart("findEconomicCCLocation");
 
 	// obstruction map
-	let obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	let obstructions = KIARA.createObstructionMap(gameState, 0, template);
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
@@ -1040,7 +1040,7 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 
 				if (dist < minDist)
 					minDist = dist;
-				accessible = accessible || index == PETRA.getLandAccess(gameState, cc.ent);
+				accessible = accessible || index == KIARA.getLandAccess(gameState, cc.ent);
 			}
 			if (norm == 0)
 				continue;
@@ -1062,7 +1062,7 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 			}
 
 			// Not near any of our dropsite, except for oversea docks
-			oversea = !accessible && dpList.some(dp => PETRA.getLandAccess(gameState, dp.ent) == index);
+			oversea = !accessible && dpList.some(dp => KIARA.getLandAccess(gameState, dp.ent) == index);
 			if (!oversea)
 			{
 				for (let dp of dpList)
@@ -1081,7 +1081,7 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 				continue;
 		}
 
-		if (this.borderMap.map[j] & PETRA.fullBorder_Mask)	// disfavor the borders of the map
+		if (this.borderMap.map[j] & KIARA.fullBorder_Mask)	// disfavor the borders of the map
 			norm *= 0.5;
 
 		let val = 2 * gameState.sharedScript.ccResourceMaps[resource].map[j];
@@ -1133,7 +1133,7 @@ PETRA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
  * Returns the best position to build a new Civil Center
  * Whose primary function would be to assure territorial continuity with our allies
  */
-PETRA.HQ.prototype.findStrategicCCLocation = function(gameState, template)
+KIARA.HQ.prototype.findStrategicCCLocation = function(gameState, template)
 {
 	// This builds a map. The procedure is fairly simple.
 	// We minimize the Sum((dist - 300)^2) where the sum is on the three nearest allied CC
@@ -1156,7 +1156,7 @@ PETRA.HQ.prototype.findStrategicCCLocation = function(gameState, template)
 	Engine.ProfileStart("findStrategicCCLocation");
 
 	// obstruction map
-	let obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	let obstructions = KIARA.createObstructionMap(gameState, 0, template);
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
@@ -1236,7 +1236,7 @@ PETRA.HQ.prototype.findStrategicCCLocation = function(gameState, template)
 			currentVal += delta*delta;
 		}
 		// disfavor border of the map
-		if (this.borderMap.map[j] & PETRA.fullBorder_Mask)
+		if (this.borderMap.map[j] & KIARA.fullBorder_Mask)
 			currentVal += 10000;
 
 		if (bestVal !== undefined && currentVal > bestVal)
@@ -1279,7 +1279,7 @@ PETRA.HQ.prototype.findStrategicCCLocation = function(gameState, template)
  * To do so, we suppose that the gain/distance is an increasing function of distance and look for the max distance
  * for performance reasons.
  */
-PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
+KIARA.HQ.prototype.findMarketLocation = function(gameState, template)
 {
 	let markets = gameState.updatingCollection("diplo-ExclusiveAllyMarkets", API3.Filters.byClass("Trade"), gameState.getExclusiveAllyEntities()).toEntityArray();
 	if (!markets.length)
@@ -1293,7 +1293,7 @@ PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
 		return false;
 
 	// obstruction map
-	let obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	let obstructions = KIARA.createObstructionMap(gameState, 0, template);
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
@@ -1316,7 +1316,7 @@ PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
 	for (let j = 0; j < this.territoryMap.length; ++j)
 	{
 		// do not try on the narrow border of our territory
-		if (this.borderMap.map[j] & PETRA.narrowFrontier_Mask)
+		if (this.borderMap.map[j] & KIARA.narrowFrontier_Mask)
 			continue;
 		if (this.basesMap.map[j] == 0)   // only in our territory
 			continue;
@@ -1337,12 +1337,12 @@ PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
 		{
 			if (isNavalMarket && template.hasClass("Naval") && template.hasClass("Trade"))
 			{
-				if (PETRA.getSeaAccess(gameState, market) != gameState.ai.accessibility.getAccessValue(pos, true))
+				if (KIARA.getSeaAccess(gameState, market) != gameState.ai.accessibility.getAccessValue(pos, true))
 					continue;
 				gainMultiplier = traderTemplatesGains.navalGainMultiplier;
 			}
-			else if (PETRA.getLandAccess(gameState, market) == index &&
-				!PETRA.isLineInsideEnemyTerritory(gameState, market.position(), pos))
+			else if (KIARA.getLandAccess(gameState, market) == index &&
+				!KIARA.isLineInsideEnemyTerritory(gameState, market.position(), pos))
 				gainMultiplier = traderTemplatesGains.landGainMultiplier;
 			else
 				continue;
@@ -1399,7 +1399,7 @@ PETRA.HQ.prototype.findMarketLocation = function(gameState, template)
  * Returns the best position to build defensive buildings (fortress and towers)
  * Whose primary function is to defend our borders
  */
-PETRA.HQ.prototype.findDefensiveLocation = function(gameState, template)
+KIARA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 {
 	// We take the point in our territory which is the nearest to any enemy cc
 	// but requiring a minimal distance with our other defensive structures
@@ -1432,7 +1432,7 @@ PETRA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 	}
 
 	// obstruction map
-	let obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	let obstructions = KIARA.createObstructionMap(gameState, 0, template);
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
@@ -1458,9 +1458,9 @@ PETRA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 		if (!wonderMode)
 		{
 			// do not try if well inside or outside territory
-			if (!(this.borderMap.map[j] & PETRA.fullFrontier_Mask))
+			if (!(this.borderMap.map[j] & KIARA.fullFrontier_Mask))
 				continue;
-			if (this.borderMap.map[j] & PETRA.largeFrontier_Mask && isTower)
+			if (this.borderMap.map[j] & KIARA.largeFrontier_Mask && isTower)
 				continue;
 		}
 		if (this.basesMap.map[j] == 0)   // inaccessible cell
@@ -1533,7 +1533,7 @@ PETRA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 	return [x, z, this.basesMap.map[bestJdx]];
 };
 
-PETRA.HQ.prototype.buildTemple = function(gameState, queues)
+KIARA.HQ.prototype.buildTemple = function(gameState, queues)
 {
 	// at least one market (which have the same queue) should be build before any temple
 	if (queues.economicBuilding.hasQueuedUnits() ||
@@ -1549,10 +1549,10 @@ PETRA.HQ.prototype.buildTemple = function(gameState, queues)
 		templateName = "structures/{civ}/temple_vesta";
 	else if (!this.canBuild(gameState, templateName))
 		return;
-	queues.economicBuilding.addPlan(new PETRA.ConstructionPlan(gameState, templateName));
+	queues.economicBuilding.addPlan(new KIARA.ConstructionPlan(gameState, templateName));
 };
 
-PETRA.HQ.prototype.buildMarket = function(gameState, queues)
+KIARA.HQ.prototype.buildMarket = function(gameState, queues)
 {
 	if (gameState.getOwnEntitiesByClass("Market", true).hasEntities() ||
 		!this.canBuild(gameState, "structures/{civ}/market"))
@@ -1582,13 +1582,13 @@ PETRA.HQ.prototype.buildMarket = function(gameState, queues)
 	}
 
 	gameState.ai.queueManager.changePriority("economicBuilding", 3 * this.Config.priorities.economicBuilding);
-	let plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/market");
+	let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/market");
 	plan.queueToReset = "economicBuilding";
 	queues.economicBuilding.addPlan(plan);
 };
 
 /** Build a farmstead */
-PETRA.HQ.prototype.buildFarmstead = function(gameState, queues)
+KIARA.HQ.prototype.buildFarmstead = function(gameState, queues)
 {
 	// Only build one farmstead for the time being ("DropsiteFood" does not refer to CCs)
 	if (gameState.getOwnEntitiesByClass("Farmstead", true).hasEntities())
@@ -1603,14 +1603,14 @@ PETRA.HQ.prototype.buildFarmstead = function(gameState, queues)
 	if (!this.canBuild(gameState, "structures/{civ}/farmstead"))
 		return;
 
-	queues.economicBuilding.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/farmstead"));
+	queues.economicBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/farmstead"));
 };
 
 /**
  * Try to build a wonder when required
  * force = true when called from the victoryManager in case of Wonder victory condition.
  */
-PETRA.HQ.prototype.buildWonder = function(gameState, queues, force = false)
+KIARA.HQ.prototype.buildWonder = function(gameState, queues, force = false)
 {
 	if (queues.wonder && queues.wonder.hasQueuedUnits() ||
 	    gameState.getOwnEntitiesByClass("Wonder", true).hasEntities() ||
@@ -1636,11 +1636,11 @@ PETRA.HQ.prototype.buildWonder = function(gameState, queues, force = false)
 			return;
 	}
 
-	queues.wonder.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/wonder"));
+	queues.wonder.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/wonder"));
 };
 
 /** Build a corral, and train animals there */
-PETRA.HQ.prototype.manageCorral = function(gameState, queues)
+KIARA.HQ.prototype.manageCorral = function(gameState, queues)
 {
 	if (queues.corral.hasQueuedUnits())
 		return;
@@ -1651,7 +1651,7 @@ PETRA.HQ.prototype.manageCorral = function(gameState, queues)
 	{
 		if (this.canBuild(gameState, "structures/{civ}/corral"))
 		{
-			queues.corral.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/corral"));
+			queues.corral.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/corral"));
 			return;
 		}
 		if (!nCorral)
@@ -1677,7 +1677,7 @@ PETRA.HQ.prototype.manageCorral = function(gameState, queues)
 				count += item.count;
 			if (count > nCorral)
 				continue;
-			queues.corral.addPlan(new PETRA.TrainingPlan(gameState, trainable, { "trainer": corral.id() }));
+			queues.corral.addPlan(new KIARA.TrainingPlan(gameState, trainable, { "trainer": corral.id() }));
 			return;
 		}
 	}
@@ -1687,7 +1687,7 @@ PETRA.HQ.prototype.manageCorral = function(gameState, queues)
  * build more houses if needed.
  * kinda ugly, lots of special cases to both build enough houses but not tooo many…
  */
-PETRA.HQ.prototype.buildMoreHouses = function(gameState, queues)
+KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 {
 	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/house")) ||
 	    gameState.getPopulationMax() <= gameState.getPopulationLimit())
@@ -1696,7 +1696,7 @@ PETRA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 	let numPlanned = queues.house.length();
 	if (numPlanned < 3 || numPlanned < 5 && gameState.getPopulation() > 80)
 	{
-		let plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/house");
+		let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
 		// change the starting condition according to the situation.
 		plan.goRequirement = "houseNeeded";
 		queues.house.addPlan(plan);
@@ -1770,7 +1770,7 @@ PETRA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 };
 
 /** Checks the status of the territory expansion. If no new economic bases created, build some strategic ones. */
-PETRA.HQ.prototype.checkBaseExpansion = function(gameState, queues)
+KIARA.HQ.prototype.checkBaseExpansion = function(gameState, queues)
 {
 	if (queues.civilCentre.hasQueuedUnits())
 		return;
@@ -1803,7 +1803,7 @@ PETRA.HQ.prototype.checkBaseExpansion = function(gameState, queues)
 	}
 };
 
-PETRA.HQ.prototype.buildNewBase = function(gameState, queues, resource)
+KIARA.HQ.prototype.buildNewBase = function(gameState, queues, resource)
 {
 	if (this.numPotentialBases() > 0 && this.currentPhase == 1 && !gameState.isResearching(gameState.getPhaseName(2)))
 		return false;
@@ -1832,12 +1832,12 @@ PETRA.HQ.prototype.buildNewBase = function(gameState, queues, resource)
 	// base "-1" means new base.
 	if (this.Config.debug > 1)
 		API3.warn("new base " + gameState.applyCiv(template) + " planned with resource " + resource);
-	queues.civilCentre.addPlan(new PETRA.ConstructionPlan(gameState, template, { "base": -1, "resource": resource }));
+	queues.civilCentre.addPlan(new KIARA.ConstructionPlan(gameState, template, { "base": -1, "resource": resource }));
 	return true;
 };
 
 /** Deals with building fortresses and towers along our border with enemies. */
-PETRA.HQ.prototype.buildDefenses = function(gameState, queues)
+KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 {
 	if (this.saveResources && !this.canBarter || queues.defenseBuilding.hasQueuedUnits())
 		return;
@@ -1856,7 +1856,7 @@ PETRA.HQ.prototype.buildDefenses = function(gameState, queues)
 				this.fortressStartTime = gameState.ai.elapsedTime;
 				if (!numFortresses)
 					gameState.ai.queueManager.changePriority("defenseBuilding", 2 * this.Config.priorities.defenseBuilding);
-				let plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/fortress");
+				let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/fortress");
 				plan.queueToReset = "defenseBuilding";
 				queues.defenseBuilding.addPlan(plan);
 				return;
@@ -1872,7 +1872,7 @@ PETRA.HQ.prototype.buildDefenses = function(gameState, queues)
 		if (numTowers < this.Config.Military.numSentryTowers && gameState.ai.elapsedTime > towerLapseTime + this.fortStartTime)
 		{
 			this.fortStartTime = gameState.ai.elapsedTime;
-			queues.defenseBuilding.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/sentry_tower"));
+			queues.defenseBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/sentry_tower"));
 		}
 		return;
 	}
@@ -1890,13 +1890,13 @@ PETRA.HQ.prototype.buildDefenses = function(gameState, queues)
 		this.towerStartTime = gameState.ai.elapsedTime;
 		if (numTowers > 2 * this.numActiveBases() + 3)
 			gameState.ai.queueManager.changePriority("defenseBuilding", Math.round(0.7 * this.Config.priorities.defenseBuilding));
-		let plan = new PETRA.ConstructionPlan(gameState, "structures/{civ}/defense_tower");
+		let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/defense_tower");
 		plan.queueToReset = "defenseBuilding";
 		queues.defenseBuilding.addPlan(plan);
 	}
 };
 
-PETRA.HQ.prototype.buildForge = function(gameState, queues)
+KIARA.HQ.prototype.buildForge = function(gameState, queues)
 {
 	if (this.getAccountedPopulation(gameState) < this.Config.Military.popForForge ||
 		queues.militaryBuilding.hasQueuedUnits() || gameState.getOwnEntitiesByClass("Forge", true).length)
@@ -1906,14 +1906,14 @@ PETRA.HQ.prototype.buildForge = function(gameState, queues)
 		return;
 
 	if (this.canBuild(gameState, "structures/{civ}/forge"))
-		queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/forge"));
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/forge"));
 };
 
 /**
  * Deals with constructing military buildings (barracks, stables…)
  * They are mostly defined by Config.js. This is unreliable since changes could be done easily.
  */
-PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
+KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 {
 	if (this.saveResources && !this.canBarter || queues.militaryBuilding.hasQueuedUnits())
 		return;
@@ -1940,7 +1940,7 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 			if (template)
 			{
 				gameState.ai.queueManager.changePriority("militaryBuilding", 2 * this.Config.priorities.militaryBuilding);
-				let plan = new PETRA.ConstructionPlan(gameState, template, { "militaryBase": true });
+				let plan = new KIARA.ConstructionPlan(gameState, template, { "militaryBase": true });
 				plan.queueToReset = "militaryBuilding";
 				queues.militaryBuilding.addPlan(plan);
 				return;
@@ -1948,7 +1948,7 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		}
 		if (numStables == 0 && stableTemplate)
 		{
-			queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
+			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
 			return;
 		}
 
@@ -1958,13 +1958,13 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 			let template = numBarracks == 0 ? (barracksTemplate || rangeTemplate) : (rangeTemplate || barracksTemplate);
 			if (template)
 			{
-				queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, template, { "militaryBase": true }));
+				queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, template, { "militaryBase": true }));
 				return;
 			}
 		}
 		if (numStables == 1 && stableTemplate && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2)
 		{
-			queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
+			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
 			return;
 		}
 
@@ -1974,7 +1974,7 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 			let template = barracksTemplate || stableTemplate || rangeTemplate;
 			if (template)
 			{
-				queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, template, { "militaryBase": true }));
+				queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, template, { "militaryBase": true }));
 				return;
 			}
 		}
@@ -1988,13 +1988,13 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 
 	if (this.canBuild(gameState, "structures/{civ}/elephant_stables") && !gameState.getOwnEntitiesByClass("ElephantStable", true).hasEntities())
 	{
-		queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/elephant_stables", { "militaryBase": true }));
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/elephant_stables", { "militaryBase": true }));
 		return;
 	}
 
 	if (this.canBuild(gameState, "structures/{civ}/arsenal") && !gameState.getOwnEntitiesByClass("Arsenal", true).hasEntities())
 	{
-		queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, "structures/{civ}/arsenal", { "militaryBase": true }));
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/arsenal", { "militaryBase": true }));
 		return;
 	}
 
@@ -2017,9 +2017,9 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 				continue;
 			let civ = gameState.getPlayerCiv();
 			if (template.hasDefensiveFire() || template.trainableEntities(civ))
-				queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, advanced, { "militaryBase": true }));
+				queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, advanced, { "militaryBase": true }));
 			else	// not a military building, but still use this queue
-				queues.militaryBuilding.addPlan(new PETRA.ConstructionPlan(gameState, advanced));
+				queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, advanced));
 			return;
 		}
 	}
@@ -2028,7 +2028,7 @@ PETRA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 /**
  *  Find base nearest to ennemies for military buildings.
  */
-PETRA.HQ.prototype.findBestBaseForMilitary = function(gameState)
+KIARA.HQ.prototype.findBestBaseForMilitary = function(gameState)
 {
 	let ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre")).toEntityArray();
 	let bestBase;
@@ -2040,13 +2040,13 @@ PETRA.HQ.prototype.findBestBaseForMilitary = function(gameState)
 			continue;
 		if (enemyFound && !gameState.isPlayerEnemy(cce.owner()))
 			continue;
-		let access = PETRA.getLandAccess(gameState, cce);
+		let access = KIARA.getLandAccess(gameState, cce);
 		let isEnemy = gameState.isPlayerEnemy(cce.owner());
 		for (let cc of ccEnts)
 		{
 			if (cc.owner() != PlayerID)
 				continue;
-			if (PETRA.getLandAccess(gameState, cc) != access)
+			if (KIARA.getLandAccess(gameState, cc) != access)
 				continue;
 			let dist = API3.SquareVectorDistance(cc.position(), cce.position());
 			if (!enemyFound && isEnemy)
@@ -2064,7 +2064,7 @@ PETRA.HQ.prototype.findBestBaseForMilitary = function(gameState)
  * train with highest priority ranged infantry in the nearest civil center from a given set of positions
  * and garrison them there for defense
  */
-PETRA.HQ.prototype.trainEmergencyUnits = function(gameState, positions)
+KIARA.HQ.prototype.trainEmergencyUnits = function(gameState, positions)
 {
 	if (gameState.ai.queues.emergency.hasQueuedUnits())
 		return false;
@@ -2082,7 +2082,7 @@ PETRA.HQ.prototype.trainEmergencyUnits = function(gameState, positions)
 		{
 			if (!base.anchor || !base.anchor.position())
 				continue;
-			if (PETRA.getLandAccess(gameState, base.anchor) != access)
+			if (KIARA.getLandAccess(gameState, base.anchor) != access)
 				continue;
 			if (!base.anchor.trainableEntities(civ))	// base still in construction
 				continue;
@@ -2165,11 +2165,11 @@ PETRA.HQ.prototype.trainEmergencyUnits = function(gameState, positions)
 	let metadata = { "role": "worker", "base": nearestAnchor.getMetadata(PlayerID, "base"), "plan": -1, "trainer": nearestAnchor.id() };
 	if (autogarrison)
 		metadata.garrisonType = "protection";
-	gameState.ai.queues.emergency.addPlan(new PETRA.TrainingPlan(gameState, templateFound[0], metadata, 1, 1));
+	gameState.ai.queues.emergency.addPlan(new KIARA.TrainingPlan(gameState, templateFound[0], metadata, 1, 1));
 	return true;
 };
 
-PETRA.HQ.prototype.canBuild = function(gameState, structure)
+KIARA.HQ.prototype.canBuild = function(gameState, structure)
 {
 	let type = gameState.applyCiv(structure);
 	if (this.buildManager.isUnbuildable(gameState, type))
@@ -2223,7 +2223,7 @@ PETRA.HQ.prototype.canBuild = function(gameState, structure)
 	return true;
 };
 
-PETRA.HQ.prototype.updateTerritories = function(gameState)
+KIARA.HQ.prototype.updateTerritories = function(gameState)
 {
 	const around = [ [-0.7, 0.7], [0, 1], [0.7, 0.7], [1, 0], [0.7, -0.7], [0, -1], [-0.7, -0.7], [-1, 0] ];
 	let alliedVictory = gameState.getAlliedVictory();
@@ -2236,10 +2236,10 @@ PETRA.HQ.prototype.updateTerritories = function(gameState)
 
 	for (let j = 0; j < this.territoryMap.length; ++j)
 	{
-		if (this.borderMap.map[j] & PETRA.outside_Mask)
+		if (this.borderMap.map[j] & KIARA.outside_Mask)
 			continue;
-		if (this.borderMap.map[j] & PETRA.fullFrontier_Mask)
-			this.borderMap.map[j] &= ~PETRA.fullFrontier_Mask;	// reset the frontier
+		if (this.borderMap.map[j] & KIARA.fullFrontier_Mask)
+			this.borderMap.map[j] &= ~KIARA.fullFrontier_Mask;	// reset the frontier
 
 		if (this.territoryMap.getOwnerIndex(j) != PlayerID)
 		{
@@ -2273,12 +2273,12 @@ PETRA.HQ.prototype.updateTerritories = function(gameState)
 				let jz = iz + Math.round(insideSmall*a[1]);
 				if (jz < 0 || jz >= width)
 					continue;
-				if (this.borderMap.map[jx+width*jz] & PETRA.outside_Mask)
+				if (this.borderMap.map[jx+width*jz] & KIARA.outside_Mask)
 					continue;
 				let territoryOwner = this.territoryMap.getOwnerIndex(jx+width*jz);
 				if (territoryOwner != PlayerID && !(alliedVictory && gameState.isPlayerAlly(territoryOwner)))
 				{
-					this.borderMap.map[j] |= PETRA.narrowFrontier_Mask;
+					this.borderMap.map[j] |= KIARA.narrowFrontier_Mask;
 					break;
 				}
 				jx = ix + Math.round(insideLarge*a[0]);
@@ -2287,14 +2287,14 @@ PETRA.HQ.prototype.updateTerritories = function(gameState)
 				jz = iz + Math.round(insideLarge*a[1]);
 				if (jz < 0 || jz >= width)
 					continue;
-				if (this.borderMap.map[jx+width*jz] & PETRA.outside_Mask)
+				if (this.borderMap.map[jx+width*jz] & KIARA.outside_Mask)
 					continue;
 				territoryOwner = this.territoryMap.getOwnerIndex(jx+width*jz);
 				if (territoryOwner != PlayerID && !(alliedVictory && gameState.isPlayerAlly(territoryOwner)))
 					onFrontier = true;
 			}
-			if (onFrontier && !(this.borderMap.map[j] & PETRA.narrowFrontier_Mask))
-				this.borderMap.map[j] |= PETRA.largeFrontier_Mask;
+			if (onFrontier && !(this.borderMap.map[j] & KIARA.narrowFrontier_Mask))
+				this.borderMap.map[j] |= KIARA.largeFrontier_Mask;
 
 			// If this tile was not already accounted, add it.
 			if (this.basesMap.map[j] != 0)
@@ -2346,7 +2346,7 @@ PETRA.HQ.prototype.updateTerritories = function(gameState)
 };
 
 /** Reassign territories when a base is going to be deleted */
-PETRA.HQ.prototype.reassignTerritories = function(deletedBase)
+KIARA.HQ.prototype.reassignTerritories = function(deletedBase)
 {
 	let cellSize = this.territoryMap.cellSize;
 	let width = this.territoryMap.width;
@@ -2356,7 +2356,7 @@ PETRA.HQ.prototype.reassignTerritories = function(deletedBase)
 			continue;
 		if (this.territoryMap.getOwnerIndex(j) != PlayerID)
 		{
-			API3.warn("Petra reassignTerritories: should never happen");
+			API3.warn("Kiara reassignTerritories: should never happen");
 			this.basesMap.map[j] = 0;
 			continue;
 		}
@@ -2389,7 +2389,7 @@ PETRA.HQ.prototype.reassignTerritories = function(deletedBase)
 /**
  * returns the base corresponding to baseID
  */
-PETRA.HQ.prototype.getBaseByID = function(baseID)
+KIARA.HQ.prototype.getBaseByID = function(baseID)
 {
 	for (let base of this.baseManagers)
 		if (base.ID == baseID)
@@ -2403,21 +2403,21 @@ PETRA.HQ.prototype.getBaseByID = function(baseID)
  * ActiveBases includes only those with a built cc
  * PotentialBases includes also those with a cc in construction
  */
-PETRA.HQ.prototype.numActiveBases = function()
+KIARA.HQ.prototype.numActiveBases = function()
 {
 	if (!this.turnCache.base)
 		this.updateBaseCache();
 	return this.turnCache.base.active;
 };
 
-PETRA.HQ.prototype.numPotentialBases = function()
+KIARA.HQ.prototype.numPotentialBases = function()
 {
 	if (!this.turnCache.base)
 		this.updateBaseCache();
 	return this.turnCache.base.potential;
 };
 
-PETRA.HQ.prototype.updateBaseCache = function()
+KIARA.HQ.prototype.updateBaseCache = function()
 {
 	this.turnCache.base = { "active": 0, "potential": 0 };
 	for (let base of this.baseManagers)
@@ -2430,7 +2430,7 @@ PETRA.HQ.prototype.updateBaseCache = function()
 	}
 };
 
-PETRA.HQ.prototype.resetBaseCache = function()
+KIARA.HQ.prototype.resetBaseCache = function()
 {
 	this.turnCache.base = undefined;
 };
@@ -2439,7 +2439,7 @@ PETRA.HQ.prototype.resetBaseCache = function()
  * Count gatherers returning resources in the number of gatherers of resourceSupplies
  * to prevent the AI always reassigning idle workers to these resourceSupplies (specially in naval maps).
  */
-PETRA.HQ.prototype.assignGatherers = function()
+KIARA.HQ.prototype.assignGatherers = function()
 {
 	for (let base of this.baseManagers)
 	{
@@ -2455,13 +2455,13 @@ PETRA.HQ.prototype.assignGatherers = function()
 	}
 };
 
-PETRA.HQ.prototype.isDangerousLocation = function(gameState, pos, radius)
+KIARA.HQ.prototype.isDangerousLocation = function(gameState, pos, radius)
 {
 	return this.isNearInvadingArmy(pos) || this.isUnderEnemyFire(gameState, pos, radius);
 };
 
 /** Check that the chosen position is not too near from an invading army */
-PETRA.HQ.prototype.isNearInvadingArmy = function(pos)
+KIARA.HQ.prototype.isNearInvadingArmy = function(pos)
 {
 	for (let army of this.defenseManager.armies)
 		if (army.foePosition && API3.SquareVectorDistance(army.foePosition, pos) < 12000)
@@ -2469,7 +2469,7 @@ PETRA.HQ.prototype.isNearInvadingArmy = function(pos)
 	return false;
 };
 
-PETRA.HQ.prototype.isUnderEnemyFire = function(gameState, pos, radius = 0)
+KIARA.HQ.prototype.isUnderEnemyFire = function(gameState, pos, radius = 0)
 {
 	if (!this.turnCache.firingStructures)
 		this.turnCache.firingStructures = gameState.updatingCollection("diplo-FiringStructures", API3.Filters.hasDefensiveFire(), gameState.getEnemyStructures());
@@ -2483,7 +2483,7 @@ PETRA.HQ.prototype.isUnderEnemyFire = function(gameState, pos, radius = 0)
 };
 
 /** Compute the capture strength of all units attacking a capturable target */
-PETRA.HQ.prototype.updateCaptureStrength = function(gameState)
+KIARA.HQ.prototype.updateCaptureStrength = function(gameState)
 {
 	this.capturableTargets.clear();
 	for (let ent of gameState.getOwnUnits().values())
@@ -2502,13 +2502,13 @@ PETRA.HQ.prototype.updateCaptureStrength = function(gameState)
 			continue;
 		if (!this.capturableTargets.has(targetId))
 			this.capturableTargets.set(targetId, {
-				"strength": ent.captureStrength() * PETRA.getAttackBonus(ent, target, "Capture"),
+				"strength": ent.captureStrength() * KIARA.getAttackBonus(ent, target, "Capture"),
 				"ents": new Set([ent.id()])
 			});
 		else
 		{
 			let capturableTarget = this.capturableTargets.get(target.id());
-			capturableTarget.strength += ent.captureStrength() * PETRA.getAttackBonus(ent, target, "Capture");
+			capturableTarget.strength += ent.captureStrength() * KIARA.getAttackBonus(ent, target, "Capture");
 			capturableTarget.ents.add(ent.id());
 		}
 	}
@@ -2521,7 +2521,7 @@ PETRA.HQ.prototype.updateCaptureStrength = function(gameState)
 		{
 			let ent = gameState.getEntityById(entId);
 			if (allowCapture === undefined)
-				allowCapture = PETRA.allowCapture(gameState, ent, target);
+				allowCapture = KIARA.allowCapture(gameState, ent, target);
 			let orderData = ent.unitAIOrderData();
 			if (!orderData || !orderData.length || !orderData[0].attackType)
 				continue;
@@ -2536,7 +2536,7 @@ PETRA.HQ.prototype.updateCaptureStrength = function(gameState)
 /** Some functions that register that we assigned a gatherer to a resource this turn */
 
 /** add a gatherer to the turn cache for this supply. */
-PETRA.HQ.prototype.AddTCGatherer = function(supplyID)
+KIARA.HQ.prototype.AddTCGatherer = function(supplyID)
 {
 	if (this.turnCache.resourceGatherer && this.turnCache.resourceGatherer[supplyID] !== undefined)
 		++this.turnCache.resourceGatherer[supplyID];
@@ -2549,7 +2549,7 @@ PETRA.HQ.prototype.AddTCGatherer = function(supplyID)
 };
 
 /** remove a gatherer to the turn cache for this supply. */
-PETRA.HQ.prototype.RemoveTCGatherer = function(supplyID)
+KIARA.HQ.prototype.RemoveTCGatherer = function(supplyID)
 {
 	if (this.turnCache.resourceGatherer && this.turnCache.resourceGatherer[supplyID])
 		--this.turnCache.resourceGatherer[supplyID];
@@ -2561,7 +2561,7 @@ PETRA.HQ.prototype.RemoveTCGatherer = function(supplyID)
 	}
 };
 
-PETRA.HQ.prototype.GetTCGatherer = function(supplyID)
+KIARA.HQ.prototype.GetTCGatherer = function(supplyID)
 {
 	if (this.turnCache.resourceGatherer && this.turnCache.resourceGatherer[supplyID])
 		return this.turnCache.resourceGatherer[supplyID];
@@ -2570,7 +2570,7 @@ PETRA.HQ.prototype.GetTCGatherer = function(supplyID)
 };
 
 /** The next two are to register that we assigned a gatherer to a resource this turn. */
-PETRA.HQ.prototype.AddTCResGatherer = function(resource)
+KIARA.HQ.prototype.AddTCResGatherer = function(resource)
 {
 	if (this.turnCache["resourceGatherer-" + resource])
 		++this.turnCache["resourceGatherer-" + resource];
@@ -2581,7 +2581,7 @@ PETRA.HQ.prototype.AddTCResGatherer = function(resource)
 		this.turnCache.currentRates[resource] += 0.5;
 };
 
-PETRA.HQ.prototype.GetTCResGatherer = function(resource)
+KIARA.HQ.prototype.GetTCResGatherer = function(resource)
 {
 	if (this.turnCache["resourceGatherer-" + resource])
 		return this.turnCache["resourceGatherer-" + resource];
@@ -2592,7 +2592,7 @@ PETRA.HQ.prototype.GetTCResGatherer = function(resource)
 /**
  * flag a resource as exhausted
  */
-PETRA.HQ.prototype.isResourceExhausted = function(resource)
+KIARA.HQ.prototype.isResourceExhausted = function(resource)
 {
 	if (this.turnCache["exhausted-" + resource] == undefined)
 		this.turnCache["exhausted-" + resource] = this.baseManagers.every(base =>
@@ -2606,7 +2606,7 @@ PETRA.HQ.prototype.isResourceExhausted = function(resource)
 /**
  * Check if a structure in blinking territory should/can be defended (currently if it has some attacking armies around)
  */
-PETRA.HQ.prototype.isDefendable = function(ent)
+KIARA.HQ.prototype.isDefendable = function(ent)
 {
 	if (!this.turnCache.numAround)
 		this.turnCache.numAround = {};
@@ -2618,7 +2618,7 @@ PETRA.HQ.prototype.isDefendable = function(ent)
 /**
  * Get the number of population already accounted for
  */
-PETRA.HQ.prototype.getAccountedPopulation = function(gameState)
+KIARA.HQ.prototype.getAccountedPopulation = function(gameState)
 {
 	if (this.turnCache.accountedPopulation == undefined)
 	{
@@ -2642,7 +2642,7 @@ PETRA.HQ.prototype.getAccountedPopulation = function(gameState)
 /**
  * Get the number of workers already accounted for
  */
-PETRA.HQ.prototype.getAccountedWorkers = function(gameState)
+KIARA.HQ.prototype.getAccountedWorkers = function(gameState)
 {
 	if (this.turnCache.accountedWorkers == undefined)
 	{
@@ -2665,11 +2665,11 @@ PETRA.HQ.prototype.getAccountedWorkers = function(gameState)
  * Some functions are run every turn
  * Others once in a while
  */
-PETRA.HQ.prototype.update = function(gameState, queues, events)
+KIARA.HQ.prototype.update = function(gameState, queues, events)
 {
 	Engine.ProfileStart("Headquarters update");
 	this.turnCache = {};
-	this.territoryMap = PETRA.createTerritoryMap(gameState);
+	this.territoryMap = KIARA.createTerritoryMap(gameState);
 	this.canBarter = gameState.getOwnEntitiesByClass("Market", true).filter(API3.Filters.isBuilt()).hasEntities();
 	// TODO find a better way to update
 	if (this.currentPhase != gameState.currentPhase())
@@ -2692,7 +2692,7 @@ PETRA.HQ.prototype.update = function(gameState, queues, events)
 		gameState.getOwnUnits().forEach (function (ent) {
 			if (!ent.position())
 				return;
-			PETRA.dumpEntity(ent);
+			KIARA.dumpEntity(ent);
 		});
 	}
 	*/
@@ -2783,7 +2783,7 @@ PETRA.HQ.prototype.update = function(gameState, queues, events)
 	Engine.ProfileStop();
 };
 
-PETRA.HQ.prototype.Serialize = function()
+KIARA.HQ.prototype.Serialize = function()
 {
 	let properties = {
 		"phasing": this.phasing,
@@ -2848,7 +2848,7 @@ PETRA.HQ.prototype.Serialize = function()
 	};
 };
 
-PETRA.HQ.prototype.Deserialize = function(gameState, data)
+KIARA.HQ.prototype.Deserialize = function(gameState, data)
 {
 	for (let key in data.properties)
 		this[key] = data.properties[key];
@@ -2857,41 +2857,41 @@ PETRA.HQ.prototype.Deserialize = function(gameState, data)
 	for (let base of data.baseManagers)
 	{
 		// the first call to deserialize set the ID base needed by entitycollections
-		let newbase = new PETRA.BaseManager(gameState, this.Config);
+		let newbase = new KIARA.BaseManager(gameState, this.Config);
 		newbase.Deserialize(gameState, base);
 		newbase.init(gameState);
 		newbase.Deserialize(gameState, base);
 		this.baseManagers.push(newbase);
 	}
 
-	this.navalManager = new PETRA.NavalManager(this.Config);
+	this.navalManager = new KIARA.NavalManager(this.Config);
 	this.navalManager.init(gameState, true);
 	this.navalManager.Deserialize(gameState, data.navalManager);
 
-	this.attackManager = new PETRA.AttackManager(this.Config);
+	this.attackManager = new KIARA.AttackManager(this.Config);
 	this.attackManager.Deserialize(gameState, data.attackManager);
 	this.attackManager.init(gameState);
 	this.attackManager.Deserialize(gameState, data.attackManager);
 
-	this.buildManager = new PETRA.BuildManager();
+	this.buildManager = new KIARA.BuildManager();
 	this.buildManager.Deserialize(data.buildManager);
 
-	this.defenseManager = new PETRA.DefenseManager(this.Config);
+	this.defenseManager = new KIARA.DefenseManager(this.Config);
 	this.defenseManager.Deserialize(gameState, data.defenseManager);
 
-	this.tradeManager = new PETRA.TradeManager(this.Config);
+	this.tradeManager = new KIARA.TradeManager(this.Config);
 	this.tradeManager.init(gameState);
 	this.tradeManager.Deserialize(gameState, data.tradeManager);
 
-	this.researchManager = new PETRA.ResearchManager(this.Config);
+	this.researchManager = new KIARA.ResearchManager(this.Config);
 	this.researchManager.Deserialize(data.researchManager);
 
-	this.diplomacyManager = new PETRA.DiplomacyManager(this.Config);
+	this.diplomacyManager = new KIARA.DiplomacyManager(this.Config);
 	this.diplomacyManager.Deserialize(data.diplomacyManager);
 
-	this.garrisonManager = new PETRA.GarrisonManager(this.Config);
+	this.garrisonManager = new KIARA.GarrisonManager(this.Config);
 	this.garrisonManager.Deserialize(data.garrisonManager);
 
-	this.victoryManager = new PETRA.VictoryManager(this.Config);
+	this.victoryManager = new KIARA.VictoryManager(this.Config);
 	this.victoryManager.Deserialize(data.victoryManager);
 };

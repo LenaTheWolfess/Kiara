@@ -1,4 +1,4 @@
-PETRA.Config = function(difficulty, behavior)
+KIARA.Config = function(difficulty, behavior)
 {
 	// 0 is sandbox, 1 is very easy, 2 is easy, 3 is medium, 4 is hard and 5 is very hard.
 	this.difficulty = difficulty !== undefined ? difficulty : 3;
@@ -137,7 +137,7 @@ PETRA.Config = function(difficulty, behavior)
 		"defensive": 0.5
 	};
 
-	// See PETRA.QueueManager.prototype.wantedGatherRates()
+	// See KIARA.QueueManager.prototype.wantedGatherRates()
 	this.queues =
 	{
 		"firstTurn": {
@@ -161,7 +161,7 @@ PETRA.Config = function(difficulty, behavior)
 	this.garrisonHealthLevel = { "low": 0.4, "medium": 0.55, "high": 0.7 };
 };
 
-PETRA.Config.prototype.setConfig = function(gameState)
+KIARA.Config.prototype.setConfig = function(gameState)
 {
 	if (this.difficulty > 0)
 	{
@@ -188,7 +188,7 @@ PETRA.Config.prototype.setConfig = function(gameState)
 			"cooperative": randFloat(0, 1)
 		};
 	}
-	// Petra usually uses the continuous values of personality.aggressive and personality.defensive
+	// Kiara usually uses the continuous values of personality.aggressive and personality.defensive
 	// to define its behavior according to personality. But when discontinuous behavior is needed,
 	// it uses the following personalityCut which should be set such that:
 	// behavior="aggressive" => personality.aggressive > personalityCut.strong &&
@@ -272,10 +272,10 @@ PETRA.Config.prototype.setConfig = function(gameState)
 
 	if (this.debug < 2)
 		return;
-	API3.warn(" >>>  Petra bot: personality = " + uneval(this.personality));
+	API3.warn(" >>>  Kiara bot: personality = " + uneval(this.personality));
 };
 
-PETRA.Config.prototype.Serialize = function()
+KIARA.Config.prototype.Serialize = function()
 {
 	var data = {};
 	for (let key in this)
@@ -284,7 +284,7 @@ PETRA.Config.prototype.Serialize = function()
 	return data;
 };
 
-PETRA.Config.prototype.Deserialize = function(data)
+KIARA.Config.prototype.Deserialize = function(data)
 {
 	for (let key in data)
 		this[key] = data[key];
