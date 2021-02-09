@@ -1,26 +1,25 @@
-var KIARA = function(m)
-{
+/**
+ * This takes the input queues and picks which items to fund with resources until no more resources are left to distribute.
+ *
+ * Currently this manager keeps accounts for each queue, split between the 4 main resources
+ *
+ * Each time resources are available (ie not in any account), it is split between the different queues
+ * Mostly based on priority of the queue, and existing needs.
+ * Each turn, the queue Manager checks if a queue can afford its next item, then it does.
+ *
+ * A consequence of the system it's not really revertible. Once a queue has an account of 500 food, it'll keep it
+ * If for some reason the AI stops getting new food, and this queue lacks, say, wood, no other queues will
+ * be able to benefit form the 500 food (even if they only needed food).
+ * This is not to annoying as long as all goes well. If the AI loses many workers, it starts being problematic.
+ *
+ * It also has the effect of making the AI more or less always sit on a few hundreds resources since most queues
+ * get some part of the total, and if all queues have 70% of their needs, nothing gets done
+ * Particularly noticeable when phasing: the AI often overshoots by a good 200/300 resources before starting.
+ *
+ * This system should be improved. It's probably not flexible enough.
+ */
 
-// This takes the input queues and picks which items to fund with resources until no more resources are left to distribute.
-//
-// Currently this manager keeps accounts for each queue, split between the 4 main resources
-//
-// Each time resources are available (ie not in any account), it is split between the different queues
-// Mostly based on priority of the queue, and existing needs.
-// Each turn, the queue Manager checks if a queue can afford its next item, then it does.
-//
-// A consequence of the system it's not really revertible. Once a queue has an account of 500 food, it'll keep it
-// If for some reason the AI stops getting new food, and this queue lacks, say, wood, no other queues will
-// be able to benefit form the 500 food (even if they only needed food).
-// This is not to annoying as long as all goes well. If the AI loses many workers, it starts being problematic.
-//
-// It also has the effect of making the AI more or less always sit on a few hundreds resources since most queues
-// get some part of the total, and if all queues have 70% of their needs, nothing gets done
-// Particularly noticeable when phasing: the AI often overshoots by a good 200/300 resources before starting.
-//
-// This system should be improved. It's probably not flexible enough.
-
-m.QueueManager = function(Config, queues)
+PETRA.QueueManager = function(Config, queues)
 {
 	this.Config = Config;
 	this.queues = queues;
@@ -38,11 +37,9 @@ m.QueueManager = function(Config, queues)
 	}
 	let priorities = this.priorities;
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
-	
-	this.Lia = false;
 };
 
-m.QueueManager.prototype.getAvailableResources = function(gameState)
+PETRA.QueueManager.prototype.getAvailableResources = function(gameState)
 {
 	let resources = gameState.getResources();
 	for (let key in this.queues)
@@ -50,7 +47,7 @@ m.QueueManager.prototype.getAvailableResources = function(gameState)
 	return resources;
 };
 
-m.QueueManager.prototype.getTotalAccountedResources = function()
+PETRA.QueueManager.prototype.getTotalAccountedResources = function()
 {
 	let resources = new API3.Resources();
 	for (let key in this.queues)
@@ -58,7 +55,7 @@ m.QueueManager.prototype.getTotalAccountedResources = function()
 	return resources;
 };
 
-m.QueueManager.prototype.currentNeeds = function(gameState)
+PETRA.QueueManager.prototype.currentNeeds = function(gameState)
 {
 	let needed = new API3.Resources();
 	// queueArrays because it's faster.
@@ -80,7 +77,7 @@ m.QueueManager.prototype.currentNeeds = function(gameState)
 
 // calculate the gather rates we'd want to be able to start all elements in our queues
 // TODO: many things.
-m.QueueManager.prototype.wantedGatherRates = function(gameState)
+PETRA.QueueManager.prototype.wantedGatherRates = function(gameState)
 {
 	// default values for first turn when we have not yet set our queues.
 	if (gameState.ai.playedTurn === 0)
@@ -157,7 +154,7 @@ m.QueueManager.prototype.wantedGatherRates = function(gameState)
 	return rates;
 };
 
-m.QueueManager.prototype.printQueues = function(gameState)
+PETRA.QueueManager.prototype.printQueues = function(gameState)
 {
 	let numWorkers = 0;
 	gameState.getOwnUnits().forEach(ent => {
@@ -171,7 +168,7 @@ m.QueueManager.prototype.printQueues = function(gameState)
 		if (q.hasQueuedUnits())
 		{
 			API3.warn(i + ": ( with priority " + this.priorities[i] +" and accounts " + uneval(this.accounts[i]) +")");
-			API3.warn(" while maxAccountWanted(0.8) is " + uneval(q.maxAccountWanted(gameState, 0.8)));
+			API3.warn(" while maxAccountWanted(0.6) is " + uneval(q.maxAccountWanted(gameState, 0.6)));
 		}
 		for (let plan of q.plans)
 		{
@@ -193,7 +190,7 @@ m.QueueManager.prototype.printQueues = function(gameState)
 	API3.warn("------------------------------------");
 };
 
-m.QueueManager.prototype.clear = function()
+PETRA.QueueManager.prototype.clear = function()
 {
 	for (let i in this.queues)
 		this.queues[i].empty();
@@ -202,7 +199,7 @@ m.QueueManager.prototype.clear = function()
 /**
  * set accounts of queue i from the unaccounted resources
  */
-m.QueueManager.prototype.setAccounts = function(gameState, cost, i)
+PETRA.QueueManager.prototype.setAccounts = function(gameState, cost, i)
 {
 	let available = this.getAvailableResources(gameState);
 	for (let res of Resources.GetCodes())
@@ -216,7 +213,7 @@ m.QueueManager.prototype.setAccounts = function(gameState, cost, i)
 /**
  * transfer accounts from queue i to queue j
  */
-m.QueueManager.prototype.transferAccounts = function(cost, i, j)
+PETRA.QueueManager.prototype.transferAccounts = function(cost, i, j)
 {
 	for (let res of Resources.GetCodes())
 	{
@@ -231,57 +228,8 @@ m.QueueManager.prototype.transferAccounts = function(cost, i, j)
 /**
  * distribute the resources between the different queues according to their priorities
  */
-m.QueueManager.prototype.distributeResources = function(gameState)
+PETRA.QueueManager.prototype.distributeResources = function(gameState)
 {
-	// Use distribution defined for Lia
-	if (this.Lia) {
-		let availableRes = this.getAvailableResources(gameState);
-		for (let res of Resources.GetCodes())
-		{
-			if (availableRes[res] < 0)    // rescale the accounts if we've spent resources already accounted (e.g. by bartering)
-			{
-				let total = gameState.getResources()[res];
-				let scale = total / (total - availableRes[res]);
-				availableRes[res] = total;
-				for (let j in this.queues)
-				{
-					this.accounts[j][res] = Math.floor(scale * this.accounts[j][res]);
-					availableRes[res] -= this.accounts[j][res];
-				}
-			}
-
-			if (!availableRes[res])
-			{
-		//		this.switchResource(gameState, res);
-				continue;
-			}
-			let available = availableRes[res];
-			let maxNeed = {};
-			for (let j in this.queues)
-			{
-				// returns exactly the correct amount, ie 0 if we're not go.
-				let queueCost = this.queues[j].maxAccountWanted(gameState, 1.0);
-				if (this.queues[j].hasQueuedUnits() && this.accounts[j][res] < queueCost[res] && !this.queues[j].paused)
-				{
-					// adding us to the list of queues that need an update.
-					maxNeed[j] = queueCost[res] - this.accounts[j][res];
-					let toAdd = Math.min(maxNeed[j], available);
-					if (toAdd >= maxNeed[j])
-						toAdd = maxNeed[j];
-					this.accounts[j][res] += toAdd;
-					
-				}
-				else if (this.accounts[j][res] > queueCost[res])
-				{
-					availableRes[res] += this.accounts[j][res] - queueCost[res];
-					this.accounts[j][res] = queueCost[res];
-				}
-			}
-			if (available < 0)
-				API3.warn("Luna: problem with remaining " + res + " in queueManager " + available);
-		}
-		return;
-	}
 	let availableRes = this.getAvailableResources(gameState);
 	for (let res of Resources.GetCodes())
 	{
@@ -318,7 +266,7 @@ m.QueueManager.prototype.distributeResources = function(gameState)
 		for (let j in this.queues)
 		{
 			// returns exactly the correct amount, ie 0 if we're not go.
-			let queueCost = this.queues[j].maxAccountWanted(gameState, 0.8);
+			let queueCost = this.queues[j].maxAccountWanted(gameState, 0.6);
 			if (this.queues[j].hasQueuedUnits() && this.accounts[j][res] < queueCost[res] && !this.queues[j].paused)
 			{
 				// adding us to the list of queues that need an update.
@@ -365,12 +313,11 @@ m.QueueManager.prototype.distributeResources = function(gameState)
 			}
 		}
 		if (available < 0)
-			API3.warn("Kiara: problem with remaining " + res + " in queueManager " + available);
+			API3.warn("Petra: problem with remaining " + res + " in queueManager " + available);
 	}
-	
 };
 
-m.QueueManager.prototype.switchResource = function(gameState, res)
+PETRA.QueueManager.prototype.switchResource = function(gameState, res)
 {
 	// We have no available resources, see if we can't "compact" them in one queue.
 	// compare queues 2 by 2, and if one with a higher priority could be completed by our amount, give it.
@@ -407,51 +354,8 @@ m.QueueManager.prototype.switchResource = function(gameState, res)
 };
 
 // Start the next item in the queue if we can afford it.
-m.QueueManager.prototype.startNextItems = function(gameState)
+PETRA.QueueManager.prototype.startNextItems = function(gameState)
 {
-	if (this.Lia) {
-		for (let q of this.queueArrays)
-		{
-			let name = q[0];
-			let queue = q[1];
-			if (queue.hasQueuedUnits() && !queue.paused)
-			{
-				let i = 0;
-				let item = queue.getPlan(i);
-				// allways start at least one item from queue if has enough resources -> do not block it with first one
-				// actually limit to 3 to avoid stalling
-				while (queue.hasNext(i) && i < 3) {
-					item = queue.getPlan(i);
-					if (!item) {
-						break;
-					}
-					if (!item.allreadyStarted() && this.accounts[name].canAfford(item.getCost()) && item.canStart(gameState))
-					{
-						// canStart may update the cost because of the costMultiplier so we must check it again
-						if (this.accounts[name].canAfford(item.getCost()))
-						{
-							this.finishingTime = gameState.ai.elapsedTime;
-							this.accounts[name].subtract(item.getCost());
-							queue.startPlan(gameState, i);
-							// clean queue if first item have started
-							if (i == 0 && queue.getPlan(i).allreadyStarted()) {
-								queue.makeRoom(gameState);
-							}
-							queue.switched = 0;
-							break;
-						}
-					}
-					i++;
-				}
-			}
-			else if (!queue.hasQueuedUnits())
-			{
-				this.accounts[name].reset();
-				queue.switched = 0;
-			}
-		}
-		return;
-	}
 	for (let q of this.queueArrays)
 	{
 		let name = q[0];
@@ -479,7 +383,7 @@ m.QueueManager.prototype.startNextItems = function(gameState)
 	}
 };
 
-m.QueueManager.prototype.update = function(gameState)
+PETRA.QueueManager.prototype.update = function(gameState)
 {
 	Engine.ProfileStart("Queue Manager");
 
@@ -508,10 +412,10 @@ m.QueueManager.prototype.update = function(gameState)
 };
 
 // Recovery system: if short of workers after an attack, pause (and reset) some queues to favor worker training
-m.QueueManager.prototype.checkPausedQueues = function(gameState)
+PETRA.QueueManager.prototype.checkPausedQueues = function(gameState)
 {
 	let numWorkers = gameState.countOwnEntitiesAndQueuedWithRole("worker");
-	let workersMin = gameState.ai.HQ.strategy == "recover" ? 100 : 20;
+	let workersMin = Math.min(Math.max(12, 24 * this.Config.popScaling), this.Config.Economy.popPhase2);
 	for (let q in this.queues)
 	{
 		let toBePaused = false;
@@ -541,14 +445,11 @@ m.QueueManager.prototype.checkPausedQueues = function(gameState)
 			if (q == "ships" && gameState.ai.HQ.needFish &&
 				!gameState.ai.HQ.navalManager.ships.filter(API3.Filters.byClass("FishingBoat")).hasEntities())
 				toBePaused = false;
-			if (q.indexOf("ent_") != -1)
-				toBePaused = false;
 		}
 
 		let queue = this.queues[q];
 		if (!queue.paused && toBePaused)
 		{
-			API3.warn("pausing " + q);
 			queue.paused = true;
 			this.accounts[q].reset();
 		}
@@ -565,14 +466,14 @@ m.QueueManager.prototype.checkPausedQueues = function(gameState)
 	}
 };
 
-m.QueueManager.prototype.canAfford = function(queue, cost)
+PETRA.QueueManager.prototype.canAfford = function(queue, cost)
 {
 	if (!this.accounts[queue])
 		return false;
 	return this.accounts[queue].canAfford(cost);
 };
 
-m.QueueManager.prototype.pauseQueue = function(queue, scrapAccounts)
+PETRA.QueueManager.prototype.pauseQueue = function(queue, scrapAccounts)
 {
 	if (!this.queues[queue])
 		return;
@@ -581,13 +482,13 @@ m.QueueManager.prototype.pauseQueue = function(queue, scrapAccounts)
 		this.accounts[queue].reset();
 };
 
-m.QueueManager.prototype.unpauseQueue = function(queue)
+PETRA.QueueManager.prototype.unpauseQueue = function(queue)
 {
 	if (this.queues[queue])
 		this.queues[queue].paused = false;
 };
 
-m.QueueManager.prototype.pauseAll = function(scrapAccounts, but)
+PETRA.QueueManager.prototype.pauseAll = function(scrapAccounts, but)
 {
 	for (let q in this.queues)
 	{
@@ -599,7 +500,7 @@ m.QueueManager.prototype.pauseAll = function(scrapAccounts, but)
 	}
 };
 
-m.QueueManager.prototype.unpauseAll = function(but)
+PETRA.QueueManager.prototype.unpauseAll = function(but)
 {
 	for (let q in this.queues)
 		if (q != but)
@@ -607,12 +508,12 @@ m.QueueManager.prototype.unpauseAll = function(but)
 };
 
 
-m.QueueManager.prototype.addQueue = function(queueName, priority)
+PETRA.QueueManager.prototype.addQueue = function(queueName, priority)
 {
 	if (this.queues[queueName] !== undefined)
 		return;
 
-	this.queues[queueName] = new m.Queue();
+	this.queues[queueName] = new PETRA.Queue();
 	this.priorities[queueName] = priority;
 	this.accounts[queueName] = new API3.Resources();
 
@@ -623,7 +524,7 @@ m.QueueManager.prototype.addQueue = function(queueName, priority)
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
 };
 
-m.QueueManager.prototype.removeQueue = function(queueName)
+PETRA.QueueManager.prototype.removeQueue = function(queueName)
 {
 	if (this.queues[queueName] === undefined)
 		return;
@@ -639,12 +540,12 @@ m.QueueManager.prototype.removeQueue = function(queueName)
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
 };
 
-m.QueueManager.prototype.getPriority = function(queueName)
+PETRA.QueueManager.prototype.getPriority = function(queueName)
 {
 	return this.priorities[queueName];
 };
 
-m.QueueManager.prototype.changePriority = function(queueName, newPriority)
+PETRA.QueueManager.prototype.changePriority = function(queueName, newPriority)
 {
 	if (this.Config.debug > 1)
 		API3.warn(">>> Priority of queue " + queueName + " changed from " + this.priorities[queueName] + " to " + newPriority);
@@ -654,7 +555,7 @@ m.QueueManager.prototype.changePriority = function(queueName, newPriority)
 	this.queueArrays.sort((a, b) => priorities[b[0]] - priorities[a[0]]);
 };
 
-m.QueueManager.prototype.Serialize = function()
+PETRA.QueueManager.prototype.Serialize = function()
 {
 	let accounts = {};
 	let queues = {};
@@ -674,7 +575,7 @@ m.QueueManager.prototype.Serialize = function()
 	};
 };
 
-m.QueueManager.prototype.Deserialize = function(gameState, data)
+PETRA.QueueManager.prototype.Deserialize = function(gameState, data)
 {
 	this.priorities = data.priorities;
 	this.queues = {};
@@ -684,7 +585,7 @@ m.QueueManager.prototype.Deserialize = function(gameState, data)
 	this.queueArrays = [];
 	for (let q in data.queues)
 	{
-		this.queues[q] = new m.Queue();
+		this.queues[q] = new PETRA.Queue();
 		this.queues[q].Deserialize(gameState, data.queues[q]);
 		this.accounts[q] = new API3.Resources();
 		this.accounts[q].Deserialize(data.accounts[q]);
@@ -692,6 +593,3 @@ m.QueueManager.prototype.Deserialize = function(gameState, data)
 	}
 	this.queueArrays.sort((a, b) => data.priorities[b[0]] - data.priorities[a[0]]);
 };
-
-return m;
-}(KIARA);

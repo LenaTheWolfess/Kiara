@@ -9,14 +9,6 @@ m.warn = function(output)
 		warn("PlayerID " + PlayerID + " |   " + uneval(output));
 };
 
-m.error = function(output)
-{
-	if (typeof output === "string")
-		error("PlayerID " + PlayerID + " |   " + output);
-	else
-		error("PlayerID " + PlayerID + " |   " + uneval(output));
-}
-
 /**
  * Useful for simulating consecutive AI matches.
  */

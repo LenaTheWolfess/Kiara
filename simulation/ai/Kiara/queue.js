@@ -1,23 +1,19 @@
-var KIARA = function(m)
-{
-
 /**
  * Holds a list of wanted plans to train or construct
  */
-
-m.Queue = function()
+PETRA.Queue = function()
 {
 	this.plans = [];
 	this.paused = false;
 	this.switched = 0;
 };
 
-m.Queue.prototype.empty = function()
+PETRA.Queue.prototype.empty = function()
 {
 	this.plans = [];
 };
 
-m.Queue.prototype.addPlan = function(newPlan)
+PETRA.Queue.prototype.addPlan = function(newPlan)
 {
 	if (!newPlan)
 		return;
@@ -34,7 +30,7 @@ m.Queue.prototype.addPlan = function(newPlan)
 	this.plans.push(newPlan);
 };
 
-m.Queue.prototype.check= function(gameState)
+PETRA.Queue.prototype.check= function(gameState)
 {
 	while (this.plans.length > 0)
 	{
@@ -46,41 +42,14 @@ m.Queue.prototype.check= function(gameState)
 	}
 };
 
-m.Queue.prototype.makeRoom = function(gameState)
-{
-	while (this.plans.length > 0) {
-		if (!this.plans[0].allreadyStarted() && !this.plans[0].isInvalid(gameState))
-			return;
-		this.plans.shift();
-	}
-}
-
-m.Queue.prototype.getPlan = function(id)
-{
-	if (id < this.plans.length)
-		return this.plans[id];
-	return null;
-}
-
-m.Queue.prototype.hasNext = function(id)
-{
-	return id < this.plans.length;
-}
-
-m.Queue.prototype.startPlan = function(gameState, id)
-{
-	if (id < this.plans.length)
-		this.plans[id].start(gameState);
-}
-
-m.Queue.prototype.getNext = function()
+PETRA.Queue.prototype.getNext = function()
 {
 	if (this.plans.length > 0)
 		return this.plans[0];
 	return null;
 };
 
-m.Queue.prototype.startNext = function(gameState)
+PETRA.Queue.prototype.startNext = function(gameState)
 {
 	if (this.plans.length > 0)
 	{
@@ -94,18 +63,8 @@ m.Queue.prototype.startNext = function(gameState)
  * returns the maximal account we'll accept for this queue.
  * Currently all the cost of the first element and fraction of that of the second
  */
-m.Queue.prototype.maxAccountWanted = function(gameState, fraction)
+PETRA.Queue.prototype.maxAccountWanted = function(gameState, fraction)
 {
-	let Lia = true;
-	if (Lia) {
-		let cost = new API3.Resources();
-		for (let plan of this.plans) {
-			if (plan.isGo(gameState) && !plan.allreadyStarted()) {
-				cost.add(plan.getCost());
-			}
-		}
-		return cost;
-	}
 	let cost = new API3.Resources();
 	if (this.plans.length > 0 && this.plans[0].isGo(gameState))
 		cost.add(this.plans[0].getCost());
@@ -118,26 +77,25 @@ m.Queue.prototype.maxAccountWanted = function(gameState, fraction)
 	return cost;
 };
 
-m.Queue.prototype.queueCost = function()
+PETRA.Queue.prototype.queueCost = function()
 {
 	let cost = new API3.Resources();
 	for (let plan of this.plans)
-		if (!plan.allreadyStarted())
-			cost.add(plan.getCost());
+		cost.add(plan.getCost());
 	return cost;
 };
 
-m.Queue.prototype.length = function()
+PETRA.Queue.prototype.length = function()
 {
 	return this.plans.length;
 };
 
-m.Queue.prototype.hasQueuedUnits = function()
+PETRA.Queue.prototype.hasQueuedUnits = function()
 {
 	return this.plans.length > 0;
 };
 
-m.Queue.prototype.countQueuedUnits = function()
+PETRA.Queue.prototype.countQueuedUnits = function()
 {
 	let count = 0;
 	for (let plan of this.plans)
@@ -145,12 +103,12 @@ m.Queue.prototype.countQueuedUnits = function()
 	return count;
 };
 
-m.Queue.prototype.hasQueuedUnitsWithClass = function(classe)
+PETRA.Queue.prototype.hasQueuedUnitsWithClass = function(classe)
 {
 	return this.plans.some(plan => plan.template && plan.template.hasClass(classe));
 };
 
-m.Queue.prototype.countQueuedUnitsWithClass = function(classe)
+PETRA.Queue.prototype.countQueuedUnitsWithClass = function(classe)
 {
 	let count = 0;
 	for (let plan of this.plans)
@@ -159,7 +117,7 @@ m.Queue.prototype.countQueuedUnitsWithClass = function(classe)
 	return count;
 };
 
-m.Queue.prototype.countQueuedUnitsWithMetadata = function(data, value)
+PETRA.Queue.prototype.countQueuedUnitsWithMetadata = function(data, value)
 {
 	let count = 0;
 	for (let plan of this.plans)
@@ -168,7 +126,7 @@ m.Queue.prototype.countQueuedUnitsWithMetadata = function(data, value)
 	return count;
 };
 
-m.Queue.prototype.Serialize = function()
+PETRA.Queue.prototype.Serialize = function()
 {
 	let plans = [];
 	for (let plan of this.plans)
@@ -177,7 +135,7 @@ m.Queue.prototype.Serialize = function()
 	return { "plans": plans, "paused": this.paused, "switched": this.switched };
 };
 
-m.Queue.prototype.Deserialize = function(gameState, data)
+PETRA.Queue.prototype.Deserialize = function(gameState, data)
 {
 	this.paused = data.paused;
 	this.switched = data.switched;
@@ -186,20 +144,17 @@ m.Queue.prototype.Deserialize = function(gameState, data)
 	{
 		let plan;
 		if (dataPlan.category == "unit")
-			plan = new m.TrainingPlan(gameState, dataPlan.type);
+			plan = new PETRA.TrainingPlan(gameState, dataPlan.type);
 		else if (dataPlan.category == "building")
-			plan = new m.ConstructionPlan(gameState, dataPlan.type);
+			plan = new PETRA.ConstructionPlan(gameState, dataPlan.type);
 		else if (dataPlan.category == "technology")
-			plan = new m.ResearchPlan(gameState, dataPlan.type);
+			plan = new PETRA.ResearchPlan(gameState, dataPlan.type);
 		else
 		{
-			API3.warn("Kiara deserialization error: plan unknown " + uneval(dataPlan));
+			API3.warn("Petra deserialization error: plan unknown " + uneval(dataPlan));
 			continue;
 		}
 		plan.Deserialize(gameState, dataPlan);
 		this.plans.push(plan);
 	}
 };
-
-return m;
-}(KIARA);

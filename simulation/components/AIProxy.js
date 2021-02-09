@@ -81,22 +81,6 @@ AIProxy.prototype.NotifyChange = function()
 };
 
 // AI representation-updating event handlers:
-AIProxy.prototype.OnValueModification = function(msg)
-{
-	if (msg.component != "Attack")
-		return;
-	if (!this.NotifyChange())
-		return;
-	
-	if (
-		msg.valueNames.indexOf("Attack/Ranged/MaxRange") != -1 ||
-		msg.valueNames.indexOf("Attack/Ranged/MinRange") != -1
-	) {
-		let cmpAttack = Engine.QueryInterface(this.entity, IID_Attack);
-		if (cmpAttack) 
-			this.changes.fullAttackRange = cmpAttack.GetFullAttackRange();
-	}
-}
 
 AIProxy.prototype.OnPositionChanged = function(msg)
 {
@@ -105,7 +89,7 @@ AIProxy.prototype.OnPositionChanged = function(msg)
 
 	if (msg.inWorld)
 	{
-		this.changes.position = [msg.x, msg.z, msg.y];
+		this.changes.position = [msg.x, msg.z];
 		this.changes.angle = msg.a;
 	}
 	else
@@ -258,8 +242,8 @@ AIProxy.prototype.GetFullRepresentation = function()
 
 		if (cmpPosition.IsInWorld())
 		{
-			let pos = cmpPosition.GetPosition();
-			ret.position = [pos.x, pos.z, pos.y];
+			let pos = cmpPosition.GetPosition2D();
+			ret.position = [pos.x, pos.y];
 			ret.angle = cmpPosition.GetRotation().y;
 		}
 		else
@@ -276,9 +260,9 @@ AIProxy.prototype.GetFullRepresentation = function()
 		ret.hitpoints = cmpHealth.GetHitpoints();
 	}
 
-	let cmpDamageReceiver = Engine.QueryInterface(this.entity, IID_DamageReceiver);
-	if (cmpDamageReceiver)
-		ret.invulnerability = cmpDamageReceiver.IsInvulnerable();
+	let cmpResistance = Engine.QueryInterface(this.entity, IID_Resistance);
+	if (cmpResistance)
+		ret.invulnerability = cmpResistance.IsInvulnerable();
 
 	let cmpOwnership = Engine.QueryInterface(this.entity, IID_Ownership);
 	if (cmpOwnership)
@@ -404,11 +388,6 @@ AIProxy.prototype.OnTrainingFinished = function(msg)
 AIProxy.prototype.OnAIMetadata = function(msg)
 {
 	this.cmpAIInterface.PushEvent("AIMetadata", msg);
-};
-
-AIProxy.prototype.OnResearchFinished = function(msg)
-{
-	this.cmpAIInterface.PushEvent("ResearchFinished", msg);
 };
 
 Engine.RegisterComponentType(IID_AIProxy, "AIProxy", AIProxy);

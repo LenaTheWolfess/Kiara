@@ -1,14 +1,11 @@
-var KIARA = function(m)
-{
-
 /**
  * Defines a construction plan, ie a building.
  * We'll try to fing a good position if non has been provided
  */
 
-m.ConstructionPlan = function(gameState, type, metadata, position)
+PETRA.ConstructionPlan = function(gameState, type, metadata, position)
 {
-	if (!m.QueuePlan.call(this, gameState, type, metadata))
+	if (!PETRA.QueuePlan.call(this, gameState, type, metadata))
 		return false;
 
 	this.position = position ? position : 0;
@@ -18,13 +15,10 @@ m.ConstructionPlan = function(gameState, type, metadata, position)
 	return true;
 };
 
-m.ConstructionPlan.prototype = Object.create(m.QueuePlan.prototype);
+PETRA.ConstructionPlan.prototype = Object.create(PETRA.QueuePlan.prototype);
 
-m.ConstructionPlan.prototype.canStart = function(gameState)
+PETRA.ConstructionPlan.prototype.canStart = function(gameState)
 {
-	if (this.allreadyStarted())
-		return false;
-
 	if (gameState.ai.HQ.turnCache.buildingBuilt)   // do not start another building if already one this turn
 		return false;
 
@@ -37,7 +31,7 @@ m.ConstructionPlan.prototype.canStart = function(gameState)
 	return gameState.ai.HQ.buildManager.hasBuilder(this.type);
 };
 
-m.ConstructionPlan.prototype.start = function(gameState)
+PETRA.ConstructionPlan.prototype.start = function(gameState)
 {
 	Engine.ProfileStart("Building construction start");
 
@@ -47,9 +41,8 @@ m.ConstructionPlan.prototype.start = function(gameState)
 	let builder = gameState.findBuilder(this.type);
 	if (!builder)
 	{
-		API3.warn("kiara error: builder not found when starting construction.");
+		API3.warn("petra error: builder not found when starting construction.");
 		Engine.ProfileStop();
-		this.started = true;
 		return;
 	}
 
@@ -58,19 +51,17 @@ m.ConstructionPlan.prototype.start = function(gameState)
 	{
 		gameState.ai.HQ.buildManager.setUnbuildable(gameState, this.type, 90, "room");
 		Engine.ProfileStop();
-		this.started = true;
 		return;
 	}
 
-	if (this.metadata && this.metadata.expectedGain && (!this.template.hasClass("BarterMarket") ||
-	    gameState.getOwnEntitiesByClass("BarterMarket", true).hasEntities()))
+	if (this.metadata && this.metadata.expectedGain && (!this.template.hasClass("Market") ||
+	    gameState.getOwnEntitiesByClass("Market", true).hasEntities()))
 	{
-		// Check if this market is still worth building (others may have been built making it useless)
+		// Check if this Market is still worth building (others may have been built making it useless).
 		let tradeManager = gameState.ai.HQ.tradeManager;
 		tradeManager.checkRoutes(gameState);
 		if (!tradeManager.isNewMarketWorth(this.metadata.expectedGain))
 		{
-			this.started = true;
 			Engine.ProfileStop();
 			return;
 		}
@@ -115,7 +106,7 @@ m.ConstructionPlan.prototype.start = function(gameState)
 		gameState.ai.HQ.navalManager.createTransportIfNeeded(gameState, this.metadata.proximity, [pos.x, pos.z], this.metadata.access);
 };
 
-m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
+PETRA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 {
 	let template = this.template;
 
@@ -123,28 +114,24 @@ m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 		return this.findDockPosition(gameState);
 
 	let HQ = gameState.ai.HQ;
-	if ((template.hasClass("Storehouse") || template.hasClass("Farmstead") ) && this.metadata && this.metadata.base)
+	if (template.hasClass("Storehouse") && this.metadata && this.metadata.base)
 	{
 		// recompute the best dropsite location in case some conditions have changed
 		let base = HQ.getBaseByID(this.metadata.base);
 		let type = this.metadata.type ? this.metadata.type : "wood";
-		let newpos;
-		if (type === "food")
-			newpos = base.findBestFarmsteadLocation(gameState, type);
-		else
-			newpos = base.findBestDropsiteLocation(gameState, type);
+		let newpos = base.findBestDropsiteLocation(gameState, type);
 		if (newpos && newpos.quality > 0)
 		{
 			let pos = newpos.pos;
 			return { "x": pos[0], "z": pos[1], "angle": 3*Math.PI/4, "base": this.metadata.base };
 		}
 	}
-	
-	let pos;
+
 	if (!this.position)
 	{
 		if (template.hasClass("CivCentre"))
 		{
+			let pos;
 			if (this.metadata && this.metadata.resource)
 			{
 				let proximity = this.metadata.proximity ? this.metadata.proximity : undefined;
@@ -156,7 +143,7 @@ m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 			if (pos)
 				return { "x": pos[0], "z": pos[1], "angle": 3*Math.PI/4, "base": 0 };
 			// No possible location, try to build instead a dock in a not-enemy island
-			let templateName = gameState.applyCiv("structures/{civ}_dock");
+			let templateName = gameState.applyCiv("structures/{civ}/dock");
 			if (gameState.ai.HQ.canBuild(gameState, templateName) && !gameState.isTemplateDisabled(templateName))
 			{
 				template = gameState.getTemplate(templateName);
@@ -165,21 +152,18 @@ m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 			}
 			return false;
 		}
-		else if (template.hasClass("DefenseTower") || template.hasClass("Fortress") || template.hasClass("ArmyCamp"))
+		else if (template.hasClass("Tower") || template.hasClass("Fortress") || template.hasClass("ArmyCamp"))
 		{
-			pos = HQ.findDefensiveLocation(gameState, template);
-			
-			if (pos) {
-				if ( (template.hasClass("DefenseTower") && gameState.getOwnEntitiesByClass("DefenseTower", true).length < 3) ||
-					(template.hasClass("Fortress") && gameState.getOwnEntitiesByClass("Fortress", true).hasEntities())
-				)
-					return { "x": pos[0], "z": pos[1], "angle": 3*Math.PI/4, "base": pos[2] };
-			}
+			let pos = HQ.findDefensiveLocation(gameState, template);
+			if (pos)
+				return { "x": pos[0], "z": pos[1], "angle": 3*Math.PI/4, "base": pos[2] };
 			// if this fortress is our first one, just try the standard placement
+			if (!template.hasClass("Fortress") || gameState.getOwnEntitiesByClass("Fortress", true).hasEntities())
+				return false;
 		}
-		else if (template.hasClass("Market"))	// Docks (i.e. NavalMarket) are done before
+		else if (template.hasClass("Market")) // Docks are done before.
 		{
-			pos = HQ.findMarketLocation(gameState, template);
+			let pos = HQ.findMarketLocation(gameState, template);
 			if (pos && pos[2] > 0)
 			{
 				if (!this.metadata)
@@ -207,21 +191,11 @@ m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 	}
 	else	// No position was specified so try and find a sensible place to build
 	{
-		if (pos) {
-			placement.set(pos[3], 255);
-		}
 		// give a small > 0 level as the result of addInfluence is constrained to be > 0
 		// if we really need houses (i.e. Phasing without enough village building), do not apply these constraints
 		if (this.metadata && this.metadata.base !== undefined)
 		{
 			let base = this.metadata.base;
-			for (let j = 0; j < placement.map.length; ++j)
-				if (HQ.basesMap.map[j] == base)
-					placement.set(j, 45);
-		}
-		else if (pos !== undefined)
-		{
-			let base = pos[2];
 			for (let j = 0; j < placement.map.length; ++j)
 				if (HQ.basesMap.map[j] == base)
 					placement.set(j, 45);
@@ -240,37 +214,33 @@ m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				let x = Math.round(pos[0] / cellSize);
 				let z = Math.round(pos[1] / cellSize);
 
-				let struct = m.getBuiltEntity(gameState, ent);
+				let struct = PETRA.getBuiltEntity(gameState, ent);
 				if (struct.resourceDropsiteTypes() && struct.resourceDropsiteTypes().indexOf("food") != -1)
 				{
 					if (template.hasClass("Field") || template.hasClass("Corral"))
-						placement.addInfluence(x, z, 80/cellSize, 50);
+						placement.addInfluence(x, z, 80 / cellSize, 50);
 					else // If this is not a field add a negative influence because we want to leave this area for fields
-						placement.addInfluence(x, z, 60/cellSize, -20);
+						placement.addInfluence(x, z, 80 / cellSize, -20);
 				}
-				/**/
-				if (template.hasClass("House") && ent.hasClass("CivilCentre"))
-					placement.addInfluence(x, z, 40/cellSize, -10);    // we want to leave this for fields
-				if (template.hasClass("House") && ent.hasClass("Field"))
-					placement.addInfluence(x, z, 40/cellSize, 5);
-				if (template.hasClass("Farmstead") && (!ent.hasClass("Field") && !ent.hasClass("Corral") &&
-					(!ent.hasClass("StoneWall") || ent.hasClass("Gates"))))
-					placement.addInfluence(x, z, 100/cellSize, -25);       // move farmsteads away to make room (StoneWall test needed for iber)
-				if (template.hasClass("DefenseTower") && ent.hasClass("DefenseTower"))
-					placement.addInfluence(x, z, 60/cellSize, -20);
-				if (template.hasClass("DefenseTower") && (ent.hasClass("House") || ent.hasClass("Military") || ent.hasClass("Storehouse")))
-					placement.addInfluence(x, z, 40/cellSize, 20);
-
-				if (template.hasClass("Farmstead") && (!ent.hasClass("Field") && !ent.hasClass("Corral") &&
-					(!ent.hasClass("StoneWall") || ent.hasClass("Gates"))))
-					placement.addInfluence(x, z, 100/cellSize, -25);       // move farmsteads away to make room (StoneWall test needed for iber)
-
-				if (template.genericName() == "Rotary Mill" && ent.hasClass("Field"))
-					placement.addInfluence(x, z, 60/cellSize, 40);
-
-				placement.addInfluence(x, z, 20/cellSize, 20);
-				
-		/*	*/
+				else if (template.hasClass("House"))
+				{
+					if (ent.hasClass("House"))
+					{
+						placement.addInfluence(x, z, 60 / cellSize, 40);    // houses are close to other houses
+						alreadyHasHouses = true;
+					}
+					else if (!ent.hasClass("Wall") || ent.hasClass("Gate"))
+						placement.addInfluence(x, z, 60 / cellSize, -40);   // and further away from other stuffs
+				}
+				else if (template.hasClass("Farmstead") && (!ent.hasClass("Field") && !ent.hasClass("Corral") &&
+					(!ent.hasClass("Wall") || ent.hasClass("Gate"))))
+					placement.addInfluence(x, z, 100 / cellSize, -25);       // move farmsteads away to make room (Wall test needed for iber)
+				else if (template.hasClass("GarrisonFortress") && ent.hasClass("House"))
+					placement.addInfluence(x, z, 120 / cellSize, -50);
+				else if (template.hasClass("Military"))
+					placement.addInfluence(x, z, 40 / cellSize, -40);
+				else if (template.genericName() == "Rotary Mill" && ent.hasClass("Field"))
+					placement.addInfluence(x, z, 60 / cellSize, 40);
 			});
 		}
 		if (template.hasClass("Farmstead"))
@@ -278,36 +248,19 @@ m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 			for (let j = 0; j < placement.map.length; ++j)
 			{
 				let value = placement.map[j] - gameState.sharedScript.resourceMaps.wood.map[j]/3;
-				if (HQ.borderMap.map[j] & m.fullBorder_Mask)
+				if (HQ.borderMap.map[j] & PETRA.fullBorder_Mask)
 					value /= 2;	// we need space around farmstead, so disfavor map border
 				placement.set(j, value);
 			}
 		}
 	}
 
-	let radius = 0;
-	// Find the best non-obstructed:
-	// Find target building's approximate obstruction radius, and expand by a bit to make sure we're not too close,
-	// this allows room for units to walk between buildings.
-	// note: not for houses and dropsites who ought to be closer to either each other or a resource.
-	// also not for fields who can be stacked quite a bit
-
-	let obstructions = m.createObstructionMap(gameState, 0, template);
-	// obstructions.dumpIm(template.buildPlacementType() + "_obstructions.png");
-	if (template.hasClass("Fortress") || template.hasClass("Workshop") ||
-		this.type == gameState.applyCiv("structures/{civ}_elephant_stables"))
-		radius = Math.floor((template.obstructionRadius().max + 8) / obstructions.cellSize);
-	else if (template.resourceDropsiteTypes() === undefined && !template.hasClass("House") &&
-	         !template.hasClass("Field") && !template.hasClass("BarterMarket"))
-		radius = Math.ceil((template.obstructionRadius().max + 4) / obstructions.cellSize);
-	else
-		radius = Math.ceil(template.obstructionRadius().max / obstructions.cellSize);
-
 	// Requires to be inside our territory, and inside our base territory if required
-	// and if our first market, put it on border if possible to maximize distance with next market
-	let favorBorder = false;
-	let disfavorBorder = true;
-	let favoredBase = this.metadata && this.metadata.favoredBase;
+	// and if our first market, put it on border if possible to maximize distance with next Market.
+	let favorBorder = template.hasClass("Market");
+	let disfavorBorder = gameState.currentPhase() > 1 && !template.hasDefensiveFire();
+	let favoredBase = this.metadata && (this.metadata.favoredBase ||
+		         (this.metadata.militaryBase ? HQ.findBestBaseForMilitary(gameState) : undefined));
 	if (this.metadata && this.metadata.base !== undefined)
 	{
 		let base = this.metadata.base;
@@ -317,16 +270,14 @@ m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				placement.map[j] = 0;
 			else if (placement.map[j] > 0)
 			{
-				if (favorBorder && HQ.borderMap.map[j] & m.border_Mask)
+				if (favorBorder && HQ.borderMap.map[j] & PETRA.border_Mask)
 					placement.set(j, placement.map[j] + 50);
-				else if (disfavorBorder && !(HQ.borderMap.map[j] & m.fullBorder_Mask))
+				else if (disfavorBorder && !(HQ.borderMap.map[j] & PETRA.fullBorder_Mask))
 					placement.set(j, placement.map[j] + 10);
 
 				let x = (j % placement.width + 0.5) * cellSize;
 				let z = (Math.floor(j / placement.width) + 0.5) * cellSize;
 				if (HQ.isNearInvadingArmy([x, z]))
-					placement.map[j] = 0;
-				else if (HQ.isUnderEnemyFire(gameState, [x, z], radius/2))
 					placement.map[j] = 0;
 			}
 		}
@@ -339,16 +290,14 @@ m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				placement.map[j] = 0;
 			else if (placement.map[j] > 0)
 			{
-				if (favorBorder && HQ.borderMap.map[j] & m.border_Mask)
+				if (favorBorder && HQ.borderMap.map[j] & PETRA.border_Mask)
 					placement.set(j, placement.map[j] + 50);
-				else if (disfavorBorder && !(HQ.borderMap.map[j] & m.fullBorder_Mask))
+				else if (disfavorBorder && !(HQ.borderMap.map[j] & PETRA.fullBorder_Mask))
 					placement.set(j, placement.map[j] + 10);
 
 				let x = (j % placement.width + 0.5) * cellSize;
 				let z = (Math.floor(j / placement.width) + 0.5) * cellSize;
 				if (HQ.isNearInvadingArmy([x, z]))
-					placement.map[j] = 0;
-				else if (HQ.isUnderEnemyFire(gameState, [x, z], radius/2))
 					placement.map[j] = 0;
 				else if (favoredBase && HQ.basesMap.map[j] == favoredBase)
 					placement.set(j, placement.map[j] + 100);
@@ -356,7 +305,33 @@ m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 		}
 	}
 
+	// Find the best non-obstructed:
+	// Find target building's approximate obstruction radius, and expand by a bit to make sure we're not too close,
+	// this allows room for units to walk between buildings.
+	// note: not for houses and dropsites who ought to be closer to either each other or a resource.
+	// also not for fields who can be stacked quite a bit
+
+	let obstructions = PETRA.createObstructionMap(gameState, 0, template);
+	// obstructions.dumpIm(template.buildPlacementType() + "_obstructions.png");
+
+	let radius = 0;
+	if (template.hasClass("Fortress") || template.hasClass("Arsenal") ||
+		this.type == gameState.applyCiv("structures/{civ}/elephant_stables"))
+		radius = Math.floor((template.obstructionRadius().max + 8) / obstructions.cellSize);
+	else if (template.resourceDropsiteTypes() === undefined && !template.hasClass("House") &&
+		!template.hasClass("Field") && !template.hasClass("Market"))
+		radius = Math.ceil((template.obstructionRadius().max + 4) / obstructions.cellSize);
+	else
+		radius = Math.ceil(template.obstructionRadius().max / obstructions.cellSize);
+
 	let bestTile;
+	if (template.hasClass("House") && !alreadyHasHouses)
+	{
+		// try to get some space to place several houses first
+		bestTile = placement.findBestTile(3*radius, obstructions);
+		if (!bestTile.val)
+			bestTile = undefined;
+	}
 
 	if (!bestTile)
 		bestTile = placement.findBestTile(radius, obstructions);
@@ -385,12 +360,12 @@ m.ConstructionPlan.prototype.findGoodPosition = function(gameState)
  * => we try not to be too far from our territory
  * In all cases, we add a bonus for nearby resources, and when a large extend of water in front ot it.
  */
-m.ConstructionPlan.prototype.findDockPosition = function(gameState)
+PETRA.ConstructionPlan.prototype.findDockPosition = function(gameState)
 {
 	let template = this.template;
 	let territoryMap = gameState.ai.HQ.territoryMap;
 
-	let obstructions = m.createObstructionMap(gameState, 0, template);
+	let obstructions = PETRA.createObstructionMap(gameState, 0, template);
 	// obstructions.dumpIm(template.buildPlacementType() + "_obstructions.png");
 
 	let bestIdx;
@@ -493,7 +468,7 @@ m.ConstructionPlan.prototype.findDockPosition = function(gameState)
 			let dockDist = 0;
 			for (let dock of docks.values())
 			{
-				if (m.getSeaAccess(gameState, dock) != navalPassMap[i])
+				if (PETRA.getSeaAccess(gameState, dock) != navalPassMap[i])
 					continue;
 				let dist = API3.SquareVectorDistance(pos, dock.position());
 				if (dist > dockDist)
@@ -509,7 +484,7 @@ m.ConstructionPlan.prototype.findDockPosition = function(gameState)
 		}
 
 		// Add a penalty if on the map border as ship movement will be difficult
-		if (gameState.ai.HQ.borderMap.map[j] & m.fullBorder_Mask)
+		if (gameState.ai.HQ.borderMap.map[j] & PETRA.fullBorder_Mask)
 			score += 20;
 
 		// Do a pre-selection, supposing we will have the best possible water
@@ -560,7 +535,7 @@ m.ConstructionPlan.prototype.findDockPosition = function(gameState)
 /**
  * Find a good island to build a dock.
  */
-m.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template)
+PETRA.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template)
 {
 	let docks = gameState.getOwnStructures().filter(API3.Filters.byClass("Dock"));
 	if (!docks.hasEntities())
@@ -580,7 +555,7 @@ m.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template)
 		let keep = true;
 		for (let dock of docks.values())
 		{
-			if (m.getLandAccess(gameState, dock) != i)
+			if (PETRA.getLandAccess(gameState, dock) != i)
 				continue;
 			keep = false;
 			break;
@@ -590,7 +565,7 @@ m.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template)
 		let sea;
 		for (let cc of ccEnts.values())
 		{
-			let ccAccess = m.getLandAccess(gameState, cc);
+			let ccAccess = PETRA.getLandAccess(gameState, cc);
 			if (ccAccess != i)
 			{
 				if (cc.owner() == PlayerID && !sea)
@@ -612,7 +587,7 @@ m.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template)
 	if (!found)
 		return;
 	if (!gameState.ai.HQ.navalMap)
-		API3.warn("kiara.findOverseaLand on a non-naval map??? we should never go there ");
+		API3.warn("petra.findOverseaLand on a non-naval map??? we should never go there ");
 
 	let oldTemplate = this.template;
 	let oldMetadata = this.metadata;
@@ -641,7 +616,7 @@ m.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template)
 };
 
 /** Algorithm taken from the function GetDockAngle in simulation/helpers/Commands.js */
-m.ConstructionPlan.prototype.getDockAngle = function(gameState, x, z, size)
+PETRA.ConstructionPlan.prototype.getDockAngle = function(gameState, x, z, size)
 {
 	let pos = gameState.ai.accessibility.gamePosToMapPos([x, z]);
 	let k = pos[0] + pos[1]*gameState.ai.accessibility.width;
@@ -703,7 +678,7 @@ m.ConstructionPlan.prototype.getDockAngle = function(gameState, x, z, size)
  * to determine the special dock requirements
  * returns {"land": land index for this dock, "water": amount of water around this spot}
  */
-m.ConstructionPlan.prototype.checkDockPlacement = function(gameState, x, z, halfDepth, halfWidth, angle)
+PETRA.ConstructionPlan.prototype.checkDockPlacement = function(gameState, x, z, halfDepth, halfWidth, angle)
 {
 	let sz = halfDepth * Math.sin(angle);
 	let cz = halfDepth * Math.cos(angle);
@@ -766,9 +741,9 @@ m.ConstructionPlan.prototype.checkDockPlacement = function(gameState, x, z, half
  * if wantedSea is given, this tile should be inside this sea
  */
 const around = [[ 1.0, 0.0], [ 0.87, 0.50], [ 0.50, 0.87], [ 0.0, 1.0], [-0.50, 0.87], [-0.87, 0.50],
-	        [-1.0, 0.0], [-0.87,-0.50], [-0.50,-0.87], [ 0.0,-1.0], [ 0.50,-0.87], [ 0.87,-0.50]];
+	        [-1.0, 0.0], [-0.87, -0.50], [-0.50, -0.87], [ 0.0, -1.0], [ 0.50, -0.87], [ 0.87, -0.50]];
 
-m.ConstructionPlan.prototype.isDockLocation = function(gameState, j, dimension, wantedLand, wantedSea)
+PETRA.ConstructionPlan.prototype.isDockLocation = function(gameState, j, dimension, wantedLand, wantedSea)
 {
 	let width = gameState.ai.HQ.territoryMap.width;
 	let cellSize = gameState.ai.HQ.territoryMap.cellSize;
@@ -815,7 +790,7 @@ m.ConstructionPlan.prototype.isDockLocation = function(gameState, j, dimension, 
  * return a measure of the proximity to our frontier (including our allies)
  * 0=inside, 1=less than 24m, 2= less than 48m, 3= less than 72m, 4=less than 96m, 5=above 96m
  */
-m.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
+PETRA.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
 {
 	let alliedVictory = gameState.getAlliedVictory();
 	let territoryMap = gameState.ai.HQ.territoryMap;
@@ -839,7 +814,7 @@ m.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
 			let jz = iz + Math.round(i*step*a[1]);
 			if (jz < 0 || jz >= width)
 				continue;
-			if (borderMap.map[jx+width*jz] & m.outside_Mask)
+			if (borderMap.map[jx+width*jz] & PETRA.outside_Mask)
 				continue;
 			territoryOwner = territoryMap.getOwnerIndex(jx+width*jz);
 			if (alliedVictory && gameState.isPlayerAlly(territoryOwner) || territoryOwner == PlayerID)
@@ -859,7 +834,7 @@ m.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
  * get the sum of the resources (except food) around, inside a given radius
  * resources have a weight (1 if dist=0 and 0 if dist=size) doubled for wood
  */
-m.ConstructionPlan.prototype.getResourcesAround = function(gameState, types, i, radius)
+PETRA.ConstructionPlan.prototype.getResourcesAround = function(gameState, types, i, radius)
 {
 	let resourceMaps = gameState.sharedScript.resourceMaps;
 	let w = resourceMaps.wood.width;
@@ -912,13 +887,11 @@ m.ConstructionPlan.prototype.getResourcesAround = function(gameState, types, i, 
 	return nbcell ? total / nbcell : 0;
 };
 
-m.ConstructionPlan.prototype.isGo = function(gameState)
+PETRA.ConstructionPlan.prototype.isGo = function(gameState)
 {
-	if (this.allreadyStarted())
-		return false;
 	if (this.goRequirement && this.goRequirement == "houseNeeded")
 	{
-		if (!gameState.ai.HQ.canBuild(gameState, "structures/{civ}_house"))
+		if (!gameState.ai.HQ.canBuild(gameState, "structures/{civ}/house"))
 			return false;
 		if (gameState.getPopulationMax() <= gameState.getPopulationLimit())
 			return false;
@@ -941,14 +914,13 @@ m.ConstructionPlan.prototype.isGo = function(gameState)
 	return true;
 };
 
-m.ConstructionPlan.prototype.onStart = function(gameState)
+PETRA.ConstructionPlan.prototype.onStart = function(gameState)
 {
-	this.started = true;
 	if (this.queueToReset)
 		gameState.ai.queueManager.changePriority(this.queueToReset, gameState.ai.Config.priorities[this.queueToReset]);
 };
 
-m.ConstructionPlan.prototype.Serialize = function()
+PETRA.ConstructionPlan.prototype.Serialize = function()
 {
 	return {
 		"category": this.category,
@@ -963,7 +935,7 @@ m.ConstructionPlan.prototype.Serialize = function()
 	};
 };
 
-m.ConstructionPlan.prototype.Deserialize = function(gameState, data)
+PETRA.ConstructionPlan.prototype.Deserialize = function(gameState, data)
 {
 	for (let key in data)
 		this[key] = data[key];
@@ -971,6 +943,3 @@ m.ConstructionPlan.prototype.Deserialize = function(gameState, data)
 	this.cost = new API3.Resources();
 	this.cost.Deserialize(data.cost);
 };
-
-return m;
-}(KIARA);

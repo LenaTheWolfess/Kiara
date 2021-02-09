@@ -15,8 +15,7 @@ m.Template = m.Class({
 		this._tpCache = new Map();
 	},
 
-	// helper function to return a template value, optionally adjusting for tech.
-	// TODO: there's no support for "_string" values here.
+	// Helper function to return a template value, adjusting for tech.
 	"get": function(string)
 	{
 		let value = this._template;
@@ -34,7 +33,7 @@ m.Template = m.Class({
 			let args = string.split("/");
 			for (let arg of args)
 			{
-				if (value[arg])
+				if (value[arg] != undefined)
 					value = value[arg];
 				else
 				{
@@ -60,14 +59,6 @@ m.Template = m.Class({
 		return GetIdentityClasses(template);
 	},
 
-
-	"alertRaiser": function() {
-		let template = this.get("AlertRaiser");
-		if (!template)
-			return false;
-		return true;
-	},
-	
 	"hasClass": function(name) {
 		if (!this._classes)
 			this._classes = this.classes();
@@ -113,32 +104,20 @@ m.Template = m.Class({
 		return 0;
 	},
 
-	"batchSize": function(productionQueue) {
-		if (!this.get("Cost"))
-			return 0;
-		
-		if (!this.get("Cost/BatchSize"))
-			return 1;
-		
-		return this.get("Cost/BatchSize");
-	},
-	
 	"cost": function(productionQueue) {
 		if (!this.get("Cost"))
-			return undefined;
+			return {};
 
-		let size = this.batchSize(productionQueue);
-		size = 1;
 		let ret = {};
 		for (let type in this.get("Cost/Resources"))
-			ret[type] = +this.get("Cost/Resources/" + type)*size;
+			ret[type] = +this.get("Cost/Resources/" + type);
 		return ret;
 	},
 
 	"costSum": function(productionQueue) {
 		let cost = this.cost(productionQueue);
 		if (!cost)
-			return undefined;
+			return 0;
 		let ret = 0;
 		for (let type in cost)
 			ret += cost[type];
@@ -215,17 +194,32 @@ m.Template = m.Class({
 
 	"isRepairable": function() { return this.get("Repairable") !== undefined; },
 
-	"getPopulationBonus": function() { return +this.get("Cost/PopulationBonus"); },
+	"getPopulationBonus": function() {
+		if (!this.get("Population"))
+			return 0;
 
-	"armourStrengths": function() {
-		if (!this.get("Armour"))
+		return +this.get("Population/Bonus");
+	},
+
+	"resistanceStrengths": function() {
+		let resistanceTypes = this.get("Resistance");
+		if (!resistanceTypes || !resistanceTypes.Entity)
 			return undefined;
 
-		return {
-			"Hack": +this.get("Armour/Hack"),
-			"Pierce": +this.get("Armour/Pierce"),
-			"Crush": +this.get("Armour/Crush")
-		};
+		let resistance = {};
+		if (resistanceTypes.Entity.Capture)
+			resistance.Capture = +this.get("Resistance/Entity/Capture");
+
+		if (resistanceTypes.Entity.Damage)
+		{
+			resistance.Damage = {};
+			for (let damageType in resistanceTypes.Entity.Damage)
+				resistance.Damage[damageType] = +this.get("Resistance/Entity/Damage/" + damageType);
+		}
+
+		// ToDo: Resistance to StatusEffects.
+
+		return resistance;
 	},
 
 	"attackTypes": function() {
@@ -244,27 +238,27 @@ m.Template = m.Class({
 
 		return {
 			"max": +this.get("Attack/" + type +"/MaxRange"),
-			"min": +(this.get("Attack/" + type +"/MinRange") || 0),
-			"elevationBonus": +(this.get("Attack/" + type + "/ElevationBonus") || 0)
+			"min": +(this.get("Attack/" + type +"/MinRange") || 0)
 		};
 	},
 
 	"attackStrengths": function(type) {
-		if (!this.get("Attack/" + type +""))
+		let attackDamageTypes = this.get("Attack/" + type + "/Damage");
+		if (!attackDamageTypes)
 			return undefined;
 
-		return {
-			"Hack": +(this.get("Attack/" + type + "/Hack") || 0),
-			"Pierce": +(this.get("Attack/" + type + "/Pierce") || 0),
-			"Crush": +(this.get("Attack/" + type + "/Crush") || 0)
-		};
+		let damage = {};
+		for (let damageType in attackDamageTypes)
+			damage[damageType] = +attackDamageTypes[damageType];
+
+		return damage;
 	},
 
 	"captureStrength": function() {
 		if (!this.get("Attack/Capture"))
 			return undefined;
 
-		return +this.get("Attack/Capture/Value") || 0;
+		return +this.get("Attack/Capture/Capture") || 0;
 	},
 
 	"attackTimes": function(type) {
@@ -293,7 +287,7 @@ m.Template = m.Class({
 			{
 				let bonusClasses = this.get("Attack/" + type + "/Bonuses/" + b + "/Classes");
 				if (bonusClasses)
-					Classes.push([bonusClasses.split(" "), +this.get("Attack/" + type +"/Bonuses" + b +"/Multiplier")]);
+					Classes.push([bonusClasses.split(" "), +this.get("Attack/" + type +"/Bonuses/" + b +"/Multiplier")]);
 			}
 		}
 		return Classes;
@@ -617,9 +611,7 @@ m.Entity = m.Class({
 	"getStance": function() { return this._entity.stance !== undefined ? this._entity.stance : undefined; },
 	"unitAIState": function() { return this._entity.unitAIState !== undefined ? this._entity.unitAIState : undefined; },
 	"unitAIOrderData": function() { return this._entity.unitAIOrderData !== undefined ? this._entity.unitAIOrderData : undefined; },
-	"getFormationController": function() {return this._entity.formationController;},
-	
-	
+
 	"hitpoints": function() { return this._entity.hitpoints !== undefined ? this._entity.hitpoints : undefined; },
 	"isHurt": function() { return this.hitpoints() < this.maxHitpoints(); },
 	"healthLevel": function() { return this.hitpoints() / this.maxHitpoints(); },
@@ -764,6 +756,34 @@ m.Entity = m.Class({
 		return false;
 	},
 
+	/**
+	 * Derived from Attack.js' similary named function.
+	 * @return {boolean} - Whether an entity can attack a given target.
+	 */
+	"canAttackTarget": function(target, allowCapture)
+	{
+		let attackTypes = this.get("Attack");
+		if (!attackTypes)
+			return false;
+
+		let canCapture = allowCapture && this.canCapture(target);
+		let health = target.get("Health");
+		if (!health)
+			return canCapture;
+
+		for (let type in attackTypes)
+		{
+			if (type == "Capture" ? !canCapture : target.isInvulnerable())
+				continue;
+
+			let restrictedClasses = this.get("Attack/" + type + "/RestrictedClasses/_string");
+			if (!restrictedClasses || !MatchesClassList(target.classes(), restrictedClasses))
+				return true;
+		};
+
+		return false;
+	},
+
 	"move": function(x, z, queued = false) {
 		Engine.PostCommand(PlayerID, { "type": "walk", "entities": [this.id()], "x": x, "z": z, "queued": queued });
 		return this;
@@ -779,18 +799,6 @@ m.Entity = m.Class({
 		return this;
 	},
 
-	"raiseAlert": function() {
-		if (!this.alertRaiser())
-			return undefined;
-		Engine.PostCommand(PlayerID, {"type": "alert-raise", "entities": [this.id()]});
-		return this;
-	},
-	"endAlert": function() {
-		if (!this.alertRaiser())
-			return undefined;
-		Engine.PostCommand(PlayerID, {"type": "alert-end", "entities": [this.id()]});
-		return this;
-	},
 	// violent, aggressive, defensive, passive, standground
 	"setStance": function(stance, queued = false) {
 		if (this.getStance() === undefined)

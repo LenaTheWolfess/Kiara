@@ -16,6 +16,12 @@ function ProcessCommand(player, cmd)
 	if (cmd.entities)
 		data.entities = FilterEntityList(cmd.entities, player, data.controlAllUnits);
 
+	// TODO: queuing order and forcing formations doesn't really work.
+	// To play nice, we'll still no-formation queued order if units are in formation
+	// but the opposite perhaps ought to be implemented.
+	if (!cmd.queued || cmd.formation == NULL_FORMATION)
+		data.formation = cmd.formation || undefined;
+
 	// Allow focusing the camera on recent commands
 	let commandData = {
 		"type": "playercommand",
@@ -51,16 +57,6 @@ function ProcessCommand(player, cmd)
 }
 
 var g_Commands = {
-	"debug-print": function(player, cmd, data)
-	{
-		print(cmd.message);
-	},
-
-	"chat": function(player, cmd, data)
-	{
-		var cmpGuiInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
-		cmpGuiInterface.PushNotification({ "type": cmd.type, "players": [player], "message": cmd.message });
-	},
 
 	"aichat": function(player, cmd, data)
 	{
@@ -147,7 +143,7 @@ var g_Commands = {
 
 	"walk": function(player, cmd, data)
 	{
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.Walk(cmd.x, cmd.z, cmd.queued);
 		});
 	},
@@ -155,7 +151,7 @@ var g_Commands = {
 	"walk-custom": function(player, cmd, data)
 	{
 		for (let ent in data.entities)
-			GetFormationUnitAIs([data.entities[ent]], player).forEach(cmpUnitAI => {
+			GetFormationUnitAIs([data.entities[ent]], player, cmd, data.formation).forEach(cmpUnitAI => {
 				cmpUnitAI.Walk(cmd.targetPositions[ent].x, cmd.targetPositions[ent].y, cmd.queued);
 			});
 	},
@@ -163,16 +159,19 @@ var g_Commands = {
 	"walk-to-range": function(player, cmd, data)
 	{
 		// Only used by the AI
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		for (let ent of data.entities)
+		{
+			var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
+			if (cmpUnitAI)
 				cmpUnitAI.WalkToPointRange(cmd.x, cmd.z, cmd.min, cmd.max, cmd.queued);
-		});
+		}
 	},
 
 	"attack-walk": function(player, cmd, data)
 	{
 		let allowCapture = cmd.allowCapture || cmd.allowCapture == null;
 
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.WalkAndFight(cmd.x, cmd.z, cmd.targetClasses, allowCapture, cmd.queued);
 		});
 	},
@@ -181,7 +180,7 @@ var g_Commands = {
 	{
 		let allowCapture = cmd.allowCapture || cmd.allowCapture == null;
 		for (let ent in data.entities)
-			GetFormationUnitAIs([data.entities[ent]], player).forEach(cmpUnitAI => {
+			GetFormationUnitAIs([data.entities[ent]], player, cmd, data.formation).forEach(cmpUnitAI => {
 				cmpUnitAI.WalkAndFight(cmd.targetPositions[ent].x, cmd.targetPositions[ent].y, cmd.targetClasses, allowCapture, cmd.queued);
 			});
 	},
@@ -189,12 +188,12 @@ var g_Commands = {
 	"attack": function(player, cmd, data)
 	{
 		let allowCapture = cmd.allowCapture || cmd.allowCapture == null;
-		
+
 		if (g_DebugCommands && !allowCapture &&
 		   !(IsOwnedByEnemyOfPlayer(player, cmd.target) || IsOwnedByNeutralOfPlayer(player, cmd.target)))
 			warn("Invalid command: attack target is not owned by enemy of player "+player+": "+uneval(cmd));
 
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.Attack(cmd.target, allowCapture, cmd.queued);
 		});
 	},
@@ -203,7 +202,7 @@ var g_Commands = {
 	{
 		let allowCapture = cmd.allowCapture || cmd.allowCapture == null;
 
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI =>
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI =>
 			cmpUnitAI.Patrol(cmd.x, cmd.z, cmd.targetClasses, allowCapture, cmd.queued)
 		);
 	},
@@ -213,7 +212,7 @@ var g_Commands = {
 		if (g_DebugCommands && !(IsOwnedByPlayer(player, cmd.target) || IsOwnedByAllyOfPlayer(player, cmd.target)))
 			warn("Invalid command: heal target is not owned by player "+player+" or their ally: "+uneval(cmd));
 
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.Heal(cmd.target, cmd.queued);
 		});
 	},
@@ -224,7 +223,7 @@ var g_Commands = {
 		if (g_DebugCommands && !IsOwnedByAllyOfPlayer(player, cmd.target))
 			warn("Invalid command: repair target is not owned by ally of player "+player+": "+uneval(cmd));
 
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.Repair(cmd.target, cmd.autocontinue, cmd.queued);
 		});
 	},
@@ -234,14 +233,14 @@ var g_Commands = {
 		if (g_DebugCommands && !(IsOwnedByPlayer(player, cmd.target) || IsOwnedByGaia(cmd.target)))
 			warn("Invalid command: resource is not owned by gaia or player "+player+": "+uneval(cmd));
 
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.Gather(cmd.target, cmd.queued);
 		});
 	},
 
 	"gather-near-position": function(player, cmd, data)
 	{
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.GatherNearPosition(cmd.x, cmd.z, cmd.resourceType, cmd.resourceTemplate, cmd.queued);
 		});
 	},
@@ -251,7 +250,7 @@ var g_Commands = {
 		if (g_DebugCommands && !IsOwnedByPlayer(player, cmd.target))
 			warn("Invalid command: dropsite is not owned by player "+player+": "+uneval(cmd));
 
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.ReturnResource(cmd.target, cmd.queued);
 		});
 	},
@@ -303,7 +302,7 @@ var g_Commands = {
 			if (unitCategory)
 			{
 				var cmpPlayerEntityLimits = QueryOwnerInterface(ent, IID_EntityLimits);
-				if (!cmpPlayerEntityLimits.AllowedToTrain(unitCategory, cmd.count))
+				if (cmpPlayerEntityLimits && !cmpPlayerEntityLimits.AllowedToTrain(unitCategory, cmd.count, cmd.template, template.TrainingRestrictions.MatchLimit))
 				{
 					if (g_DebugCommands)
 						warn(unitCategory + " train limit is reached: " + uneval(cmd));
@@ -312,7 +311,7 @@ var g_Commands = {
 			}
 
 			var cmpTechnologyManager = QueryOwnerInterface(ent, IID_TechnologyManager);
-			if (!cmpTechnologyManager.CanProduce(cmd.template))
+			if (cmpTechnologyManager && !cmpTechnologyManager.CanProduce(cmd.template))
 			{
 				if (g_DebugCommands)
 					warn("Invalid command: training requires unresearched technology: " + uneval(cmd));
@@ -347,15 +346,8 @@ var g_Commands = {
 
 	"research": function(player, cmd, data)
 	{
-		if (!CanControlUnit(cmd.entity, player, data.controlAllUnits))
-		{
-			if (g_DebugCommands)
-				warn("Invalid command: research building cannot be controlled by player "+player+": "+uneval(cmd));
-			return;
-		}
-
 		var cmpTechnologyManager = QueryOwnerInterface(cmd.entity, IID_TechnologyManager);
-		if (!cmpTechnologyManager.CanResearch(cmd.template))
+		if (cmpTechnologyManager && !cmpTechnologyManager.CanResearch(cmd.template))
 		{
 			if (g_DebugCommands)
 				warn("Invalid command: Requirements to research technology are not met: " + uneval(cmd));
@@ -369,13 +361,6 @@ var g_Commands = {
 
 	"stop-production": function(player, cmd, data)
 	{
-		if (!CanControlUnit(cmd.entity, player, data.controlAllUnits))
-		{
-			if (g_DebugCommands)
-				warn("Invalid command: production building cannot be controlled by player "+player+": "+uneval(cmd));
-			return;
-		}
-
 		var queue = Engine.QueryInterface(cmd.entity, IID_ProductionQueue);
 		if (queue)
 			queue.RemoveBatch(cmd.id);
@@ -465,45 +450,42 @@ var g_Commands = {
 
 	"garrison": function(player, cmd, data)
 	{
-		// Verify that the building can be controlled by the player or is mutualAlly
-		if (!CanControlUnitOrIsAlly(cmd.target, player, data.controlAllUnits))
+		if (!CanPlayerOrAllyControlUnit(cmd.target, player, data.controlAllUnits))
 		{
 			if (g_DebugCommands)
 				warn("Invalid command: garrison target cannot be controlled by player "+player+" (or ally): "+uneval(cmd));
 			return;
 		}
 
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.Garrison(cmd.target, cmd.queued);
 		});
 	},
 
 	"guard": function(player, cmd, data)
 	{
-		// Verify that the target can be controlled by the player or is mutualAlly
-		if (!CanControlUnitOrIsAlly(cmd.target, player, data.controlAllUnits))
+		if (!IsOwnedByPlayerOrMutualAlly(cmd.target, player, data.controlAllUnits))
 		{
 			if (g_DebugCommands)
-				warn("Invalid command: guard/escort target cannot be controlled by player "+player+": "+uneval(cmd));
+				warn("Invalid command: Guard/escort target is not owned by player " + player + " or ally thereof: " + uneval(cmd));
 			return;
 		}
 
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.Guard(cmd.target, cmd.queued);
 		});
 	},
 
 	"stop": function(player, cmd, data)
 	{
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.Stop(cmd.queued);
 		});
 	},
 
 	"unload": function(player, cmd, data)
 	{
-		// Verify that the building can be controlled by the player or is mutualAlly
-		if (!CanControlUnitOrIsAlly(cmd.garrisonHolder, player, data.controlAllUnits))
+		if (!CanPlayerOrAllyControlUnit(cmd.garrisonHolder, player, data.controlAllUnits))
 		{
 			if (g_DebugCommands)
 				warn("Invalid command: unload target cannot be controlled by player "+player+" (or ally): "+uneval(cmd));
@@ -586,16 +568,9 @@ var g_Commands = {
 		}
 	},
 
-	"regroup": function(player, cmd, data)
-	{
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
-			cmpUnitAI.MoveIntoFormation(cmd);
-		});
-	},
-
 	"formation": function(player, cmd, data)
 	{
-		GetFormationUnitAIs(data.entities, player, cmd.name).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation, true).forEach(cmpUnitAI => {
 			cmpUnitAI.MoveIntoFormation(cmd);
 		});
 	},
@@ -648,8 +623,15 @@ var g_Commands = {
 
 	"setup-trade-route": function(player, cmd, data)
 	{
-		GetFormationUnitAIs(data.entities, player).forEach(cmpUnitAI => {
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
 			cmpUnitAI.SetupTradeRoute(cmd.target, cmd.source, cmd.route, cmd.queued);
+		});
+	},
+
+	"cancel-setup-trade-route": function(player, cmd, data)
+	{
+		GetFormationUnitAIs(data.entities, player, cmd, data.formation).forEach(cmpUnitAI => {
+			cmpUnitAI.CancelSetupTradeRoute(cmd.target);
 		});
 	},
 
@@ -747,11 +729,13 @@ var g_Commands = {
 				continue;
 			}
 
-			var cmpTechnologyManager = QueryOwnerInterface(ent, IID_TechnologyManager);
-			if (cmpUpgrade.GetRequiredTechnology(cmd.template) && !cmpTechnologyManager.IsTechnologyResearched(cmpUpgrade.GetRequiredTechnology(cmd.template)))
+			let cmpTechnologyManager = QueryOwnerInterface(ent, IID_TechnologyManager);
+			let requiredTechnology = cmpUpgrade.GetRequiredTechnology(cmd.template);
+
+			if (requiredTechnology && (!cmpTechnologyManager || !cmpTechnologyManager.IsTechnologyResearched(requiredTechnology)))
 			{
 				if (g_DebugCommands)
-					warn("Invalid command: upgrading requires unresearched technology: " + uneval(cmd));
+					warn("Invalid command: upgrading is not possible for this player or requires unresearched technology: " + uneval(cmd));
 				continue;
 			}
 
@@ -881,27 +865,59 @@ function notifyBackToWorkFailure(player)
 }
 
 /**
+ * Sends a GUI notification about entities that can't be controlled.
+ * @param {number} player - The player-ID of the player that needs to receive this message.
+ */
+function notifyOrderFailure(entity, player)
+{
+	let cmpIdentity = Engine.QueryInterface(entity, IID_Identity);
+	if (!cmpIdentity)
+		return;
+
+	let cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
+	cmpGUIInterface.PushNotification({
+		"type": "text",
+		"players": [player],
+		"message": sprintf(markForTranslation("%(unit)s can't be controlled."), {
+			"unit": cmpIdentity.GetGenericName()
+		}),
+		"translateMessage": true
+	});
+}
+
+/**
  * Get some information about the formations used by entities.
- * The entities must have a UnitAI component.
  */
 function ExtractFormations(ents)
 {
-	var entities = []; // subset of ents that have UnitAI
-	var members = {}; // { formationentity: [ent, ent, ...], ... }
+	let entities = []; // Entities with UnitAI.
+	let members = {}; // { formationentity: [ent, ent, ...], ... }
+	let templates = {};  // { formationentity: template }
 	for (let ent of ents)
 	{
-		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
-		var fid = cmpUnitAI.GetFormationController();
-		if (fid != INVALID_ENTITY)
-		{
-			if (!members[fid])
-				members[fid] = [];
-			members[fid].push(ent);
-		}
+		let cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
+		if (!cmpUnitAI)
+			continue;
+
 		entities.push(ent);
+
+		let fid = cmpUnitAI.GetFormationController();
+		if (fid == INVALID_ENTITY)
+			continue;
+
+		if (!members[fid])
+		{
+			members[fid] = [];
+			templates[fid] = cmpUnitAI.GetFormationTemplate();
+		}
+		members[fid].push(ent);
 	}
 
-	return { "entities": entities, "members": members };
+	return {
+		"entities": entities,
+		"members": members,
+		"templates": templates
+	};
 }
 
 /**
@@ -1157,7 +1173,8 @@ function TryConstructBuilding(player, cmpPlayer, controlAllUnits, cmd)
 			"entities": entities,
 			"target": ent,
 			"autocontinue": cmd.autocontinue,
-			"queued": cmd.queued
+			"queued": cmd.queued,
+			"formation": cmd.formation || undefined
 		});
 	}
 
@@ -1293,9 +1310,8 @@ function TryConstructWall(player, cmpPlayer, controlAllUnits, cmd)
 			// Regardless of whether we're building a tower or an intermediate wall piece, it is always (first) constructed
 			// using the control group of the last tower (see comments above).
 			"obstructionControlGroup": lastTowerControlGroup,
-			"metadata": cmd.metadata
 		};
-		
+
 		// If we're building the last piece and we're attaching to a snapped entity, we need to add in the snapped entity's
 		// control group directly at construction time (instead of setting it in the second pass) to allow it to be built
 		// while overlapping the snapped entity.
@@ -1410,10 +1426,10 @@ function TryConstructWall(player, cmpPlayer, controlAllUnits, cmd)
  */
 function RemoveFromFormation(ents)
 {
-	var formation = ExtractFormations(ents);
-	for (var fid in formation.members)
+	let formation = ExtractFormations(ents);
+	for (let fid in formation.members)
 	{
-		var cmpFormation = Engine.QueryInterface(+fid, IID_Formation);
+		let cmpFormation = Engine.QueryInterface(+fid, IID_Formation);
 		if (cmpFormation)
 			cmpFormation.RemoveMembers(formation.members[fid]);
 	}
@@ -1423,14 +1439,13 @@ function RemoveFromFormation(ents)
  * Returns a list of UnitAI components, each belonging either to a
  * selected unit or to a formation entity for groups of the selected units.
  */
-function GetFormationUnitAIs(ents, player, formationTemplate)
+function GetFormationUnitAIs(ents, player, cmd, formationTemplate, forceTemplate)
 {
 	// If an individual was selected, remove it from any formation
-	// and command it individually
+	// and command it individually.
 	if (ents.length == 1)
 	{
-		// Skip unit if it has no UnitAI
-		var cmpUnitAI = Engine.QueryInterface(ents[0], IID_UnitAI);
+		let cmpUnitAI = Engine.QueryInterface(ents[0], IID_UnitAI);
 		if (!cmpUnitAI)
 			return [];
 
@@ -1439,101 +1454,97 @@ function GetFormationUnitAIs(ents, player, formationTemplate)
 		return [ cmpUnitAI ];
 	}
 
-	// Separate out the units that don't support the chosen formation
-	var formedEnts = [];
-	var nonformedUnitAIs = [];
+	let formationUnitAIs = [];
+	// Find what formations the selected entities are currently in,
+	// and default to that unless the formation is forced or it's the null formation
+	// (we want that to reset whatever formations units are in).
+	if (formationTemplate != NULL_FORMATION)
+	{
+		let formation = ExtractFormations(ents);
+		let formationIds = Object.keys(formation.members);
+		if (formationIds.length == 1)
+		{
+			// Selected units either belong to this formation or have no formation.
+			let fid = formationIds[0];
+			let cmpFormation = Engine.QueryInterface(+fid, IID_Formation);
+			if (cmpFormation && cmpFormation.GetMemberCount() == formation.members[fid].length &&
+			    cmpFormation.GetMemberCount() == formation.entities.length)
+			{
+				cmpFormation.DeleteTwinFormations();
+
+				// The whole formation was selected, so reuse its controller for this command.
+				if (!forceTemplate || formationTemplate == formation.templates[fid])
+				{
+					formationTemplate = formation.templates[fid];
+					formationUnitAIs = [Engine.QueryInterface(+fid, IID_UnitAI)];
+				}
+				else if (formationTemplate && CanMoveEntsIntoFormation(formation.entities, formationTemplate))
+					formationUnitAIs = [cmpFormation.LoadFormation(formationTemplate)];
+			}
+			else if (cmpFormation && !forceTemplate)
+			{
+				// Just reuse the template.
+				formationTemplate = formation.templates[fid];
+			}
+		}
+		else if (formationIds.length)
+		{
+			// Check if all entities share a common formation, if so reuse this template.
+			let template = formation.templates[formationIds[0]];
+			for (let i = 1; i < formationIds.length; ++i)
+				if (formation.templates[formationIds[i]] != template)
+				{
+					template = null;
+					break;
+				}
+			if (template && !forceTemplate)
+				formationTemplate = template;
+		}
+	}
+
+	// Separate out the units that don't support the chosen formation.
+	let formedUnits = [];
+	let nonformedUnitAIs = [];
 	for (let ent of ents)
 	{
-		// Skip units with no UnitAI or no position
-		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
-		var cmpPosition = Engine.QueryInterface(ent, IID_Position);
+		let cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
+		let cmpPosition = Engine.QueryInterface(ent, IID_Position);
 		if (!cmpUnitAI || !cmpPosition || !cmpPosition.IsInWorld())
 			continue;
 
-		var cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
+		let cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
 		// TODO: We only check if the formation is usable by some units
 		// if we move them to it. We should check if we can use formations
 		// for the other cases.
-		var nullFormation = (formationTemplate || cmpUnitAI.GetFormationTemplate()) == "special/formations/null";
-		if (!nullFormation && cmpIdentity && cmpIdentity.CanUseFormation(formationTemplate || "special/formations/null"))
-			formedEnts.push(ent);
-		else
+		let nullFormation = (formationTemplate || cmpUnitAI.GetFormationTemplate()) == NULL_FORMATION;
+		if (nullFormation || !cmpIdentity || !cmpIdentity.CanUseFormation(formationTemplate || NULL_FORMATION))
 		{
-			if (nullFormation)
-				RemoveFromFormation([ent]);
-
+			if (nullFormation && cmpUnitAI.GetFormationController())
+				cmpUnitAI.LeaveFormation(cmd.queued || false);
 			nonformedUnitAIs.push(cmpUnitAI);
 		}
+		else
+			formedUnits.push(ent);
 	}
-
-	if (formedEnts.length == 0)
+	if (nonformedUnitAIs.length == ents.length)
 	{
-		// No units support the formation - return all the others
+		// No units support the formation.
 		return nonformedUnitAIs;
-	}
-
-	// Find what formations the formationable selected entities are currently in
-	var formation = ExtractFormations(formedEnts);
-
-	var formationUnitAIs = [];
-	let formationIds = Object.keys(formation.members);
-	if (formationIds.length == 1)
-	{
-		// Selected units either belong to this formation or have no formation
-		// Check that all its members are selected
-		var fid = formationIds[0];
-		var cmpFormation = Engine.QueryInterface(+fid, IID_Formation);
-		if (cmpFormation && cmpFormation.GetMemberCount() == formation.members[fid].length
-			&& cmpFormation.GetMemberCount() == formation.entities.length)
-		{
-			cmpFormation.DeleteTwinFormations();
-			// The whole formation was selected, so reuse its controller for this command
-			formationUnitAIs = [Engine.QueryInterface(+fid, IID_UnitAI)];
-			if (formationTemplate && CanMoveEntsIntoFormation(formation.entities, formationTemplate))
-				cmpFormation.LoadFormation(formationTemplate);
-		}
 	}
 
 	if (!formationUnitAIs.length)
 	{
-		// We need to give the selected units a new formation controller
+		// We need to give the selected units a new formation controller.
 
 		// TODO replace the fixed 60 with something sensible, based on vision range f.e.
-		var formationSeparation = 60;
-		var clusters = ClusterEntities(formation.entities, formationSeparation);
-		var formationEnts = [];
+		let formationSeparation = 60;
+		let clusters = ClusterEntities(formedUnits, formationSeparation);
+		let formationEnts = [];
 		for (let cluster of clusters)
 		{
-			if (!formationTemplate || !CanMoveEntsIntoFormation(cluster, formationTemplate))
-			{
-				// Use the last formation template if everyone was using it
-				var lastFormationTemplate = undefined;
-				for (let ent of cluster)
-				{
-					var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
-					if (cmpUnitAI)
-					{
-						var template = cmpUnitAI.GetFormationTemplate();
-						if (lastFormationTemplate === undefined)
-						{
-							lastFormationTemplate = template;
-						}
-						else if (lastFormationTemplate != template)
-						{
-							lastFormationTemplate = undefined;
-							break;
-						}
-					}
-				}
-				if (lastFormationTemplate && CanMoveEntsIntoFormation(cluster, lastFormationTemplate))
-					formationTemplate = lastFormationTemplate;
-				else
-					formationTemplate = "special/formations/null";
-			}
-
 			RemoveFromFormation(cluster);
 
-			if (formationTemplate == "special/formations/null")
+			if (!formationTemplate || !CanMoveEntsIntoFormation(cluster, formationTemplate))
 			{
 				for (let ent of cluster)
 					nonformedUnitAIs.push(Engine.QueryInterface(ent, IID_UnitAI));
@@ -1541,9 +1552,9 @@ function GetFormationUnitAIs(ents, player, formationTemplate)
 				continue;
 			}
 
-			// Create the new controller
-			var formationEnt = Engine.AddEntity(formationTemplate);
-			var cmpFormation = Engine.QueryInterface(formationEnt, IID_Formation);
+			// Create the new controller.
+			let formationEnt = Engine.AddEntity(formationTemplate);
+			let cmpFormation = Engine.QueryInterface(formationEnt, IID_Formation);
 			formationUnitAIs.push(Engine.QueryInterface(formationEnt, IID_UnitAI));
 			cmpFormation.SetFormationSeparation(formationSeparation);
 			cmpFormation.SetMembers(cluster);
@@ -1552,10 +1563,11 @@ function GetFormationUnitAIs(ents, player, formationTemplate)
 				cmpFormation.RegisterTwinFormation(ent);
 
 			formationEnts.push(formationEnt);
-			var cmpOwnership = Engine.QueryInterface(formationEnt, IID_Ownership);
+			let cmpOwnership = Engine.QueryInterface(formationEnt, IID_Ownership);
 			cmpOwnership.SetOwner(player);
 		}
 	}
+
 	return nonformedUnitAIs.concat(formationUnitAIs);
 }
 
@@ -1564,20 +1576,20 @@ function GetFormationUnitAIs(ents, player, formationTemplate)
  */
 function ClusterEntities(ents, separationDistance)
 {
-	var clusters = [];
+	let clusters = [];
 	if (!ents.length)
 		return clusters;
 
-	var distSq = separationDistance * separationDistance;
-	var positions = [];
+	let distSq = separationDistance * separationDistance;
+	let positions = [];
 	// triangular matrix with the (squared) distances between the different clusters
 	// the other half is not initialised
-	var matrix = [];
+	let matrix = [];
 	for (let i = 0; i < ents.length; ++i)
 	{
 		matrix[i] = [];
 		clusters.push([ents[i]]);
-		var cmpPosition = Engine.QueryInterface(ents[i], IID_Position);
+		let cmpPosition = Engine.QueryInterface(ents[i], IID_Position);
 		positions.push(cmpPosition.GetPosition2D());
 		for (let j = 0; j < i; ++j)
 			matrix[i][j] = positions[i].distanceToSquared(positions[j]);
@@ -1585,10 +1597,10 @@ function ClusterEntities(ents, separationDistance)
 	while (clusters.length > 1)
 	{
 		// search two clusters that are closer than the required distance
-		var closeClusters = undefined;
+		let closeClusters = undefined;
 
-		for (var i = matrix.length - 1; i >= 0 && !closeClusters; --i)
-			for (var j = i - 1; j >= 0 && !closeClusters; --j)
+		for (let i = matrix.length - 1; i >= 0 && !closeClusters; --i)
+			for (let j = i - 1; j >= 0 && !closeClusters; --j)
 				if (matrix[i][j] < distSq)
 					closeClusters = [i,j];
 
@@ -1597,17 +1609,19 @@ function ClusterEntities(ents, separationDistance)
 			return clusters;
 
 		// make a new cluster with the entities from the two found clusters
-		var newCluster = clusters[closeClusters[0]].concat(clusters[closeClusters[1]]);
+		let newCluster = clusters[closeClusters[0]].concat(clusters[closeClusters[1]]);
 
 		// calculate the minimum distance between the new cluster and all other remaining
 		// clusters by taking the minimum of the two distances.
-		var distances = [];
+		let distances = [];
 		for (let i = 0; i < clusters.length; ++i)
 		{
-			if (i == closeClusters[1] || i == closeClusters[0])
+			let a = closeClusters[1];
+			let b = closeClusters[0];
+			if (i == a || i == b)
 				continue;
-			var dist1 = matrix[closeClusters[1]][i] || matrix[i][closeClusters[1]];
-			var dist2 = matrix[closeClusters[0]][i] || matrix[i][closeClusters[0]];
+			let dist1 = matrix[a][i] !== undefined ? matrix[a][i] : matrix[i][a];
+			let dist2 = matrix[b][i] !== undefined ? matrix[b][i] : matrix[i][b];
 			distances.push(Math.min(dist1, dist2));
 		}
 		// remove the rows and columns in the matrix for the merged clusters,
@@ -1664,27 +1678,55 @@ function CanMoveEntsIntoFormation(ents, formationTemplate)
 
 /**
  * Check if player can control this entity
- * returns: true if the entity is valid and owned by the player
+ * returns: true if the entity is owned by the player and controllable
  *          or control all units is activated, else false
  */
 function CanControlUnit(entity, player, controlAll)
 {
-	return IsOwnedByPlayer(player, entity) || controlAll;
+	let cmpIdentity = Engine.QueryInterface(entity, IID_Identity);
+	let canBeControlled = IsOwnedByPlayer(player, entity) &&
+		(!cmpIdentity || cmpIdentity.IsControllable()) ||
+		controlAll;
+
+	if (!canBeControlled)
+		notifyOrderFailure(entity, player);
+
+	return canBeControlled;
+}
+
+/**
+ * @param {number} entity - The entityID to verify.
+ * @param {number} player - The playerID to check against.
+ * @return {boolean}.
+ */
+function IsOwnedByPlayerOrMutualAlly(entity, player)
+{
+	return IsOwnedByPlayer(player, entity) || IsOwnedByMutualAllyOfPlayer(player, entity);
 }
 
 /**
  * Check if player can control this entity
- * returns: true if the entity is valid and owned by the player
- *          or the entity is owned by an mutualAlly
- *          or control all units is activated, else false
+ * @return {boolean} - True if the entity is valid and controlled by the player
+ *          or the entity is owned by an mutualAlly and can be controlled
+ *          or control all units is activated, else false.
  */
-function CanControlUnitOrIsAlly(entity, player, controlAll)
+function CanPlayerOrAllyControlUnit(entity, player, controlAll)
 {
-	return IsOwnedByPlayer(player, entity) || IsOwnedByMutualAllyOfPlayer(player, entity) || controlAll;
+	return CanControlUnit(player, entity, controlAll) ||
+		IsOwnedByMutualAllyOfPlayer(player, entity) && CanOwnerControlEntity(entity);
 }
 
 /**
- * Filter entities which the player can control
+ * @return {boolean} - Whether the owner of this entity can control the entity.
+ */
+function CanOwnerControlEntity(entity)
+{
+	let cmpOwner = QueryOwnerInterface(entity);
+	return cmpOwner && CanControlUnit(entity, cmpOwner.GetPlayerID());
+}
+
+/**
+ * Filter entities which the player can control.
  */
 function FilterEntityList(entities, player, controlAll)
 {
@@ -1696,7 +1738,7 @@ function FilterEntityList(entities, player, controlAll)
  */
 function FilterEntityListWithAllies(entities, player, controlAll)
 {
-	return entities.filter(ent => CanControlUnitOrIsAlly(ent, player, controlAll));
+	return entities.filter(ent => CanPlayerOrAllyControlUnit(ent, player, controlAll));
 }
 
 /**

@@ -1,42 +1,35 @@
-var KIARA = function(m)
+PETRA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 5)
 {
-
-m.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 5, m_trainer = undefined)
-{
-	if (!m.QueuePlan.call(this, gameState, type, metadata))
+	if (!PETRA.QueuePlan.call(this, gameState, type, metadata))
 	{
 		API3.warn(" Plan training " + type + " canceled");
 		return false;
 	}
 
 	// Refine the estimated cost and add pop cost
-	let trainers = m_trainer ? [m_trainer] : this.getBestTrainers(gameState);
+	let trainers = this.getBestTrainers(gameState);
 	let trainer = trainers ? trainers[0] : undefined;
 	this.cost = new API3.Resources(this.template.cost(trainer), +this.template._template.Cost.Population);
 
 	this.category = "unit";
 	this.number = number;
 	this.maxMerge = maxMerge;
-	if (m_trainer)
-		this.trainer = m_trainer;
 
 	return true;
 };
 
-m.TrainingPlan.prototype = Object.create(m.QueuePlan.prototype);
+PETRA.TrainingPlan.prototype = Object.create(PETRA.QueuePlan.prototype);
 
-m.TrainingPlan.prototype.canStart = function(gameState)
+PETRA.TrainingPlan.prototype.canStart = function(gameState)
 {
-	if (this.allreadyStarted())
-		return false;
-	this.trainers = this.trainer ? [this.trainer] : this.getBestTrainers(gameState);
+	this.trainers = this.getBestTrainers(gameState);
 	if (!this.trainers)
 		return false;
 	this.cost = new API3.Resources(this.template.cost(this.trainers[0]), +this.template._template.Cost.Population);
 	return true;
 };
 
-m.TrainingPlan.prototype.getBestTrainers = function(gameState)
+PETRA.TrainingPlan.prototype.getBestTrainers = function(gameState)
 {
 	if (this.metadata && this.metadata.trainer)
 	{
@@ -70,10 +63,8 @@ m.TrainingPlan.prototype.getBestTrainers = function(gameState)
 	return trainers;
 };
 
-m.TrainingPlan.prototype.start = function(gameState)
+PETRA.TrainingPlan.prototype.start = function(gameState)
 {
-	if (this.allreadyStarted())
-		return false;
 	if (this.metadata && this.metadata.trainer)
 	{
 		let metadata = {};
@@ -131,43 +122,20 @@ m.TrainingPlan.prototype.start = function(gameState)
 		});
 	}
 
-	// spread load among all possible trainers
-	let ln = this.trainers.length;
-	let ideal = Math.max(1, Math.floor(this.number / 5));
-	if (ln > ideal)
-		ln = ideal;
-	let number = Math.floor(this.number / ln);
-	let nMissing = this.number - (number*ln);
-
-	let pt = this.promotedTypes(gameState);
-	let civ = gameState.getPlayerCiv();
-	let i = 1;
-	while (i < ln) {
-	//	API3.warn("spreading load with " + number);
-		if (this.metadata && this.metadata.base !== undefined && this.metadata.base === 0)
-			this.metadata.base = this.trainers[i].getMetadata(PlayerID, "base");
-		this.trainers[i].train(civ, this.type, number, this.metadata, pt);
-		i++;
-	}
-
-	if (nMissing > 0)
-		number = number + nMissing;
-
-	i = 0;
 	if (this.metadata && this.metadata.base !== undefined && this.metadata.base === 0)
-		this.metadata.base = this.trainers[i].getMetadata(PlayerID, "base");
-	this.trainers[i].train(civ, this.type, number, this.metadata, pt);
+		this.metadata.base = this.trainers[0].getMetadata(PlayerID, "base");
+	this.trainers[0].train(gameState.getPlayerCiv(), this.type, this.number, this.metadata, this.promotedTypes(gameState));
 
 	this.onStart(gameState);
 };
 
-m.TrainingPlan.prototype.addItem = function(amount = 1)
+PETRA.TrainingPlan.prototype.addItem = function(amount = 1)
 {
 	this.number += amount;
 };
 
 /** Find the promoted types corresponding to this.type */
-m.TrainingPlan.prototype.promotedTypes = function(gameState)
+PETRA.TrainingPlan.prototype.promotedTypes = function(gameState)
 {
 	let types = [];
 	let promotion = this.template.promotion();
@@ -196,7 +164,7 @@ m.TrainingPlan.prototype.promotedTypes = function(gameState)
 	return types;
 };
 
-m.TrainingPlan.prototype.Serialize = function()
+PETRA.TrainingPlan.prototype.Serialize = function()
 {
 	return {
 		"category": this.category,
@@ -209,7 +177,7 @@ m.TrainingPlan.prototype.Serialize = function()
 	};
 };
 
-m.TrainingPlan.prototype.Deserialize = function(gameState, data)
+PETRA.TrainingPlan.prototype.Deserialize = function(gameState, data)
 {
 	for (let key in data)
 		this[key] = data[key];
@@ -217,6 +185,3 @@ m.TrainingPlan.prototype.Deserialize = function(gameState, data)
 	this.cost = new API3.Resources();
 	this.cost.Deserialize(data.cost);
 };
-
-return m;
-}(KIARA);
