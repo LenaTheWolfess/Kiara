@@ -57,8 +57,9 @@ KIARA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 				API3.warn("Kiara: " + str + " unknown attackTimes in getMaxStrength");
 			}
 		}
-	}
 */
+	}
+
 	let resistanceStrength = ent.resistanceStrengths();
 
 	if (resistanceStrength.Damage)

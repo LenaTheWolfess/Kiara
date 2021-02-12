@@ -11,7 +11,6 @@ KIARA.AttackManager = function(Config)
 	this.raidNumber = 0;
 	this.upcomingAttacks = {"Anihilation": [], "Rush": [], "EarlyRaid": [], "Raid": [], "Attack": [], "HugeAttack": [], "MeleeRangeInfCav": [], "MeleeRangeCav": [], "MeleeCav": [], "RangeCav": [] };
 	this.startedAttacks = {"Anihilation": [], "Rush": [], "EarlyRaid": [], "Raid": [], "Attack": [], "HugeAttack": [], "MeleeRangeInfCav": [], "MeleeRangeCav": [], "MeleeCav": [], "RangeCav": [] };	
-	this.startedAttacks = { "Rush": [], "Raid": [], "Attack": [], "HugeAttack": [] };
 	this.bombingAttacks = new Map();// Temporary attacks for siege units while waiting their current attack to start
 	this.debugTime = 0;
 	this.maxRushes = 0;

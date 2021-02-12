@@ -63,6 +63,7 @@ KIARA.BaseManager.prototype.init = function(gameState, state)
 		this.dropsiteSupplies[res] = { "nearby": [], "medium": [], "faraway": [] };
 		this.gatherers[res] = { "nextCheck": 0, "used": 0, "lost": 0 };
 	}
+	this.dropsiteSupplies["hunt"] = { "nearby": [], "medium": [], "faraway": [] };
 };
 
 KIARA.BaseManager.prototype.reset = function(gameState, state)
@@ -196,6 +197,7 @@ KIARA.BaseManager.prototype.assignResourceToDropsite = function(gameState, drops
 
 		resources.forEach(function(supply)
 		{
+			let ss = type;
 			if (!supply.position())
 				return;
 			if (supply.hasClass("Animal"))    // moving resources are treated differently
@@ -428,7 +430,7 @@ KIARA.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut =
 
 	let newDP = this.findBestDropsiteLocation(gameState, res);
 	if (newDP.quality > cut)
-		gameState.ai.queues["dropsites"].addPlan(new m.ConstructionPlan(gameState, "structures/{civ}/storehouse", {"base": this.ID, "type": res}, newDP.pos));
+		gameState.ai.queues["dropsites"].addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/storehouse", {"base": this.ID, "type": res}, newDP.pos));
 	else
 		gameState.ai.HQ.signalNoSupply(gameState, resource);
 }
@@ -440,7 +442,7 @@ KIARA.BaseManager.prototype.buildFoodSupply = function(gameState, queues, type, 
 
 	let newSF = this.findBestFarmsteadLocation(gameState, res);
 	if (newSF.quality > 10) {
-		queues[type].addPlan(new m.ConstructionPlan(gameState, "structures/{civ}/farmstead", {"base": this.ID, "type": "food"}, newSF.pos));
+		queues[type].addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/farmstead", {"base": this.ID, "type": "food"}, newSF.pos));
 		return true;
 	}
 
@@ -451,7 +453,7 @@ KIARA.BaseManager.prototype.buildField = function(gameState, queues)
 {
 	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/field")))
 		return false;
-	queues.economicBuilding.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}/field"));
+	queues.economicBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/field"));
 	return true;
 }
 

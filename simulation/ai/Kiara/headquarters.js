@@ -687,7 +687,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 		if (!fHouse && !nHouses) {
 		//	API3.warn("add house");
-			let plan = new m.ConstructionPlan(gameState, "structures/{civ}/house");
+			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
 			// change the starting condition according to the situation.
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
@@ -729,8 +729,9 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 
 	let farmers = gameState.getOwnEntitiesByClass("FemaleCitizen", true).length;
 	let sieges = gameState.getOwnEntitiesByClass("Siege", true).length;
-	let workers = gameState.getOwnEntitiesByRole("CitizenSoldier").length;
+	let workers = gameState.getOwnEntitiesByClass("CitizenSoldier", true).length;
 
+//	API3.warn("farmers = " + farmers + ", workers = " + workers + ", sieges = " + sieges);
 	let supportNum = 40;
 	let siegeNum = 5;
 
@@ -851,7 +852,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 				this.wantPop = pop;
 				while (nHouses < 3 && missing > 0) {
 		//			warn("add house");
-					let plan = new m.ConstructionPlan(gameState, "structures/{civ}/house");
+					let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
 					// change the starting condition according to the situation.
 					plan.goRequirement = "houseNeeded";
 					queues.house.addPlan(plan);
@@ -873,7 +874,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 			if (!actualTemplate.hasClass("Support"))
 				role.support = false;
 	//		API3.warn("addPlan " + template + " " + size);
-			q.addPlan(new m.TrainingPlan(gameState, template, role, size, mSize));
+			q.addPlan(new KIARA.TrainingPlan(gameState, template, role, size, mSize));
 			if (wantDefenders)
 			{
 				this.rangedSwitcher = !this.rangedSwitcher;
@@ -900,7 +901,7 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 
 	if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 		if (!fHouse && !queues.house.length()) {
-			let plan = new m.ConstructionPlan(gameState, "structures/{civ}/house");
+			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
 			// change the starting condition according to the situation.
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
@@ -1085,7 +1086,7 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 	if (missing > 0) {
 		this.wantPop = pop;
 		while (nHouses < 3 && missing > 0) {
-			let plan = new m.ConstructionPlan(gameState, "structures/{civ}_house");
+			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}_house");
 			// change the starting condition according to the situation.
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
@@ -1156,7 +1157,7 @@ KIARA.HQ.prototype.findBestTrainableUnitSpecial = function(gameState, classes, r
 			{
 				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
 				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
-			}			}
+			}
 			else if (param[0] == "speed")
 			{
 				aValue += a[1].walkSpeed() * param[1];
@@ -2251,7 +2252,7 @@ KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res)
 		let newDP = this.baseManagers[x].findBestDropsiteLocation(gameState, res);
 		if (newDP.quality > cut) {
 		//	warn("build new dropsite for " + res);
-			queues[type].addPlan(new m.ConstructionPlan(gameState, "structures/{civ}/storehouse", {"base": this.baseManagers[x].ID, "type": res}, newDP.pos));
+			queues[type].addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/storehouse", {"base": this.baseManagers[x].ID, "type": res}, newDP.pos));
 			return true;
 		} else {
 	//		warn("rejected dropsite for " + res + " with " + newDP.quality);
@@ -2446,7 +2447,7 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 			gameState.getOwnFoundationsByClass("Tower").length < 2)
 		{
 			this.towerStartTime = gameState.ai.elapsedTime;
-			let plan = new m.ConstructionPlan(gameState, "structures/{civ}/defense_tower");
+			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/defense_tower");
 			if (numTowers < 5)
 				plan.queueToReset = "defenseBuilding";
 			queues.defenseBuilding.addPlan(plan);
@@ -3244,7 +3245,7 @@ KIARA.HQ.prototype.getAccountedWorkers = function(gameState)
 	return this.turnCache.accountedWorkers;
 };
 
-m.HQ.prototype.getDropsiteClass = function(resource)
+KIARA.HQ.prototype.getDropsiteClass = function(resource)
 {
 	if (resource == "food")
 		return "DropsiteFood";

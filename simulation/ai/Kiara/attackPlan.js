@@ -121,7 +121,8 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		this.unitStat.Infantry = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 10, "classes": ["Infantry"],
 			"interests": [["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"]] };
 		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 4, "batchSize": 4, "classes": ["FastMoving", "CitizenSoldier"],
-		if (data && data.targetSize)
+			"interests": [ ["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
+	if (data && data.targetSize)
 			this.unitStat.Infantry.targetSize = data.targetSize;
 		this.neededShips = 1;
 	}
@@ -405,7 +406,6 @@ KIARA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 	}
 
 	this.siegeState = 2;
-	let targetSize;
 	let targetSize = this.type == "HugeAttack" ? 5 : 4;
 	if (!targetSize)
 		return true;
@@ -658,7 +658,7 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 			{
 				// Request another trainer
 				let t = allTrainers[0];
-				let plan = new m.ConstructionPlan(gameState, t.templateName());
+				let plan = new KIARA.ConstructionPlan(gameState, t.templateName());
 				// change the starting condition according to the situation.
 				gameState.ai.queues.militaryBuilding.addPlan(plan);
 		//		API3.warn("attack plan adding house to reach " + wantPop);
@@ -780,7 +780,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	// Assign all units without specific role.
 	for (let ent of gameState.getOwnEntitiesByRole(undefined, true).values())
 	{
-		if (!ent.hasClass("Unit") && !ent.hasClass("Siege")) || !this.isAvailableUnit(gameState, ent))
+		if ((!ent.hasClass("Unit") && !ent.hasClass("Siege")) || !this.isAvailableUnit(gameState, ent))
 			continue;
 		if (ent.hasClass("Ship") || ent.hasClass("Support") || ent.attackTypes() === undefined)
 			continue;
@@ -803,8 +803,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	// Otherwise, assign only some idle workers if too much of them
 	let num = 0;
 	let numbase = {};
-	let keep = this.type != "Rush" ?
-		6 + 4 * gameState.getNumPlayerEnemies() + 8;
+	let keep = this.type != "Rush" ? 6 + 4 * gameState.getNumPlayerEnemies() : 8;
 	keep = Math.round(this.Config.popScaling * keep);
 	for (let ent of gameState.getOwnEntitiesByRole("worker", true).values())
 	{
@@ -843,7 +842,7 @@ KIARA.AttackPlan.prototype.isAvailableUnit = function(gameState, ent)
 };
 
 /** Reassign one (at each turn) FastMoving unit to fasten raid preparation. */
-KIARA.AttackPlan.prototype.reassignFastUnit = function(gameState, type)
+KIARA.AttackPlan.prototype.reassignCavUnit = function(gameState, type)
 {
 	for (let ent of this.unitCollection.values())
 	{
@@ -1033,6 +1032,11 @@ KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 	if (gameState.getVictoryConditions().has("capture_the_relic"))
 		for (let ent of gameState.updatingGlobalCollection("allRelics", API3.Filters.byClass("Relic")).filter(relic => relic.owner() == playerEnemy).values())
 			targets.addEnt(ent);
+
+	if (targets.hasEntities())
+		return targets;
+
+	let validTargets = gameState.getEnemyStructures(playerEnemy).filter(this.isValidTarget, this);
 	targets = validTargets.filter(API3.Filters.byClass("Fortress"));
 
 	let ccs = validTargets.filter(API3.Filters.byClass("CivCentre"));
@@ -1042,10 +1046,7 @@ KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 		for(let ent of ccs.values())
 			targets.addEnt(ent);
 	}
-	if (targets.hasEntities())
-		return targets;
 
-	let validTargets = gameState.getEnemyStructures(playerEnemy).filter(this.isValidTarget, this);
 	targets = validTargets.filter(API3.Filters.byClass("CivCentre"));
 	if (!targets.hasEntities())
 		targets = validTargets.filter(API3.Filters.byClass("ConquestCritical"));
@@ -1567,7 +1568,6 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 			targetClassesUnit = { "attack": ["FemaleCitizen"], "avoid": ["Structure"], "vetoEntities": veto };
 		else if (this.type == "Rush")
 			targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Storehouse", "Farmstead", "Field", "Blacksmith", "Palisade", "StoneWall", "Tower", "Fortress"], "vetoEntities": veto };
-			targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Palisade", "Wall", "Tower", "Fortress"], "vetoEntities": veto };
 		else
 		{
 			if (this.target.hasClass("Fortress"))

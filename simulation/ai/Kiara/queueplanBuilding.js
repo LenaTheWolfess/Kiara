@@ -120,7 +120,7 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 		return this.findDockPosition(gameState);
 
 	let HQ = gameState.ai.HQ;
-	if ((template.hasClass("Storehouse")|| template.hasClass("Farmstead")  && this.metadata && this.metadata.base)
+	if ((template.hasClass("Storehouse")|| template.hasClass("Farmstead")  && this.metadata && this.metadata.base))
 	{
 		// recompute the best dropsite location in case some conditions have changed
 		let base = HQ.getBaseByID(this.metadata.base);
@@ -755,16 +755,16 @@ KIARA.ConstructionPlan.prototype.checkDockPlacement = function(gameState, x, z, 
 	return { "land": land, "water": water };
 };
 
-/**
- * fast check if we can build a dock: returns false if nearest land is farther than the dock dimension
- * if the (object) wantedLand is given, this nearest land should have one of these accessibility
- * if wantedSea is given, this tile should be inside this sea
- */
-const around = [[ 1.0, 0.0], [ 0.87, 0.50], [ 0.50, 0.87], [ 0.0, 1.0], [-0.50, 0.87], [-0.87, 0.50],
-	        [-1.0, 0.0], [-0.87, -0.50], [-0.50, -0.87], [ 0.0, -1.0], [ 0.50, -0.87], [ 0.87, -0.50]];
 
 KIARA.ConstructionPlan.prototype.isDockLocation = function(gameState, j, dimension, wantedLand, wantedSea)
 {
+	/**
+	* fast check if we can build a dock: returns false if nearest land is farther than the dock dimension
+	* if the (object) wantedLand is given, this nearest land should have one of these accessibility
+	* if wantedSea is given, this tile should be inside this sea
+	*/
+	const around = [[ 1.0, 0.0], [ 0.87, 0.50], [ 0.50, 0.87], [ 0.0, 1.0], [-0.50, 0.87], [-0.87, 0.50],
+		   [-1.0, 0.0], [-0.87, -0.50], [-0.50, -0.87], [ 0.0, -1.0], [ 0.50, -0.87], [ 0.87, -0.50]];
 	let width = gameState.ai.HQ.territoryMap.width;
 	let cellSize = gameState.ai.HQ.territoryMap.cellSize;
 	let dimLand = dimension + 1.5 * cellSize;
@@ -812,6 +812,13 @@ KIARA.ConstructionPlan.prototype.isDockLocation = function(gameState, j, dimensi
  */
 KIARA.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
 {
+	/**
+	* fast check if we can build a dock: returns false if nearest land is farther than the dock dimension
+	* if the (object) wantedLand is given, this nearest land should have one of these accessibility
+	* if wantedSea is given, this tile should be inside this sea
+	*/
+	const around = [[ 1.0, 0.0], [ 0.87, 0.50], [ 0.50, 0.87], [ 0.0, 1.0], [-0.50, 0.87], [-0.87, 0.50],
+	        [-1.0, 0.0], [-0.87, -0.50], [-0.50, -0.87], [ 0.0, -1.0], [ 0.50, -0.87], [ 0.87, -0.50]];
 	let alliedVictory = gameState.getAlliedVictory();
 	let territoryMap = gameState.ai.HQ.territoryMap;
 	let territoryOwner = territoryMap.getOwnerIndex(j);

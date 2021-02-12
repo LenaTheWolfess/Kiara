@@ -327,7 +327,7 @@ KIARA.DefenseArmy.prototype.assignUnit = function(gameState, entID)
 		let s = this.assignedAgainst[id].length;
 		if (eEnt.hasClass("Hero") && s > 8)
 			continue;
-		else if (m.isSiegeUnit(eEnt) && s > 5)
+		else if (KIARA.isSiegeUnit(eEnt) && s > 5)
 			continue;
 		else if (eEnt.hasClass("Champion") && s > 4)
 			continue;
