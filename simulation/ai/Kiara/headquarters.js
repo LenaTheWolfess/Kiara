@@ -729,7 +729,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 
 	let farmers = gameState.getOwnEntitiesByClass("FemaleCitizen", true).length;
 	let sieges = gameState.getOwnEntitiesByClass("Siege", true).length;
-	let workers = gameState.getOwnEntitiesByClass("CitizenSoldier", true).length;
+	let workers = gameState.getOwnEntitiesByClass("Worker", true).length;
 
 //	API3.warn("farmers = " + farmers + ", workers = " + workers + ", sieges = " + sieges);
 	let supportNum = 40;
@@ -767,12 +767,12 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 		}
 	}
 
-	let wantSiege = pop > 200 && gameState.currentPhase(gameState) > 2 && sieges < siegeNum;
+	let wantSiege = workers > 150 && gameState.currentPhase(gameState) > 2 && sieges < siegeNum;
 	let siegeClass = ["Siege"];
 	let siegeRequirements = [["strength", 3]];
 
-	let wantChampions = gameState.currentPhase(gameState) > 2 && pop > 200;
-	wantChampions = false;
+	let wantChampions = gameState.currentPhase(gameState) > 2 && workers > 150;
+//	wantChampions = false;
 	let championClass = ["Champion"];
 	let championRequirements = [["strength", 2]];
 
@@ -2516,6 +2516,13 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	if (this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks1 ||
 	    this.phasing == 2 && gameState.getOwnStructures().filter(API3.Filters.byClass("Village")).length < 5)
 	{
+		let civ = gameState.getPlayerCiv();
+		if (numStables == 0 && stableTemplate && civ == "brit")
+		{
+			this.strategy = "earlyRaid";
+			this.attackManager.maxRaids = 1;
+			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
+		}
 		// first barracks/range and stables.
 		if (numBarracks + numRanges < 2)
 		{
@@ -2569,15 +2576,16 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	if (this.currentPhase < 3)
 		return;
 
-	if (this.canBuild(gameState, "structures/{civ}/elephant_stables") && !gameState.getOwnEntitiesByClass("ElephantStable", true).hasEntities())
+	let nArsenals = gameState.getOwnEntitiesByClass("Arsenal", true).length;
+	if (this.canBuild(gameState, "structures/{civ}/arsenal") && nArsenals < 3)
 	{
-		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/elephant_stables", { "militaryBase": true }));
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/arsenal", { "militaryBase": true }));
 		return;
 	}
 
-	if (this.canBuild(gameState, "structures/{civ}/arsenal") && !gameState.getOwnEntitiesByClass("Arsenal", true).hasEntities())
+	if (this.canBuild(gameState, "structures/{civ}/elephant_stables") && !gameState.getOwnEntitiesByClass("ElephantStable", true).hasEntities())
 	{
-		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/arsenal", { "militaryBase": true }));
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/elephant_stables", { "militaryBase": true }));
 		return;
 	}
 

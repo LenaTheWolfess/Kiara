@@ -167,8 +167,7 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 			pos = HQ.findDefensiveLocation(gameState, template);
 
 			if (pos) {
-				if ( (template.hasClass("Tower") && gameState.getOwnEntitiesByClass("Tower", true).length < 3) ||
-					(template.hasClass("Fortress") && gameState.getOwnEntitiesByClass("Fortress", true).hasEntities())
+				if ( (template.hasClass("Tower") && gameState.getOwnEntitiesByClass("Tower", true).length < 3)
 				)
 					return { "x": pos[0], "z": pos[1], "angle": 3*Math.PI/4, "base": pos[2] };
 			}

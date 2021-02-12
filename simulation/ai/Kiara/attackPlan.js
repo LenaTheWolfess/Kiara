@@ -129,14 +129,14 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	else if (type == "EarlyRaid")
 	{
 		priority = 310;
-		this.unitStat.FastMoving = { "priority": 1, "minSize": 5, "targetSize": 8, "batchSize": 2, "classes": ["FastMoving", "CitizenSoldier"],
-			"interests": [ ["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 10, "targetSize": 15, "batchSize": 5, "classes": ["FastMoving"],
+			"interests": [ ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
 		this.neededShips = 1;
 	}
 	else if (type == "Raid")
 	{
 		priority = 150;
-		this.unitStat.FastMoving = { "priority": 1, "minSize": 5, "targetSize": 5, "batchSize": 10, "classes": ["FastMoving", "CitizenSoldier"],
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 5, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "CitizenSoldier"],
 			"interests": [ ["strength", 1] ] };
 		this.unitStat.Siege = {"priority": 2, "minSize": 1, "targetSize": 2, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 		this.neededShips = 1;
@@ -145,47 +145,47 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	{
 		priority = 350;
 		if (popCaped) {
-			this.unitStat.RangedInfantry    = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "CitizenSoldier"],
+			this.unitStat.RangedInfantry    = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Ranged"],
 				"interests": [["strength", 3]] };
-			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "CitizenSoldier"],
+			this.unitStat.MeleeInfantry     = { "priority": 1.2, "minSize": 0, "targetSize": 30, "batchSize": 5, "classes": ["Infantry", "Melee"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Ranged", "Champion"],
+/*			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Melee", "Champion"],
+			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.RangedFastMoving     = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged", "CitizenSoldier"],
+*/			this.unitStat.RangedFastMoving     = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "Ranged"],
 				"interests": [["strength", 2]] };
-			this.unitStat.MeleeFastMoving      = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee", "CitizenSoldier"],
+			this.unitStat.MeleeFastMoving      = { "priority": 1, "minSize": 0, "targetSize": 30, "batchSize": 5, "classes": ["FastMoving", "Melee"],
 				"interests": [["strength", 2]] };
-			this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "Ranged", "Champion"],
+	/*		this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "Melee", "Champion"],
+			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee", "Champion"],
 				"interests": [["strength", 2]] };
-			this.unitStat.Healer = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
-			this.unitStat.Siege = {"priority": 2, "minSize": 0, "targetSize": 5, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
+		*/	this.unitStat.Healer = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
+			this.unitStat.Siege = {"priority": 2, "minSize": 2, "targetSize": 5, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 			this.neededShips = 10;
 		} else {
 			// basically we want a mix of citizen soldiers so our barracks have a purpose, and champion units.
-			this.unitStat.RangedInfantry    = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "CitizenSoldier"],
+	/*		this.unitStat.RangedInfantry    = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "CitizenSoldier"],
 				"interests": [["strength", 3]] };
 			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "CitizenSoldier"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Infantry", "Ranged", "Champion"],
+*/			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 20, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Infantry", "Melee", "Champion"],
+			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 10, "targetSize": 40, "batchSize": 5, "classes": ["Infantry", "Melee"],
 				"interests": [["strength", 3]] };
-			this.unitStat.RangedFastMoving     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged", "CitizenSoldier"],
+/*			this.unitStat.RangedFastMoving     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged", "CitizenSoldier"],
 				"interests": [["strength", 2]] };
 			this.unitStat.MeleeFastMoving      = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee", "CitizenSoldier"],
 				"interests": [["strength", 2]] };
-			this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["FastMoving", "Ranged", "Champion"],
+*/			this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["FastMoving", "Melee", "Champion"],
+			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee"],
 				"interests": [["strength", 2]] };
 			this.unitStat.Hero                = { "priority": 1, "minSize": 0, "targetSize":  1, "batchSize": 1, "classes": ["Hero"],
 				"interests": [["strength", 2]] };
 			this.unitStat.Healer 			  = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
-			this.unitStat.Siege = {"priority": 2, "minSize": 0, "targetSize": 5, "batchSize": 2, "classes": ["Siege"] , "interests":  [["strength", 1]]};
+			this.unitStat.Siege = {"priority": 2, "minSize": 3, "targetSize": 5, "batchSize": 5, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 			this.neededShips = 5;
 		}
 	}
@@ -638,6 +638,12 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 	}
 
 	let firstOrder = this.buildOrders[0];
+	let nSiege = gameState.getOwnEntitiesByClass("Siege", true).length;
+	if (firstOrder[3].classes.indexOf("Siege") && nSiege > 10) {
+		this.buildOrders.splice(0, 1);
+	}
+	firstOrder = this.buildOrders[0];
+
 	if (firstOrder[0] < firstOrder[3].targetSize)
 	{
 		// find the actual queue we want
@@ -1038,7 +1044,13 @@ KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 
 	let validTargets = gameState.getEnemyStructures(playerEnemy).filter(this.isValidTarget, this);
 	targets = validTargets.filter(API3.Filters.byClass("Fortress"));
-
+	let towers = validTargets.filter(API3.Filters.byClass("Tower"));
+	if (!targets.hasEntities())
+		targets = towers;
+	else {
+		for(let ent of towers.values())
+			targets.addEnt(ent);
+	}
 	let ccs = validTargets.filter(API3.Filters.byClass("CivCentre"));
 	if (!targets.hasEntities())
 		targets = ccs;
@@ -1047,7 +1059,6 @@ KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 			targets.addEnt(ent);
 	}
 
-	targets = validTargets.filter(API3.Filters.byClass("CivCentre"));
 	if (!targets.hasEntities())
 		targets = validTargets.filter(API3.Filters.byClass("ConquestCritical"));
 	// If there's nothing, attack anything else that's less critical

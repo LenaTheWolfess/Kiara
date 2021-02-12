@@ -741,6 +741,7 @@ m.GameState.prototype.findTrainableUnits = function(classes, anticlasses)
 	});
 	let ret = [];
 	let limits = this.getEntityLimits();
+	let matchCounts = this.getEntityMatchCounts();
 	let current = this.getEntityCounts();
 	for (let trainable of allTrainable)
 	{
@@ -756,7 +757,8 @@ m.GameState.prototype.findTrainableUnits = function(classes, anticlasses)
 		let category = template.trainingCategory();
 		if (category && limits[category] && current[category] >= limits[category])
 			continue;
-
+		if (matchCounts[trainable] == 1)
+			continue;
 		ret.push([trainable, template]);
 	}
 	return ret;
@@ -767,12 +769,15 @@ m.GameState.prototype.filterTrainableUnitsByClass = function(allTrainable, class
 	let ret = [];
 	let limits = this.getEntityLimits();
 	let current = this.getEntityCounts();
+	let matchCounts = this.getEntityMatchCounts();
 	for (let trainable of allTrainable)
 	{
 		let template = this.getTemplate(trainable);
 		if (classes.some(c => !template.hasClass(c)))
 			continue;
 		if (anticlasses.some(c => template.hasClass(c)))
+			continue;
+		if (matchCounts[trainable] == 1)
 			continue;
 
 		ret.push([trainable, template]);
@@ -785,6 +790,7 @@ m.GameState.prototype.filterTrainableUnits = function(allTrainable)
 	let ret = [];
 	let limits = this.getEntityLimits();
 	let current = this.getEntityCounts();
+	let matchCounts = this.getEntityMatchCounts();
 	for (let trainable of allTrainable)
 	{
 		if (this.isTemplateDisabled(trainable))
@@ -794,6 +800,8 @@ m.GameState.prototype.filterTrainableUnits = function(allTrainable)
 			continue;
 		let category = template.trainingCategory();
 		if (category && limits[category] && current[category] >= limits[category])
+			continue;
+		if (matchCounts[trainable] == 1)
 			continue;
 
 		ret.push(trainable);
@@ -949,6 +957,11 @@ m.GameState.prototype.findResearchers = function(templateName, noRequirementChec
 m.GameState.prototype.getEntityLimits = function()
 {
 	return this.playerData.entityLimits;
+};
+
+m.GameState.prototype.getEntityMatchCounts = function()
+{
+	return this.playerData.matchEntityCounts;
 };
 
 m.GameState.prototype.getEntityCounts = function()

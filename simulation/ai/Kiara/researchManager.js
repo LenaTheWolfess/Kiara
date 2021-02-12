@@ -80,7 +80,25 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 	let available = phase1 ? gameState.ai.queueManager.getAvailableResources(gameState) : null;
 	let numWorkers = phase1 ? gameState.getOwnEntitiesByRole("worker", true).length : 0;
 
-if (gameState.currentPhase() > 2) {
+	if (gameState.currentPhase() > 1)
+	{
+		for (let tech of techs)
+		{
+			if (tech[0].indexOf("batch_training") == 0)
+				return { "name": tech[0], "increasePriority": true };
+			if (tech[0] == "training_conscription")
+				return { "name": tech[0], "increasePriority": true };
+		}
+	}
+	if (gameState.currentPhase() > 2)
+	{
+		for (let tech of techs)
+		{
+			if (tech[0].indexOf("unlock_champion") == 0)
+				return { "name": tech[0], "increasePriority": true };
+			if (tech[0] == "traditional_army_sele" || tech[0] == "reformed_army_sele")
+				return { "name": pickRandom(["traditional_army_sele", "reformed_army_sele"]), "increasePriority": true };
+		}
 		for (let tech of techs)
 		{
 			if (!tech[1]._template.modifications)
@@ -101,10 +119,6 @@ if (gameState.currentPhase() > 2) {
 		}
 		for (let tech of techs)
 		{
-			if (tech[0] == "training_conscription")
-				return { "name": tech[0], "increasePriority": true };
-			if (tech[0] == "unlock_champion_units")
-				return { "name": tech[0], "increasePriority": true };
 			if (!tech[1]._template.modifications)
 				continue;
 			let template = tech[1]._template;
@@ -143,11 +157,6 @@ if (gameState.currentPhase() > 2) {
 
 	for (let tech of techs)
 	{
-		if (tech[0].indexOf("unlock_champion") == 0)
-			return { "name": tech[0], "increasePriority": true };
-		if (tech[0] == "traditional_army_sele" || tech[0] == "reformed_army_sele")
-			return { "name": pickRandom(["traditional_army_sele", "reformed_army_sele"]), "increasePriority": true };
-
 		if (!tech[1]._template.modifications)
 			continue;
 		let template = tech[1]._template;
