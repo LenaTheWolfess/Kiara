@@ -30,7 +30,7 @@ KIARA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, incre
 			let count = this.builderCounters.get(buildable) + increment;
 			if (count < 0)
 			{
-				API3.warn(" Kiara error in incrementBuilderCounters for " + buildable + " with count < 0");
+				KIARA.Logger.error(" Kiara error in incrementBuilderCounters for " + buildable + " with count < 0");
 				continue;
 			}
 			this.builderCounters.set(buildable, count);
@@ -38,7 +38,7 @@ KIARA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, incre
 		else if (increment > 0)
 			this.builderCounters.set(buildable, increment);
 		else
-			API3.warn(" Kiara error in incrementBuilderCounters for " + buildable + " not yet set");
+			KIARA.Logger.error(" Kiara error in incrementBuilderCounters for " + buildable + " not yet set");
 	}
 };
 

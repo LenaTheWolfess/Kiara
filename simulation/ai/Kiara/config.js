@@ -6,9 +6,6 @@ KIARA.Config = function(difficulty, behavior)
 	// for instance "balanced", "aggressive" or "defensive"
 	this.behavior = behavior || "random";
 
-	// debug level: 0=none, 1=sanity checks, 2=debug, 3=detailed debug, -100=serializatio debug
-	this.debug = 0;
-
 	this.chat = true;	// false to prevent AI's chats
 
 	this.popScaling = 1;	// scale factor depending on the max population
@@ -187,7 +184,7 @@ KIARA.Config.prototype.setConfig = function(gameState)
 			this.priorities.villager = 30;
 			this.priorities.citizenSoldier = 60;
 		}
-		API3.warn(uneval(this.priorities));
+	//	KIARA.Logger.debug(uneval(this.priorities));
 		let min = personalityList[this.behavior].min;
 		let max = personalityList[this.behavior].max;
 		this.personality = {
@@ -236,9 +233,7 @@ KIARA.Config.prototype.setConfig = function(gameState)
 	if (this.difficulty < 2)
 		this.Economy.workPhase3 = Infinity;	// prevent the phasing to city phase
 
-	if (this.debug < 2)
-		return;
-	API3.warn(" >>>  Kiara bot: personality = " + uneval(this.personality));
+//	KIARA.Logger.trace(" >>>  Kiara bot: personality = " + uneval(this.personality));
 };
 
 KIARA.Config.prototype.Serialize = function()

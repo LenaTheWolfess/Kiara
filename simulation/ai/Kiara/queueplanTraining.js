@@ -2,7 +2,7 @@ KIARA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 
 {
 	if (!KIARA.QueuePlan.call(this, gameState, type, metadata))
 	{
-		API3.warn(" Plan training " + type + " canceled");
+		KIARA.Logger.debug(" Plan training " + type + " canceled");
 		return false;
 	}
 
@@ -141,7 +141,7 @@ KIARA.TrainingPlan.prototype.start = function(gameState)
 	let civ = gameState.getPlayerCiv();
 	let i = 1;
 	while (i < ln) {
-	//	API3.warn("spreading load with " + number);
+	//	KIARA.Logger.debug("spreading load with " + number);
 		if (this.metadata && this.metadata.base !== undefined && this.metadata.base === 0)
 			this.metadata.base = this.trainers[i].getMetadata(PlayerID, "base");
 		this.trainers[i].train(civ, this.type, number, this.metadata, pt);
@@ -178,16 +178,14 @@ KIARA.TrainingPlan.prototype.promotedTypes = function(gameState)
 		template = gameState.getTemplate(promotion);
 		if (!template)
 		{
-			if (gameState.ai.Config.debug > 0)
-				API3.warn(" promotion template " + promotion + " is not found");
+			KIARA.Logger.error(" promotion template " + promotion + " is not found");
 			promotion = undefined;
 			break;
 		}
 		promotion = template.promotion();
 		if (previous === promotion)
 		{
-			if (gameState.ai.Config.debug > 0)
-				API3.warn(" unit " + promotion + " is its own promoted unit");
+			KIARA.Logger.error(" unit " + promotion + " is its own promoted unit");
 			promotion = undefined;
 		}
 	}

@@ -11,7 +11,7 @@ KIARA.QueuePlan = function(gameState, type, metadata)
 	this.template = gameState.getTemplate(this.type);
 	if (!this.template)
 	{
-		API3.warn("Tried to add the inexisting template " + this.type + " to Kiara.");
+		KIARA.Logger.debug("Tried to add the inexisting template " + this.type + " to Kiara.");
 		return false;
 	}
 	this.ID = gameState.ai.uniqueIDs.plans++;

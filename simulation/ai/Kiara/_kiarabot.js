@@ -2,6 +2,53 @@ Engine.IncludeModule("common-api");
 
 var KIARA = {};
 
+KIARA.Logger = function(){};
+
+KIARA.Logger.TRACE = 0;
+KIARA.Logger.DEBUG = 1;
+KIARA.Logger.WARN = 2;
+KIARA.Logger.ERROR = 3;
+
+KIARA.Logger.level = KIARA.Logger.DEBUG;
+
+KIARA.Logger.warn = function(output)
+{
+	if (KIARA.Logger.isWarn())
+		API3.warn(output);
+};
+
+KIARA.Logger.debug = function(output)
+{
+	if (KIARA.Logger.isDebug())
+		API3.warn(output);
+};
+
+KIARA.Logger.trace = function(output)
+{
+	if (KIARA.Logger.isTrace())
+		API3.warn(output);
+};
+
+KIARA.Logger.error = function(output)
+{
+	API3.error(output);
+};
+
+KIARA.Logger.isDebug = function()
+{
+	return KIARA.Logger.DEBUG >= KIARA.Logger.level;
+};
+
+KIARA.Logger.isWarn = function()
+{
+	return KIARA.Logger.WARN >= KIARA.Logger.level;
+};
+
+KIARA.Logger.isTrace = function()
+{
+	return KIARA.Logger.TRACE >= KIARA.Logger.level;
+};
+
 KIARA.KiaraBot = function(settings)
 {
 	API3.BaseAI.call(this, settings);

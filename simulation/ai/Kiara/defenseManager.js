@@ -366,8 +366,7 @@ KIARA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 				continue;
 			if (API3.SquareVectorDistance(base.position(), army.foePosition) > 40000)
 				continue;
-			if(this.Config.debug > 1)
-				API3.warn("army in neutral territory, but still near one of our CC");
+			KIARA.Logger.debug("army in neutral territory, but still near one of our CC");
 			stillDangerous = true;
 			break;
 		}
@@ -377,8 +376,7 @@ KIARA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 				continue;
 			if (API3.SquareVectorDistance(fortress.position(), army.foePosition) > 12000)
 				continue;
-			if(this.Config.debug > 1)
-				API3.warn("army in neutral territory, but still near one of our fortress");
+			KIARA.Logger.debug("army in neutral territory, but still near one of our fortress");
 			stillDangerous = true;
 			break;
 		}
@@ -389,8 +387,7 @@ KIARA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 				continue;
 			if (API3.SquareVectorDistance(tower.position(), army.foePosition) > 12000)
 				continue;
-			if(this.Config.debug > 1)
-				API3.warn("army in neutral territory, but still near one of our fortress");
+			KIARA.Logger.debug("army in neutral territory, but still near one of our fortress");
 			stillDangerous = true;
 			break;
 		}
@@ -437,7 +434,7 @@ KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 			break;
 		}
 		if (!armyAccess)
-			API3.warn(" Kiara error: attacking army " + army.ID + " without access");
+			KIARA.Logger.warn(" Kiara error: attacking army " + army.ID + " without access");
 		army.recalculatePosition(gameState);
 		armiesNeeding.push({ "army": army, "access": armyAccess, "need": needsDef });
 	}
@@ -517,7 +514,7 @@ KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 			else if (aMin === undefined)
 				continue;
 
-			armiesNeeding[aMin].need -= KIARA.getMaxStrength(ent, this.Config.debug, this.Config.DamageTypeImportance);
+			armiesNeeding[aMin].need -= KIARA.getMaxStrength(ent, this.Config.DamageTypeImportance);
 			armiesNeeding[aMin].army.addOwn(gameState, potentialDefenders[i]);
 			armiesNeeding[aMin].army.assignUnit(gameState, potentialDefenders[i]);
 			potentialDefenders[i] = undefined;

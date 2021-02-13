@@ -12,7 +12,7 @@ KIARA.isFastMoving = function(ent)
 };
 
 /** returns some sort of DPS * health factor. If you specify a class, it'll use the modifiers against that class too. */
-KIARA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstClass)
+KIARA.getMaxStrength = function(ent, DamageTypeImportance, againstClass)
 {
 	let strength = 0;
 	let attackTypes = ent.attackTypes();
@@ -33,31 +33,9 @@ KIARA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 				val *= ent.getMultiplierAgainst(type, againstClass);
 			if (DamageTypeImportance[str])
 				strength += DamageTypeImportance[str] * val / damageTypes.length;
-			else if (debugLevel > 0)
-				API3.warn("Kiara: " + str + " unknown attackStrength in getMaxStrength (please add " + str + "  to config.js).");
+			else
+				KIARA.Logger.error("Kiara: " + str + " unknown attackStrength in getMaxStrength (please add " + str + "  to config.js).");
 		}
-/*
-		let attackRange = ent.attackRange(type);
-		if (attackRange)
-			strength += attackRange.max * 0.0125;
-
-		let attackTimes = ent.attackTimes(type);
-		for (let str in attackTimes)
-		{
-			let val = parseFloat(attackTimes[str]);
-			switch (str)
-			{
-			case "repeat":
-				strength += val / 100000;
-				break;
-			case "prepare":
-				strength -= val / 100000;
-				break;
-			default:
-				API3.warn("Kiara: " + str + " unknown attackTimes in getMaxStrength");
-			}
-		}
-*/
 	}
 
 	let resistanceStrength = ent.resistanceStrengths();
@@ -68,8 +46,8 @@ KIARA.getMaxStrength = function(ent, debugLevel, DamageTypeImportance, againstCl
 			let val = +resistanceStrength.Damage[str];
 			if (DamageTypeImportance[str])
 				strength += DamageTypeImportance[str] * val / damageTypes.length;
-			else if (debugLevel > 0)
-				API3.warn("Kiara: " + str + " unknown resistanceStrength in getMaxStrength (please add " + str + "  to config.js).");
+			else
+				KIARA.Logger.error("Kiara: " + str + " unknown resistanceStrength in getMaxStrength (please add " + str + "  to config.js).");
 		}
 
 	// ToDo: Add support for StatusEffects and Capture.
@@ -89,7 +67,7 @@ KIARA.getLandAccess = function(gameState, ent)
 			if (holder)
 				return KIARA.getLandAccess(gameState, holder);
 
-			API3.warn("Kiara error: entity without position, but not garrisoned");
+			KIARA.Logger.error("Kiara error: entity without position, but not garrisoned");
 			KIARA.dumpEntity(ent);
 			return undefined;
 		}
@@ -274,7 +252,7 @@ KIARA.getBestBase = function(gameState, ent, onlyConstructedBase = false, exclud
 		let holder = KIARA.getHolder(gameState, ent);
 		if (!holder || !holder.position())
 		{
-			API3.warn("Kiara error: entity without position, but not garrisoned");
+			KIARA.Logger.debug("Kiara error: entity without position, but not garrisoned");
 			KIARA.dumpEntity(ent);
 			return gameState.ai.HQ.baseManagers[0];
 		}
@@ -425,16 +403,16 @@ KIARA.dumpEntity = function(ent)
 {
 	if (!ent)
 		return;
-	API3.warn(" >>> id " + ent.id() + " name " + ent.genericName() + " pos " + ent.position() +
+	KIARA.Logger.warn(" >>> id " + ent.id() + " name " + ent.genericName() + " pos " + ent.position() +
 		  " state " + ent.unitAIState());
-	API3.warn(" base " + ent.getMetadata(PlayerID, "base") + " >>> role " + ent.getMetadata(PlayerID, "role") +
+	KIARA.Logger.warn(" base " + ent.getMetadata(PlayerID, "base") + " >>> role " + ent.getMetadata(PlayerID, "role") +
 		  " subrole " + ent.getMetadata(PlayerID, "subrole"));
-	API3.warn("owner " + ent.owner() + " health " + ent.hitpoints() + " healthMax " + ent.maxHitpoints() +
+	KIARA.Logger.warn("owner " + ent.owner() + " health " + ent.hitpoints() + " healthMax " + ent.maxHitpoints() +
 	          " foundationProgress " + ent.foundationProgress());
-	API3.warn(" garrisoning " + ent.getMetadata(PlayerID, "garrisoning") +
+	KIARA.Logger.warn(" garrisoning " + ent.getMetadata(PlayerID, "garrisoning") +
 		  " garrisonHolder " + ent.getMetadata(PlayerID, "garrisonHolder") +
 		  " plan " + ent.getMetadata(PlayerID, "plan")	+ " transport " + ent.getMetadata(PlayerID, "transport"));
-	API3.warn(" stance " + ent.getStance() + " transporter " + ent.getMetadata(PlayerID, "transporter") +
+	KIARA.Logger.warn(" stance " + ent.getStance() + " transporter " + ent.getMetadata(PlayerID, "transporter") +
 		  " gather-type " + ent.getMetadata(PlayerID, "gather-type") +
 		  " target-foundation " + ent.getMetadata(PlayerID, "target-foundation") +
 		  " PartOfArmy " + ent.getMetadata(PlayerID, "PartOfArmy"));

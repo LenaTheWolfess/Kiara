@@ -757,7 +757,8 @@ m.GameState.prototype.findTrainableUnits = function(classes, anticlasses)
 		let category = template.trainingCategory();
 		if (category && limits[category] && current[category] >= limits[category])
 			continue;
-		if (matchCounts[trainable] == 1)
+		let limit = template.matchLimit();
+		if (matchCounts && limit && matchCounts[trainable] >= limit)
 			continue;
 		ret.push([trainable, template]);
 	}
@@ -777,7 +778,8 @@ m.GameState.prototype.filterTrainableUnitsByClass = function(allTrainable, class
 			continue;
 		if (anticlasses.some(c => template.hasClass(c)))
 			continue;
-		if (matchCounts[trainable] == 1)
+		let limit = template.matchLimit();
+		if (matchCounts && limit && matchCounts[trainable] >= limit)
 			continue;
 
 		ret.push([trainable, template]);
@@ -801,7 +803,8 @@ m.GameState.prototype.filterTrainableUnits = function(allTrainable)
 		let category = template.trainingCategory();
 		if (category && limits[category] && current[category] >= limits[category])
 			continue;
-		if (matchCounts[trainable] == 1)
+		let limit = template.matchLimit();
+		if (matchCounts && limit && matchCounts[trainable] >= limit)
 			continue;
 
 		ret.push(trainable);

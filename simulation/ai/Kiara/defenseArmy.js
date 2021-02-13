@@ -176,8 +176,7 @@ KIARA.DefenseArmy.prototype.removeOwn = function(gameState, id, Entity)
 		// no plans must mean that the unit was in a ship which was destroyed, so do nothing
 		if (planID)
 		{
-			if (gameState.ai.Config.debug > 0)
-				warn("ent from army still in transport plan: plan " + planID + " canceled");
+			KIARA.Logger.debug("ent from army still in transport plan: plan " + planID + " canceled");
 			let plan = gameState.ai.HQ.navalManager.getPlan(planID);
 			if (plan && !plan.canceled)
 				plan.cancelTransport(gameState);
@@ -494,7 +493,7 @@ KIARA.DefenseArmy.prototype.evaluateStrength = function(ent, isOwn, remove)
 			entStrength = 2;
 	}
 	else
-		entStrength = KIARA.getMaxStrength(ent, this.Config.debug, this.Config.DamageTypeImportance);
+		entStrength = KIARA.getMaxStrength(ent, this.Config.DamageTypeImportance);
 
 	// TODO adapt the getMaxStrength function for animals.
 	// For the time being, just increase it for elephants as the returned value is too small.

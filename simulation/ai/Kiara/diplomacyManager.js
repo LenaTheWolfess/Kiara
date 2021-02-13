@@ -105,8 +105,7 @@ KIARA.DiplomacyManager.prototype.tributes = function(gameState)
 						this.nextTributeRequest.set("all", gameState.ai.elapsedTime + 90);
 						this.nextTributeRequest.set(res, gameState.ai.elapsedTime + 240);
 						KIARA.chatRequestTribute(gameState, res);
-						if (this.Config.debug > 1)
-							API3.warn("Tribute on " + res + " requested to player " + i);
+						KIARA.Logger.debug("Tribute on " + res + " requested to player " + i);
 						break;
 					}
 				}
@@ -114,8 +113,7 @@ KIARA.DiplomacyManager.prototype.tributes = function(gameState)
 		}
 		if (!toSend)
 			continue;
-		if (this.Config.debug > 1)
-			API3.warn("Tribute " + uneval(tribute) + " sent to player " + i);
+		KIARA.Logger.debug("Tribute " + uneval(tribute) + " sent to player " + i);
 		if (this.Config.chat)
 			KIARA.chatSentTribute(gameState, i);
 		Engine.PostCommand(PlayerID, { "type": "tribute", "player": i, "amounts": tribute });
@@ -137,8 +135,7 @@ KIARA.DiplomacyManager.prototype.checkEvents = function(gameState, events)
 
 				if (request.wanted <= 0)
 				{
-					if (this.Config.debug > 1)
-						API3.warn("Player " + uneval(evt.from) + " has sent the required tribute amount");
+					KIARA.Logger.debug("Player " + uneval(evt.from) + " has sent the required tribute amount");
 
 					this.changePlayerDiplomacy(gameState, evt.from, request.requestType);
 					request.status = "accepted";
@@ -230,8 +227,7 @@ KIARA.DiplomacyManager.prototype.checkEvents = function(gameState, events)
 
 		this.handleDiplomacyRequest(gameState, evt.source, evt.to);
 		let request = this.receivedDiplomacyRequests.get(evt.source);
-		if (this.Config.debug > 0)
-			API3.warn("Responding to diplomacy request from AI player " + evt.source + " with " + uneval(request));
+		KIARA.Logger.debug("Responding to diplomacy request from AI player " + evt.source + " with " + uneval(request));
 
 		// Our diplomacy will have changed already if the response was "accept"
 		if (request.status === "waitingForTribute")
@@ -258,8 +254,7 @@ KIARA.DiplomacyManager.prototype.checkEvents = function(gameState, events)
 		{
 			let responseTribute = {};
 			responseTribute[evt.resourceType] = evt.resourceWanted;
-			if (this.Config.debug > 0)
-				API3.warn("Responding to tribute request from AI player " + evt.source + " with " + uneval(responseTribute));
+			KIARA.Logger.debug("Responding to tribute request from AI player " + evt.source + " with " + uneval(responseTribute));
 			Engine.PostCommand(PlayerID, { "type": "tribute", "player": evt.source, "amounts": responseTribute });
 			this.nextTributeUpdate = gameState.ai.elapsedTime + 15;
 		}
@@ -434,8 +429,8 @@ KIARA.DiplomacyManager.prototype.changePlayerDiplomacy = function(gameState, pla
 	if (gameState.isPlayerEnemy(player) && (newDiplomaticStance === "ally" || newDiplomaticStance === "neutral"))
 		gameState.ai.HQ.attackManager.cancelAttacksAgainstPlayer(gameState, player);
 	Engine.PostCommand(PlayerID, { "type": "diplomacy", "player": player, "to": newDiplomaticStance });
-	if (this.Config.debug > 1)
-		API3.warn("diplomacy stance with player " + player + " is now " + newDiplomaticStance);
+
+	KIARA.Logger.debug("diplomacy stance with player " + player + " is now " + newDiplomaticStance);
 	if (this.Config.chat)
 		KIARA.chatNewDiplomacy(gameState, player, newDiplomaticStance);
 };
@@ -502,8 +497,7 @@ KIARA.DiplomacyManager.prototype.sendDiplomacyRequest = function(gameState)
 		"timeSent": gameState.ai.elapsedTime
 	});
 
-	if (this.Config.debug > 0)
-		API3.warn("Sending diplomacy request to player " + player + " with " + requestType);
+	KIARA.Logger.debug("Sending diplomacy request to player " + player + " with " + requestType);
 	Engine.PostCommand(PlayerID, { "type": "diplomacy-request", "source": PlayerID, "player": player, "to": requestType });
 	KIARA.chatNewRequestDiplomacy(gameState, player, requestType, "sendRequest");
 };

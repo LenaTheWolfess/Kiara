@@ -847,8 +847,7 @@ KIARA.Worker.prototype.startGathering = function(gameState)
 
 	// If we are here, we have nothing left to gather ... certainly no more resources of this type
 	gameState.ai.HQ.lastFailedGather[resource] = gameState.ai.elapsedTime;
-	if (gameState.ai.Config.debug > 2)
-		API3.warn(" >>>>> worker with gather-type " + resource + " with nothing to gather ");
+	KIARA.Logger.debug(" >>>>> worker with gather-type " + resource + " with nothing to gather ");
 	this.ent.setMetadata(PlayerID, "subrole", "idle");
 	gameState.ai.HQ.signalNoSupply(gameState, resource);
 	return false;

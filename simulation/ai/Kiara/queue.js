@@ -189,7 +189,7 @@ KIARA.Queue.prototype.Deserialize = function(gameState, data)
 			plan = new KIARA.ResearchPlan(gameState, dataPlan.type);
 		else
 		{
-			API3.warn("Kiara deserialization error: plan unknown " + uneval(dataPlan));
+			KIARA.Logger.debug("Kiara deserialization error: plan unknown " + uneval(dataPlan));
 			continue;
 		}
 		plan.Deserialize(gameState, dataPlan);

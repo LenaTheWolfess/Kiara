@@ -15,6 +15,12 @@ m.Template = m.Class({
 		this._tpCache = new Map();
 	},
 
+	"matchLimit": function() {
+		if (!this.get("TrainingRestrictions"))
+			return undefined;
+		return this.get("TrainingRestrictions/MatchLimit");
+	},
+
 	// Helper function to return a template value, adjusting for tech.
 	"get": function(string)
 	{

@@ -44,8 +44,7 @@ KIARA.HQ.prototype.gameAnalysis = function(gameState)
 		let template = gameState.applyCiv("structures/{civ}/civil_centre");
 		if (!gameState.isTemplateAvailable(template) || !gameState.getTemplate(template).available(gameState))
 		{
-			if (this.Config.debug > 1)
-				API3.warn(" this AI is unable to produce any units");
+			KIARA.Logger.warn(" this AI is unable to produce any units");
 			this.canBuildUnits = false;
 			this.dispatchUnits(gameState);
 		}
@@ -74,7 +73,7 @@ KIARA.HQ.prototype.assignStartingEntities = function(gameState)
 		{
 			// TODO should support recursive garrisoning. Make a warning for now
 			if (ent.isGarrisonHolder() && ent.garrisoned().length)
-				API3.warn("Kiara warning: support for garrisoned units inside garrisoned holders not yet implemented");
+				KIARA.Logger.debug("Kiara warning: support for garrisoned units inside garrisoned holders not yet implemented");
 			continue;
 		}
 
@@ -171,7 +170,7 @@ KIARA.HQ.prototype.regionAnalysis = function(gameState)
 	}
 	if (!landIndex && !seaIndex)
 	{
-		API3.warn("Kiara error: it does not know how to interpret this map");
+		KIARA.Logger.debug("Kiara error: it does not know how to interpret this map");
 		return false;
 	}
 
@@ -216,13 +215,13 @@ KIARA.HQ.prototype.regionAnalysis = function(gameState)
 			this.navalRegions[i] = true;
 	}
 
-	if (this.Config.debug < 3)
+	if (!KIARA.Logger.isTrace())
 		return true;
 	for (let region in this.landRegions)
-		API3.warn(" >>> zone " + region + " taille " + cellArea*gameState.ai.accessibility.regionSize[region]);
-	API3.warn(" navalMap " + this.navalMap);
-	API3.warn(" landRegions " + uneval(this.landRegions));
-	API3.warn(" navalRegions " + uneval(this.navalRegions));
+		KIARA.Logger.trace(" >>> zone " + region + " taille " + cellArea*gameState.ai.accessibility.regionSize[region]);
+	KIARA.Logger.trace(" navalMap " + this.navalMap);
+	KIARA.Logger.trace(" landRegions " + uneval(this.landRegions));
+	KIARA.Logger.trace(" navalRegions " + uneval(this.navalRegions));
 	return true;
 };
 
@@ -361,8 +360,8 @@ KIARA.HQ.prototype.dispatchUnits = function(gameState)
 	let allycc = gameState.getExclusiveAllyEntities().filter(API3.Filters.byClass("CivCentre")).toEntityArray();
 	if (allycc.length)
 	{
-		if (this.Config.debug > 1)
-			API3.warn(" We have allied cc " + allycc.length + " and " + gameState.getOwnUnits().length + " units ");
+		if (KIARA.Logger.isTrace())
+			KIARA.Logger.trace(" We have allied cc " + allycc.length + " and " + gameState.getOwnUnits().length + " units ");
 		let units = gameState.getOwnUnits();
 		let num = Math.max(Math.min(Math.round(0.08*(1+this.Config.personality.cooperative)*units.length), 20), 5);
 		let num1 = Math.floor(num / 2);
@@ -454,8 +453,7 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 	}
 	let cell = gameState.getPassabilityMap().cellSize;
 	startingSize = startingSize * cell * cell;
-	if (this.Config.debug > 1)
-		API3.warn("starting size " + startingSize + "(cut at 24000 for fish pushing)");
+	KIARA.Logger.debug("starting size " + startingSize + "(cut at 24000 for fish pushing)");
 	if (startingSize < 25000)
 	{
 		this.saveSpace = true;
@@ -501,7 +499,7 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 	}
 
 	this.cavalryRush = hunt > 2000;
-	API3.warn("cavalryRush = " + this.cavalryRush);
+	KIARA.Logger.debug("cavalryRush = " + this.cavalryRush);
 
 	if (startingFood < 800)
 	{
@@ -529,8 +527,7 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 			}
 		}
 	}
-	if (this.Config.debug > 1)
-		API3.warn("startingWood: " + startingWood + " (cut at 8500 for no rush and 6000 for saveResources)");
+	KIARA.Logger.debug("startingWood: " + startingWood + " (cut at 8500 for no rush and 6000 for saveResources)");
 	if (startingWood < 6000)
 	{
 		this.saveResources = true;

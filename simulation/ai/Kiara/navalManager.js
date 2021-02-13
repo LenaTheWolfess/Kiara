@@ -283,8 +283,7 @@ KIARA.NavalManager.prototype.checkEvents = function(gameState, queues, events)
 			continue;
 
 		let shipId = evt.entityObj.id();
-		if (this.Config.debug > 1)
-			API3.warn("one ship " + shipId + " from plan " + plan.ID + " destroyed during " + plan.state);
+		KIARA.Logger.debug("one ship " + shipId + " from plan " + plan.ID + " destroyed during " + plan.state);
 		if (plan.state == "boarding")
 		{
 			// just reset the units onBoard metadata and wait for a new ship to be assigned to this plan
@@ -353,8 +352,7 @@ KIARA.NavalManager.prototype.requireTransport = function(gameState, ent, startIn
 
 	if (ent.getMetadata(PlayerID, "transport") !== undefined)
 	{
-		if (this.Config.debug > 0)
-			API3.warn("Kiara naval manager error: unit " + ent.id() + " has already required a transport");
+		KIARA.Logger.error("Kiara naval manager error: unit " + ent.id() + " has already required a transport");
 		return false;
 	}
 
@@ -379,8 +377,7 @@ KIARA.NavalManager.prototype.requireTransport = function(gameState, ent, startIn
 	let plan = new KIARA.TransportPlan(gameState, [ent], startIndex, endIndex, endPos);
 	if (plan.failed)
 	{
-		if (this.Config.debug > 1)
-			API3.warn(">>>> transport plan aborted <<<<");
+		KIARA.Logger.debug(">>>> transport plan aborted <<<<");
 		return false;
 	}
 	plan.init(gameState);
@@ -391,13 +388,11 @@ KIARA.NavalManager.prototype.requireTransport = function(gameState, ent, startIn
 /** split a transport plan in two, moving all entities not yet affected to a ship in the new plan */
 KIARA.NavalManager.prototype.splitTransport = function(gameState, plan)
 {
-	if (this.Config.debug > 1)
-		API3.warn(">>>> split of transport plan started <<<<");
+	KIARA.Logger.trace(">>>> split of transport plan started <<<<");
 	let newplan = new KIARA.TransportPlan(gameState, [], plan.startIndex, plan.endIndex, plan.endPos);
 	if (newplan.failed)
 	{
-		if (this.Config.debug > 1)
-			API3.warn(">>>> split of transport plan aborted <<<<");
+		KIARA.Logger.trace(">>>> split of transport plan aborted <<<<");
 		return false;
 	}
 	newplan.init(gameState);
@@ -832,8 +827,7 @@ KIARA.NavalManager.prototype.update = function(gameState, queues, events)
 		let remaining = this.transportPlans[i].update(gameState);
 		if (remaining)
 			continue;
-		if (this.Config.debug > 1)
-			API3.warn("no more units on transport plan " + this.transportPlans[i].ID);
+		KIARA.Logger.trace("no more units on transport plan " + this.transportPlans[i].ID);
 		this.transportPlans[i].releaseAll();
 		this.transportPlans.splice(i--, 1);
 	}

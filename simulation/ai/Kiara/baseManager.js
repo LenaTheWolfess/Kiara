@@ -92,7 +92,7 @@ KIARA.BaseManager.prototype.assignEntity = function(gameState, ent)
 KIARA.BaseManager.prototype.setAnchor = function(gameState, anchorEntity)
 {
 	if (!anchorEntity.hasClass("CivCentre"))
-		API3.warn("Error: Kiara base " + this.ID + " has been assigned " + ent.templateName() + " as anchor.");
+		KIARA.Logger.error("Error: Kiara base " + this.ID + " has been assigned " + ent.templateName() + " as anchor.");
 	else
 	{
 		this.anchor = anchorEntity;
@@ -121,11 +121,11 @@ KIARA.BaseManager.prototype.setAnchorlessEntity = function(gameState, ent)
 	if (!this.buildings.hasEntities())
 	{
 		if (!KIARA.getBuiltEntity(gameState, ent).resourceDropsiteTypes())
-			API3.warn("Error: Kiara base " + this.ID + " has been assigned " + ent.templateName() + " as origin.");
+			KIARA.Logger.error("Error: Kiara base " + this.ID + " has been assigned " + ent.templateName() + " as origin.");
 		this.accessIndex = KIARA.getLandAccess(gameState, ent);
 	}
 	else if (this.accessIndex != KIARA.getLandAccess(gameState, ent))
-		API3.warn(" Error: Kiara base " + this.ID + " with access " + this.accessIndex +
+		KIARA.Logger.error(" Error: Kiara base " + this.ID + " with access " + this.accessIndex +
 		          " has been assigned " + ent.templateName() + " with access" + KIARA.getLandAccess(gameState, ent));
 
 	ent.setMetadata(PlayerID, "base", this.ID);
@@ -147,8 +147,7 @@ KIARA.BaseManager.prototype.assignResourceToDropsite = function(gameState, drops
 {
 	if (this.dropsites[dropsite.id()])
 	{
-		if (this.Config.debug > 0)
-			warn("assignResourceToDropsite: dropsite already in the list. Should never happen");
+		KIARA.Logger.error("assignResourceToDropsite: dropsite already in the list. Should never happen");
 		return;
 	}
 
@@ -349,7 +348,7 @@ KIARA.BaseManager.prototype.findBestFarmsteadLocation = function(gameState, reso
 
 	let resMap = gameState.sharedScript.resourceMaps[resource];
 	if (!resMap) {
-		API3.warn("resource map is undefined for " + resource);
+		KIARA.Logger.error("resource map is undefined for " + resource);
 		resource = "wood";
 		resMap = gameState.sharedScript.resourceMaps[resource];
 	}
@@ -393,8 +392,7 @@ KIARA.BaseManager.prototype.findBestFarmsteadLocation = function(gameState, reso
 		bestIdx = i;
 	}
 
-	if (this.Config.debug > 2)
-		warn(" for farmstead best is " + bestVal);
+	KIARA.Logger.trace(" for farmstead best is " + bestVal);
 
 	if (bestVal <= 0)
 		return { "quality": bestVal, "pos": [0, 0] };
@@ -414,7 +412,7 @@ KIARA.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut =
 		return;
 
 	this.needDropsite[resource] = true;
-//	API3.warn("base need supply " + resource);
+	KIARA.Logger.trace("base need supply " + resource);
 	let res = resource;
 	// Try to build one
 	if (res == "food" || res == "farm") {
@@ -424,7 +422,7 @@ KIARA.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut =
 	}
 
 	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/storehouse"))) {
-		API3.warn("signalNoSupply: cannot build storehouse");
+		KIARA.Logger.trace("signalNoSupply: cannot build storehouse");
 		return;
 	}
 
@@ -459,7 +457,7 @@ KIARA.BaseManager.prototype.buildField = function(gameState, queues)
 
 KIARA.BaseManager.prototype.signalNoNeedSupply = function(gameState, resource)
 {
-//	API3.warn("base no need supply " + resource);
+	KIARA.Logger.trace("base no need supply " + resource);
 	this.needDropsite[resource] = false;
 	gameState.ai.HQ.signalNoNeedSupply(gameState, resource);
 }
@@ -573,8 +571,7 @@ KIARA.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resou
 		bestIdx = i;
 	}
 
-	if (this.Config.debug > 2)
-		warn(" for dropsite best is " + bestVal);
+	KIARA.Logger.trace(" for dropsite best is " + bestVal);
 
 	if (bestVal <= 0)
 		return { "quality": bestVal, "pos": [0, 0] };
@@ -1159,7 +1156,7 @@ KIARA.BaseManager.prototype.update = function(gameState, queues, events)
 				if (!bestBase)
 				{
 					if (ent.hasClass("Dock"))
-						API3.warn("Kiara: dock in baseManager[0]. It may be useful to do an anchorless base for " + ent.templateName());
+						KIARA.Logger.error("Kiara: dock in baseManager[0]. It may be useful to do an anchorless base for " + ent.templateName());
 					continue;
 				}
 				if (ent.resourceDropsiteTypes())

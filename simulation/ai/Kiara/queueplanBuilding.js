@@ -44,7 +44,7 @@ KIARA.ConstructionPlan.prototype.start = function(gameState)
 	let builder = gameState.findBuilder(this.type);
 	if (!builder)
 	{
-		API3.warn("petra error: builder not found when starting construction.");
+		KIARA.Logger.debug("petra error: builder not found when starting construction.");
 		Engine.ProfileStop();
 		this.started = true;
 		return;
@@ -606,7 +606,7 @@ KIARA.ConstructionPlan.prototype.buildOverseaDock = function(gameState, template
 	if (!found)
 		return;
 	if (!gameState.ai.HQ.navalMap)
-		API3.warn("petra.findOverseaLand on a non-naval map??? we should never go there ");
+		KIARA.Logger.debug("petra.findOverseaLand on a non-naval map??? we should never go there ");
 
 	let oldTemplate = this.template;
 	let oldMetadata = this.metadata;

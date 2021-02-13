@@ -99,9 +99,8 @@ KIARA.TradeManager.prototype.trainMoreTraders = function(gameState, queues)
 
 	if (!gameState.getTemplate(template))
 	{
-		if (this.Config.debug > 0)
-			API3.warn("Kiara error: trying to train " + template + " for civ " +
-			          gameState.getPlayerCiv() + " but no template found.");
+		KIARA.Logger.error("trying to train " + template + " for civ " +
+		          gameState.getPlayerCiv() + " but no template found.");
 		return;
 	}
 	queues.trader.addPlan(new KIARA.TrainingPlan(gameState, template, metadata, 1, 1));
@@ -127,8 +126,7 @@ KIARA.TradeManager.prototype.updateTrader = function(gameState, ent)
 	if (!route)
 	{
 		// TODO try to garrison land trader inside merchant ship when only sea routes available
-		if (this.Config.debug > 0)
-			API3.warn(" no available route for " + ent.genericName() + " " + ent.id());
+		KIARA.Logger.error(" no available route for " + ent.genericName() + " " + ent.id());
 		Engine.ProfileStop();
 		return;
 	}
@@ -204,8 +202,7 @@ KIARA.TradeManager.prototype.setTradingGoods = function(gameState)
 	else
 		tradingGoods[mostNeeded[0].type] += nextNeed;
 	Engine.PostCommand(PlayerID, { "type": "set-trading-goods", "tradingGoods": tradingGoods });
-	if (this.Config.debug > 2)
-		API3.warn(" trading goods set to " + uneval(tradingGoods));
+	KIARA.Logger.debug(" trading goods set to " + uneval(tradingGoods));
 };
 
 /**
@@ -282,8 +279,8 @@ KIARA.TradeManager.prototype.performBarter = function(gameState)
 		{
 			let amount = available[bestToSell] > 5000 ? 500 : 100;
 			barterers[0].barter(buy, bestToSell, amount);
-			if (this.Config.debug > 2)
-				API3.warn("Necessity bartering: sold " + bestToSell +" for " + buy +
+			if (KIARA.Logger.isDebug())
+				KIARA.Logger.debug("Necessity bartering: sold " + bestToSell +" for " + buy +
 				          " >> need sell " + needs[bestToSell] + " need buy " + needs[buy] +
 				          " rate buy " + rates[buy] + " available sell " + available[bestToSell] +
 				          " available buy " + available[buy] + " barterRate " + bestRate +
@@ -318,8 +315,8 @@ KIARA.TradeManager.prototype.performBarter = function(gameState)
 	{
 		let amount = available.food > 5000 ? 500 : 100;
 		barterers[0].barter(bestToBuy, "food", amount);
-		if (this.Config.debug > 2)
-			API3.warn("Contingency bartering: sold food for " + bestToBuy +
+		if (KIARA.Logger.isDebug())
+			KIARA.Logger.debug("Contingency bartering: sold food for " + bestToBuy +
 			          " available sell " + available.food + " available buy " + available[bestToBuy] +
 			          " barterRate " + getBarterRate(barterPrices, bestToBuy, "food") +
 			          " amount " + amount);
@@ -509,19 +506,18 @@ KIARA.TradeManager.prototype.checkRoutes = function(gameState, accessIndex)
 
 	if (candidate.gain < 1)
 	{
-		if (this.Config.debug > 2)
-			API3.warn("no better trade route possible");
+		KIARA.Logger.debug("no better trade route possible");
 		this.tradeRoute = undefined;
 		return false;
 	}
 
-	if (this.Config.debug > 1 && this.tradeRoute)
+	if (KIARA.Logger.isDebug() && this.tradeRoute)
 	{
 		if (candidate.gain > this.tradeRoute.gain)
-			API3.warn("one better trade route set with gain " + candidate.gain + " instead of " + this.tradeRoute.gain);
+			KIARA.Logger.debug("one better trade route set with gain " + candidate.gain + " instead of " + this.tradeRoute.gain);
 	}
-	else if (this.Config.debug > 1)
-		API3.warn("one trade route set with gain " + candidate.gain);
+	else
+		KIARA.Logger.debug("one trade route set with gain " + candidate.gain);
 	this.tradeRoute = candidate;
 
 	if (this.Config.chat)
@@ -613,10 +609,10 @@ KIARA.TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
 	if (this.Config.debug > 1)
 	{
 		if (this.potentialTradeRoute)
-			API3.warn("turn " + gameState.ai.playedTurn + "we could have a new route with gain " +
+			KIARA.Logger.debug("turn " + gameState.ai.playedTurn + "we could have a new route with gain " +
 				marketPos[3] + " instead of the present " + this.potentialTradeRoute.gain);
 		else
-			API3.warn("turn " + gameState.ai.playedTurn + "we could have a first route with gain " +
+			KIARA.Logger.debug("turn " + gameState.ai.playedTurn + "we could have a first route with gain " +
 				marketPos[3]);
 	}
 

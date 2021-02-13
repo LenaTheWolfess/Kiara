@@ -232,18 +232,18 @@ KIARA.AttackManager.prototype.assignBombers = function(gameState)
  */
 KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 {
-	if (this.Config.debug > 2 && gameState.ai.elapsedTime > this.debugTime + 60)
+	if (KIARA.Logger.isTrace() && gameState.ai.elapsedTime > this.debugTime + 60)
 	{
 		this.debugTime = gameState.ai.elapsedTime;
-		API3.warn(" upcoming attacks =================");
+		KIARA.Logger.trace(" upcoming attacks =================");
 		for (let attackType in this.upcomingAttacks)
 			for (let attack of this.upcomingAttacks[attackType])
-				API3.warn(" plan " + attack.name + " type " + attackType + " state " + attack.state + " units " + attack.unitCollection.length);
-		API3.warn(" started attacks ==================");
+				KIARA.Logger.trace(" plan " + attack.name + " type " + attackType + " state " + attack.state + " units " + attack.unitCollection.length);
+		KIARA.Logger.debug(" started attacks ==================");
 		for (let attackType in this.startedAttacks)
 			for (let attack of this.startedAttacks[attackType])
-				API3.warn(" plan " + attack.name + " type " + attackType + " state " + attack.state + " units " + attack.unitCollection.length);
-		API3.warn(" ==================================");
+				KIARA.Logger.trace(" plan " + attack.name + " type " + attackType + " state " + attack.state + " units " + attack.unitCollection.length);
+		KIARA.Logger.trace(" ==================================");
 	}
 
 	this.checkEvents(gameState, events);
@@ -260,7 +260,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			if (stopAllAttacks)
 			{
 				attack.Abort(gameState);
-				API3.warn("Kiara stop attack " + attack.getType());
+				KIARA.Logger.debug("Kiara stop attack " + attack.getType());
 				this.upcomingAttacks[attackType].splice(i--, 1);
 				continue;
 			}
@@ -268,7 +268,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			attack.checkEvents(gameState, events);
 
 			if (attack.isStarted())
-				API3.warn("Kiara problem in attackManager: attack in preparation has already started ???");
+				KIARA.Logger.debug("Kiara problem in attackManager: attack in preparation has already started ???");
 
 			let updateStep = attack.updatePreparation(gameState);
 			// now we're gonna check if the preparation time is over
@@ -280,8 +280,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			}
 			else if (updateStep == 0)
 			{
-				if (this.Config.debug > 1)
-					API3.warn("Attack Manager: " + attack.getType() + " plan " + attack.getName() + " aborted.");
+				KIARA.Logger.debug("Attack Manager: " + attack.getType() + " plan " + attack.getName() + " aborted.");
 				attack.Abort(gameState);
 				this.upcomingAttacks[attackType].splice(i--, 1);
 			}
@@ -289,8 +288,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			{
 				if (attack.StartAttack(gameState))
 				{
-					if (this.Config.debug > 1)
-						API3.warn("Attack Manager: Starting " + attack.getType() + " plan " + attack.getName());
+					KIARA.Logger.debug("Attack Manager: Starting " + attack.getType() + " plan " + attack.getName());
 					if (this.Config.chat)
 						KIARA.chatLaunchAttack(gameState, attack.targetPlayer, attack.getType());
 					this.startedAttacks[attackType].push(attack);
@@ -309,13 +307,14 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			let attack = this.startedAttacks[attackType][i];
 			attack.checkEvents(gameState, events);
 			// okay so then we'll update the attack.
-			if (attack.isPaused())
+			if (attack.isPaused()) {
+				KIARA.Logger.debug("attack '"+attackType+"' is paused");
 				continue;
+			}
 			let remaining = attack.update(gameState, events);
 			if (!remaining)
 			{
-				if (this.Config.debug > 1)
-					API3.warn("Military Manager: " + attack.getType() + " plan " + attack.getName() + " is finished with remaining " + remaining);
+				KIARA.Logger.debug("Military Manager: " + attack.getType() + " plan " + attack.getName() + " is finished with remaining " + remaining);
 				attack.Abort(gameState);
 				this.startedAttacks[attackType].splice(i--, 1);
 			}
@@ -337,8 +336,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, "Rush", data);
 			if (!attackPlan.failed)
 			{
-				if (this.Config.debug > 1)
-					API3.warn("Military Manager: Rushing plan " + this.totalNumber + " with maxRushes " + this.maxRushes);
+				KIARA.Logger.debug("Military Manager: Rushing plan " + this.totalNumber + " with maxRushes " + this.maxRushes);
 				this.totalNumber++;
 				attackPlan.init(gameState);
 				this.upcomingAttacks.Rush.push(attackPlan);
@@ -368,8 +366,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, "EarlyRaid", data);
 			if (!attackPlan.failed)
 			{
-				if (this.Config.debug > 1)
-					API3.warn("Military Manager: EarlyRaid plan " + this.totalNumber + " with maxRaids " + this.maxRaids);
+				KIARA.Logger.debug("Military Manager: EarlyRaid plan " + this.totalNumber + " with maxRaids " + this.maxRaids);
 				this.totalNumber++;
 				attackPlan.init(gameState);
 				this.upcomingAttacks.EarlyRaid.push(attackPlan);
@@ -395,8 +392,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 				this.attackPlansEncounteredWater = true; // hack
 			else
 			{
-				if (this.Config.debug > 1)
-					API3.warn("Military Manager: Creating the plan " + type + "  " + this.totalNumber);
+				KIARA.Logger.debug("Military Manager: Creating the plan " + type + "  " + this.totalNumber);
 				this.totalNumber++;
 				attackPlan.init(gameState);
 				this.upcomingAttacks[type].push(attackPlan);
@@ -591,7 +587,7 @@ KIARA.AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 		if (!gameState.isPlayerEnemy(i))
 			continue;
 		let enemyCount = gameState.getEnemyUnits(i).length;
-		API3.warn("enemy " + i + " : " + enemyCount + " > " + max);
+		KIARA.Logger.debug("enemy " + i + " : " + enemyCount + " > " + max);
 		if (enemyCount > max)
 			continue;
 		max = enemyCount;
@@ -600,7 +596,7 @@ KIARA.AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 	if (attack.targetPlayer === undefined)
 		this.currentEnemyPlayer = enemyPlayer;
 	if (enemyPlayer === undefined)
-		API3.warn("picking enemy is undefined");
+		KIARA.Logger.debug("picking enemy is undefined");
 	return enemyPlayer;
 };
 
@@ -693,8 +689,7 @@ KIARA.AttackManager.prototype.raidTargetEntity = function(gameState, ent)
 	let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, "Raid", data);
 	if (attackPlan.failed)
 		return null;
-	if (this.Config.debug > 1)
-		API3.warn("Military Manager: Raiding plan " + this.totalNumber);
+	KIARA.Logger.debug("Military Manager: Raiding plan " + this.totalNumber);
 	this.raidNumber++;
 	this.totalNumber++;
 	attackPlan.init(gameState);
@@ -731,7 +726,7 @@ KIARA.AttackManager.prototype.switchDefenseToAttack = function(gameState, target
 		return false;
 	if (!data.range && !data.armyID)
 	{
-		API3.warn(" attackManager.switchDefenseToAttack inconsistent data " + uneval(data));
+		KIARA.Logger.error(" attackManager.switchDefenseToAttack inconsistent data " + uneval(data));
 		return false;
 	}
 	let attackData = data.uniqueTarget ? { "uniqueTargetId": target.id() } : undefined;

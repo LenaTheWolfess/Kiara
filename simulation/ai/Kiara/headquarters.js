@@ -162,11 +162,11 @@ KIARA.HQ.prototype.createBase = function(gameState, ent, type)
 		}
 	}
 
-	if (this.Config.debug > 0)
+	if (KIARA.Logger.isDebug())
 	{
-		API3.warn(" ----------------------------------------------------------");
-		API3.warn(" HQ createBase entrance avec access " + access + " and type " + type);
-		API3.warn(" with access " + uneval(this.baseManagers.map(base => base.accessIndex)) +
+		KIARA.Logger.debug(" ----------------------------------------------------------");
+		KIARA.Logger.debug(" HQ createBase entrance avec access " + access + " and type " + type);
+		KIARA.Logger.debug(" with access " + uneval(this.baseManagers.map(base => base.accessIndex)) +
 			  " and base nbr " + uneval(this.baseManagers.map(base => base.ID)) +
 			  " and anchor " + uneval(this.baseManagers.map(base => !!base.anchor)));
 	}
@@ -199,12 +199,10 @@ KIARA.HQ.prototype.getSeaBetweenIndices = function(gameState, index1, index2)
 	if (path && path.length == 3 && gameState.ai.accessibility.regionType[path[1]] == "water")
 		return path[1];
 
-	if (this.Config.debug > 1)
-	{
-		API3.warn("bad path from " + index1 + " to " + index2 + " ??? " + uneval(path));
-		API3.warn(" regionLinks start " + uneval(gameState.ai.accessibility.regionLinks[index1]));
-		API3.warn(" regionLinks end   " + uneval(gameState.ai.accessibility.regionLinks[index2]));
-	}
+	KIARA.Logger.error("bad path from " + index1 + " to " + index2 + " ??? " + uneval(path));
+	KIARA.Logger.error(" regionLinks start " + uneval(gameState.ai.accessibility.regionLinks[index1]));
+	KIARA.Logger.error(" regionLinks end   " + uneval(gameState.ai.accessibility.regionLinks[index2]));
+
 	return undefined;
 };
 
@@ -315,7 +313,7 @@ KIARA.HQ.prototype.checkEvents = function(gameState, events)
 			let res = ent.getMetadata(PlayerID, "type");
 		let coloring = false;
 		if (res & coloring) {
-	//		API3.warn("Dropsite build for " + res);
+			KIARA.Logger.trace("Dropsite build for " + res);
 			if (res == "wood")
 				Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [ent.id()], "rgb": [2,0,0]});
 			if (res == "stone")
@@ -686,13 +684,13 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 
 	if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 		if (!fHouse && !nHouses) {
-		//	API3.warn("add house");
+			KIARA.Logger.debug("add house");
 			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
 			// change the starting condition according to the situation.
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
 		}
-	//	API3.warn("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
+		KIARA.Logger.debug("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
 		return;
 	}
 
@@ -715,7 +713,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	});
 
 	let pop = gameState.getPopulation() + numberQueued;
-//	API3.warn("pop = " + gameState.getPopulation() + " queued pop = " + numberQueued);
+//	KIARA.Logger.debug("pop = " + gameState.getPopulation() + " queued pop = " + numberQueued);
 	let free = gameState.getPopulationLimit() - (gameState.getPopulation() + numberInTraining);
 
 	let anyClasses = ["Worker"];
@@ -731,7 +729,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let sieges = gameState.getOwnEntitiesByClass("Siege", true).length;
 	let workers = gameState.getOwnEntitiesByClass("Worker", true).length;
 
-//	API3.warn("farmers = " + farmers + ", workers = " + workers + ", sieges = " + sieges);
+//	KIARA.Logger.debug("farmers = " + farmers + ", workers = " + workers + ", sieges = " + sieges);
 	let supportNum = 40;
 	let siegeNum = 5;
 
@@ -780,7 +778,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let fac = gameState.getOwnTrainingFacilities().values();
 	for (let ent of fac) {
 		if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
-			API3.warn(gameState.getPopulationLimit() + " < " + this.wantPop);
+			KIARA.Logger.debug(gameState.getPopulationLimit() + " < " + this.wantPop);
 			return;
 		}
 		let tt = ent.trainableEntities(civ);
@@ -848,10 +846,10 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 
 			pop += size;
 			if (missing > 0) {
-		//		API3.warn("missing " + missing + " -> " + pop);
+				KIARA.Logger.debug("missing " + missing + " -> " + pop);
 				this.wantPop = pop;
 				while (nHouses < 3 && missing > 0) {
-		//			warn("add house");
+					warn("add house");
 					let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
 					// change the starting condition according to the situation.
 					plan.goRequirement = "houseNeeded";
@@ -862,7 +860,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 				if (possible > 0)
 				{
 					possible = Math.min(size, possible);
-		//			API3.warn("possible " + possible);
+					KIARA.Logger.debug("possible " + possible);
 					size = possible;
 					mSize = size;
 				}
@@ -873,7 +871,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 			let role = {"base": 0, "role": wwx, "support": true};
 			if (!actualTemplate.hasClass("Support"))
 				role.support = false;
-	//		API3.warn("addPlan " + template + " " + size);
+			KIARA.Logger.debug("addPlan " + template + " " + size);
 			q.addPlan(new KIARA.TrainingPlan(gameState, template, role, size, mSize));
 			if (wantDefenders)
 			{
@@ -906,7 +904,7 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
 		}
-		API3.warn("need house");
+		KIARA.Logger.debug("need house");
 		return;
 	}
 	// counting the workers that aren't part of a plan
@@ -988,7 +986,7 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 		min = pHouse * 2;
 //	let mSize = Math.max(size, Math.min(free, 10));
 
-//	API3.warn(pop + " -> " + size);
+//	KIARA.Logger.debug(pop + " -> " + size);
 
 	if (numberOfSupports + numberOfQueuedSupports < 20) {
 		if (this.saveResources && numberTotal > this.Config.Economy.popPhase2 + 10)
@@ -1065,7 +1063,7 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 			actualTemplate = gameState.getTemplate(templateDef);
 			cost = new API3.Resources(actualTemplate.cost());
 
-//			API3.warn(uneval(cost));
+//			KIARA.Logger.debug(uneval(cost));
 
 			for (let r of Resources.GetCodes()) {
 				if (!res[r])
@@ -1150,13 +1148,13 @@ KIARA.HQ.prototype.findBestTrainableUnitSpecial = function(gameState, classes, r
 		{
 			if (param[0] == "strength")
 			{
-				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance) * param[1];
-				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance) * param[1];
+				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.DamageTypeImportance) * param[1];
+				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.DamageTypeImportance) * param[1];
 			}
 			else if (param[0] == "siegeStrength")
 			{
-				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
-				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
+				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
+				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
 			}
 			else if (param[0] == "speed")
 			{
@@ -1180,7 +1178,7 @@ KIARA.HQ.prototype.findBestTrainableUnitSpecial = function(gameState, classes, r
 					bValue *= param[1];
 			}
 			else
-				API3.warn(" trainMoreUnits avec non prevu " + uneval(param));
+				KIARA.Logger.debug(" trainMoreUnits avec non prevu " + uneval(param));
 		}
 		return -aValue/aCost + bValue/bCost;
 	});
@@ -1234,13 +1232,13 @@ KIARA.HQ.prototype.findBestTrainableUnit = function(gameState, classes, requirem
 		{
 			if (param[0] == "strength")
 			{
-				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance) * param[1];
-				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance) * param[1];
+				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.DamageTypeImportance) * param[1];
+				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.DamageTypeImportance) * param[1];
 			}
 			else if (param[0] == "siegeStrength")
 			{
-				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
-				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.debug, gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
+				aValue += KIARA.getMaxStrength(a[1], gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
+				bValue += KIARA.getMaxStrength(b[1], gameState.ai.Config.DamageTypeImportance, "Structure") * param[1];
 			}
 			else if (param[0] == "speed")
 			{
@@ -1264,7 +1262,7 @@ KIARA.HQ.prototype.findBestTrainableUnit = function(gameState, classes, requirem
 					bValue *= param[1];
 			}
 			else
-				API3.warn(" trainMoreUnits avec non prevu " + uneval(param));
+				KIARA.Logger.debug(" trainMoreUnits avec non prevu " + uneval(param));
 		}
 		return -aValue/aCost + bValue/bCost;
 	});
@@ -1617,8 +1615,7 @@ KIARA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 
 	if (bestVal === undefined)
 		return false;
-	if (this.Config.debug > 1)
-		API3.warn("we have found a base for " + resource + " with best (cut=" + cut + ") = " + bestVal);
+	KIARA.Logger.debug("we have found a base for " + resource + " with best (cut=" + cut + ") = " + bestVal);
 	// not good enough.
 	if (bestVal < cut)
 		return false;
@@ -1758,8 +1755,7 @@ KIARA.HQ.prototype.findStrategicCCLocation = function(gameState, template)
 		bestIdx = i;
 	}
 
-	if (this.Config.debug > 1)
-		API3.warn("We've found a strategic base with bestVal = " + bestVal);
+	KIARA.Logger.debug("We've found a strategic base with bestVal = " + bestVal);
 
 	Engine.ProfileStop();
 
@@ -1880,14 +1876,12 @@ KIARA.HQ.prototype.findMarketLocation = function(gameState, template)
 		bestJdx = j;
 	}
 
-	if (this.Config.debug > 1)
-		API3.warn("We found a market position with bestVal = " + bestVal);
+	KIARA.Logger.debug("We found a market position with bestVal = " + bestVal);
 
 	if (bestVal === undefined)  // no constraints. For the time being, place it arbitrarily by the ConstructionPlan
 		return [-1, -1, -1, 0];
 	let expectedGain = Math.round(bestGainMult * TradeGain(bestDistSq, gameState.sharedScript.mapSize));
-	if (this.Config.debug > 1)
-		API3.warn("this would give a trading gain of " + expectedGain);
+	KIARA.Logger.debug("this would give a trading gain of " + expectedGain);
 	// Do not keep it if gain is too small, except if this is our first Market.
 	let idx;
 	if (expectedGain < this.tradeManager.minimalGain)
@@ -2116,7 +2110,7 @@ KIARA.HQ.prototype.buildFoodSupply = function(gameState, queues, type, res)
 		let newSF = this.baseManagers[x].findBestFarmsteadLocation(gameState, res);
 		if (newSF.quality > 10) {
 			queues[type].addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/farmstead", {"base": this.baseManagers[x].ID, "type": "food"}, newSF.pos));
-	//		API3.warn("Build food supply for " + res);
+	//		KIARA.Logger.debug("Build food supply for " + res);
 			return true;
 		}
 	}
@@ -2225,7 +2219,7 @@ KIARA.HQ.prototype.signalNoSupply = function(gameState, resource)
 {
 	if (this.needDropsite[resource])
 		return;
-//	API3.warn("need supply " + resource);
+//	KIARA.Logger.debug("need supply " + resource);
 	this.needDropsite[resource] = true;
 }
 
@@ -2233,7 +2227,7 @@ KIARA.HQ.prototype.signalNoNeedSupply = function(gameState, resource)
 {
 	if (!this.needDropsite[resource])
 		return;
-//	API3.warn("noo need supply " + resource);
+//	KIARA.Logger.debug("noo need supply " + resource);
 	this.needDropsite[resource] = false;
 }
 
@@ -2242,7 +2236,7 @@ KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res)
 	if (res == "food" || res == "farm")
 		return this.buildFoodSupply(gameState, queues, type, res);
 	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/storehouse"))) {
-		API3.warn("signalNoSupply: cannot build storehouse");
+		KIARA.Logger.debug("signalNoSupply: cannot build storehouse");
 		return false;
 	}
 	let cut = 20;
@@ -2294,8 +2288,7 @@ KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 			let count = gameState.getOwnStructures().filter(API3.Filters.byClass(entityReq.class)).length;
 			if (count < entityReq.count && this.buildManager.isUnbuildable(gameState, houseTemplateName))
 			{
-				if (this.Config.debug > 1)
-					API3.warn("no room to place a house ... try to be less restrictive");
+				KIARA.Logger.debug("no room to place a house ... try to be less restrictive");
 				this.buildManager.setBuildable(houseTemplateName);
 				this.requireHouses = true;
 			}
@@ -2333,8 +2326,7 @@ KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 	{
 		if (this.buildManager.isUnbuildable(gameState, house))
 		{
-			if (this.Config.debug > 1)
-				API3.warn("no room to place a house ... try to improve with technology");
+			KIARA.Logger.debug("no room to place a house ... try to improve with technology");
 			this.researchManager.researchPopulationBonus(gameState, queues);
 		}
 		else
@@ -2363,8 +2355,7 @@ KIARA.HQ.prototype.checkBaseExpansion = function(gameState, queues)
 	// Then expand if we have not enough room available for buildings
 	if (this.buildManager.numberMissingRoom(gameState) > 1)
 	{
-		if (this.Config.debug > 2)
-			API3.warn("try to build a new base because not enough room to build ");
+		KIARA.Logger.debug("try to build a new base because not enough room to build ");
 		this.buildNewBase(gameState, queues);
 		return;
 	}
@@ -2397,8 +2388,7 @@ KIARA.HQ.prototype.buildNewBase = function(gameState, queues, resource)
 		return false;
 
 	// base "-1" means new base.
-	if (this.Config.debug > 1)
-		API3.warn("new base " + gameState.applyCiv(template) + " planned with resource " + resource);
+	KIARA.Logger.debug("new base " + gameState.applyCiv(template) + " planned with resource " + resource);
 	queues.civilCentre.addPlan(new KIARA.ConstructionPlan(gameState, template, { "base": -1, "resource": resource }));
 	this.expanding = true;
 	return true;
@@ -2844,10 +2834,10 @@ KIARA.HQ.prototype.updateTerritories = function(gameState)
 				if (index != -1)
 					base.territoryIndices.splice(index, 1);
 				else
-					API3.warn(" problem in headquarters::updateTerritories for base " + this.basesMap.map[j]);
+					KIARA.Logger.debug(" problem in headquarters::updateTerritories for base " + this.basesMap.map[j]);
 			}
 			else
-				API3.warn(" problem in headquarters::updateTerritories without base " + this.basesMap.map[j]);
+				KIARA.Logger.debug(" problem in headquarters::updateTerritories without base " + this.basesMap.map[j]);
 			this.basesMap.map[j] = 0;
 		}
 		else
@@ -2947,7 +2937,7 @@ KIARA.HQ.prototype.reassignTerritories = function(deletedBase)
 			continue;
 		if (this.territoryMap.getOwnerIndex(j) != PlayerID)
 		{
-			API3.warn("Kiara reassignTerritories: should never happen");
+			KIARA.Logger.debug("Kiara reassignTerritories: should never happen");
 			this.basesMap.map[j] = 0;
 			continue;
 		}
@@ -3279,8 +3269,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 	// TODO find a better way to update
 	if (this.currentPhase != gameState.currentPhase())
 	{
-		if (this.Config.debug > 0)
-			API3.warn(" civ " + gameState.getPlayerCiv() + " has phasedUp from " + this.currentPhase +
+		KIARA.Logger.trace(" civ " + gameState.getPlayerCiv() + " has phasedUp from " + this.currentPhase +
 			          " to " + gameState.currentPhase() + " at time " + gameState.ai.elapsedTime +
 				  " phasing " + this.phasing);
 		this.currentPhase = gameState.currentPhase();
@@ -3291,16 +3280,6 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 			this.phasing = 0;
 	}
 
-	/*
-	if (this.Config.debug > 1)
-	{
-		gameState.getOwnUnits().forEach (function (ent) {
-			if (!ent.position())
-				return;
-			KIARA.dumpEntity(ent);
-		});
-	}
-	*/
 
 	let pop = gameState.getPopulation();
 	// Some units were killed, reset wantPop
@@ -3342,11 +3321,11 @@ if (
 			!queues.dropsites.hasQueuedUnitsWithClass("Storehouse") &&
 			!gameState.getOwnFoundationsByClass("Storehouse", true).length
 	) {
-	//	API3.warn("wanna another dropsite");
+	//	KIARA.Logger.debug("wanna another dropsite");
 		this.buildDropsite(gameState, queues, "dropsites", "any");
 	}
 
-//	API3.warn(uneval(this.needDropsite));
+//	KIARA.Logger.debug(uneval(this.needDropsite));
 
 	let nFields = gameState.getOwnEntitiesByClass("Field", true).length  + gameState.getOwnFoundationsByClass("Field").length;
 	let wantFarm = this.isResourceExhausted("food") || (nFields < 8);
@@ -3360,7 +3339,7 @@ if (
 	for (let res of Resources.GetCodes()) {
 		let cl = this.getDropsiteClass(res);
 		if (this.needDropsite[res]) {
-	//		API3.warn("need Dropsite for " + res + " : " + cl);
+	//		KIARA.Logger.debug("need Dropsite for " + res + " : " + cl);
 		}
 		else {
 			continue;
@@ -3369,7 +3348,7 @@ if (
 			!queues.dropsites.hasQueuedUnitsWithClass(cl, true) &&
 			!gameState.getOwnFoundationsByClass(cl, true).length
 		) {
-//			API3.warn("building for : " + res + " : " + cl);
+//			KIARA.Logger.debug("building for : " + res + " : " + cl);
 			let dq = this.buildDropsite(gameState, queues, "dropsites", res);
 			if (!dq && res == "food") {
 				if (nFields < 2*this.currentPhase && !quedFields)
@@ -3380,10 +3359,10 @@ if (
 				this.isResourceExhausted(res)
 			) {
 				needToExpand = res;
-		//		API3.warn("need expand " + res);
+		//		KIARA.Logger.debug("need expand " + res);
 			}
 		} else {
-	//		API3.warn("has qued or foundation for : " + res + " : " + cl);
+	//		KIARA.Logger.debug("has qued or foundation for : " + res + " : " + cl);
 		}
 	}
 
@@ -3501,20 +3480,20 @@ KIARA.HQ.prototype.Serialize = function()
 	for (let base of this.baseManagers)
 		baseManagers.push(base.Serialize());
 
-	if (this.Config.debug == -100)
+	if (KIARA.Logger.isSerialisation())
 	{
-		API3.warn(" HQ serialization ---------------------");
-		API3.warn(" properties " + uneval(properties));
-		API3.warn(" baseManagers " + uneval(baseManagers));
-		API3.warn(" attackManager " + uneval(this.attackManager.Serialize()));
-		API3.warn(" buildManager " + uneval(this.buildManager.Serialize()));
-		API3.warn(" defenseManager " + uneval(this.defenseManager.Serialize()));
-		API3.warn(" tradeManager " + uneval(this.tradeManager.Serialize()));
-		API3.warn(" navalManager " + uneval(this.navalManager.Serialize()));
-		API3.warn(" researchManager " + uneval(this.researchManager.Serialize()));
-		API3.warn(" diplomacyManager " + uneval(this.diplomacyManager.Serialize()));
-		API3.warn(" garrisonManager " + uneval(this.garrisonManager.Serialize()));
-		API3.warn(" victoryManager " + uneval(this.victoryManager.Serialize()));
+		KIARA.Logger.debug(" HQ serialization ---------------------");
+		KIARA.Logger.debug(" properties " + uneval(properties));
+		KIARA.Logger.debug(" baseManagers " + uneval(baseManagers));
+		KIARA.Logger.debug(" attackManager " + uneval(this.attackManager.Serialize()));
+		KIARA.Logger.debug(" buildManager " + uneval(this.buildManager.Serialize()));
+		KIARA.Logger.debug(" defenseManager " + uneval(this.defenseManager.Serialize()));
+		KIARA.Logger.debug(" tradeManager " + uneval(this.tradeManager.Serialize()));
+		KIARA.Logger.debug(" navalManager " + uneval(this.navalManager.Serialize()));
+		KIARA.Logger.debug(" researchManager " + uneval(this.researchManager.Serialize()));
+		KIARA.Logger.debug(" diplomacyManager " + uneval(this.diplomacyManager.Serialize()));
+		KIARA.Logger.debug(" garrisonManager " + uneval(this.garrisonManager.Serialize()));
+		KIARA.Logger.debug(" victoryManager " + uneval(this.victoryManager.Serialize()));
 	}
 
 	return {

@@ -163,14 +163,14 @@ KIARA.QueueManager.prototype.printQueues = function(gameState)
 		if (ent.getMetadata(PlayerID, "role") == "worker" && ent.getMetadata(PlayerID, "plan") === undefined)
 			numWorkers++;
 	});
-	API3.warn("---------- QUEUES ------------ with pop " + gameState.getPopulation() + " and workers " + numWorkers);
+	KIARA.Logger.debug("---------- QUEUES ------------ with pop " + gameState.getPopulation() + " and workers " + numWorkers);
 	for (let i in this.queues)
 	{
 		let q = this.queues[i];
 		if (q.hasQueuedUnits())
 		{
-			API3.warn(i + ": ( with priority " + this.priorities[i] +" and accounts " + uneval(this.accounts[i]) +")");
-			API3.warn(" while maxAccountWanted(0.8) is " + uneval(q.maxAccountWanted(gameState, 0.6)));
+			KIARA.Logger.debug(i + ": ( with priority " + this.priorities[i] +" and accounts " + uneval(this.accounts[i]) +")");
+			KIARA.Logger.debug(" while maxAccountWanted(0.8) is " + uneval(q.maxAccountWanted(gameState, 0.6)));
 		}
 		for (let plan of q.plans)
 		{
@@ -178,18 +178,18 @@ KIARA.QueueManager.prototype.printQueues = function(gameState)
 			if (plan.number)
 				qStr += "x" + plan.number;
 			qStr += "   isGo " + plan.isGo(gameState);
-			API3.warn(qStr);
+			KIARA.Logger.debug(qStr);
 		}
 	}
-	API3.warn("Accounts");
+	KIARA.Logger.debug("Accounts");
 	for (let p in this.accounts)
-	    API3.warn(p + ": " + uneval(this.accounts[p]));
-	API3.warn("Current Resources: " + uneval(gameState.getResources()));
-	API3.warn("Available Resources: " + uneval(this.getAvailableResources(gameState)));
-	API3.warn("Wanted Gather Rates: " + uneval(gameState.ai.HQ.GetWantedGatherRates(gameState)));
-	API3.warn("Current Gather Rates: " + uneval(gameState.ai.HQ.GetCurrentGatherRates(gameState)));
-	API3.warn("Most needed resources: " + uneval(gameState.ai.HQ.pickMostNeededResources(gameState)));
-	API3.warn("------------------------------------");
+	    KIARA.Logger.debug(p + ": " + uneval(this.accounts[p]));
+	KIARA.Logger.debug("Current Resources: " + uneval(gameState.getResources()));
+	KIARA.Logger.debug("Available Resources: " + uneval(this.getAvailableResources(gameState)));
+	KIARA.Logger.debug("Wanted Gather Rates: " + uneval(gameState.ai.HQ.GetWantedGatherRates(gameState)));
+	KIARA.Logger.debug("Current Gather Rates: " + uneval(gameState.ai.HQ.GetCurrentGatherRates(gameState)));
+	KIARA.Logger.debug("Most needed resources: " + uneval(gameState.ai.HQ.pickMostNeededResources(gameState)));
+	KIARA.Logger.debug("------------------------------------");
 };
 
 KIARA.QueueManager.prototype.clear = function()
@@ -277,7 +277,7 @@ KIARA.QueueManager.prototype.distributeResources = function(gameState)
 				}
 			}
 			if (available < 0)
-				API3.warn("Luna: problem with remaining " + res + " in queueManager " + available);
+				KIARA.Logger.debug("Luna: problem with remaining " + res + " in queueManager " + available);
 		}
 		return;
 	}
@@ -365,7 +365,7 @@ KIARA.QueueManager.prototype.distributeResources = function(gameState)
 			}
 		}
 		if (available < 0)
-			API3.warn("Kiara: problem with remaining " + res + " in queueManager " + available);
+			KIARA.Logger.debug("Kiara: problem with remaining " + res + " in queueManager " + available);
 	}
 };
 
@@ -398,8 +398,7 @@ KIARA.QueueManager.prototype.switchResource = function(gameState, res)
 			this.accounts[j][res] += diff;
 			this.accounts[i][res] -= diff;
 			++otherQueue.switched;
-			if (this.Config.debug > 2)
-				API3.warn ("switching queue " + res + " from " + i + " to " + j + " in amount " + diff);
+			KIARA.Logger.trace("switching queue " + res + " from " + i + " to " + j + " in amount " + diff);
 			break;
 		}
 	}
@@ -488,7 +487,7 @@ KIARA.QueueManager.prototype.update = function(gameState)
 		this.queues[i].check(gameState);  // do basic sanity checks on the queue
 		if (this.priorities[i] > 0)
 			continue;
-		API3.warn("QueueManager received bad priorities, please report this error: " + uneval(this.priorities));
+		KIARA.Logger.debug("QueueManager received bad priorities, please report this error: " + uneval(this.priorities));
 		this.priorities[i] = 1;  // TODO: make the Queue Manager not die when priorities are zero.
 	}
 
@@ -501,7 +500,7 @@ KIARA.QueueManager.prototype.update = function(gameState)
 	// Start the next item in the queue if we can afford it.
 	this.startNextItems(gameState);
 
-	if (this.Config.debug > 1 && gameState.ai.playedTurn%50 === 0)
+	if (KIARA.Logger.isTrace() && gameState.ai.playedTurn%50 === 0)
 		this.printQueues(gameState);
 
 	Engine.ProfileStop();
@@ -512,6 +511,9 @@ KIARA.QueueManager.prototype.checkPausedQueues = function(gameState)
 {
 	let numWorkers = gameState.countOwnEntitiesAndQueuedWithRole("worker");
 	let workersMin =  gameState.ai.HQ.strategy == "recover" ? 100 : 20;
+	if (numWorkers < workersMin) {
+		KIARA.Logger.debug("workers: " + numWorkers + " < " + workersMin);
+	}
 	for (let q in this.queues)
 	{
 		let toBePaused = false;
@@ -646,8 +648,7 @@ KIARA.QueueManager.prototype.getPriority = function(queueName)
 
 KIARA.QueueManager.prototype.changePriority = function(queueName, newPriority)
 {
-	if (this.Config.debug > 1)
-		API3.warn(">>> Priority of queue " + queueName + " changed from " + this.priorities[queueName] + " to " + newPriority);
+	KIARA.Logger.trace(">>> Priority of queue " + queueName + " changed from " + this.priorities[queueName] + " to " + newPriority);
 	if (this.queues[queueName] !== undefined)
 		this.priorities[queueName] = newPriority;
 	let priorities = this.priorities;
@@ -662,8 +663,8 @@ KIARA.QueueManager.prototype.Serialize = function()
 	{
 		queues[q] = this.queues[q].Serialize();
 		accounts[q] = this.accounts[q].Serialize();
-		if (this.Config.debug == -100)
-			API3.warn("queueManager serialization: queue " + q + " >>> " +
+		if (KIARA.Logger.isSerialization())
+			KIARA.Logger.debug("queueManager serialization: queue " + q + " >>> " +
 				uneval(queues[q]) + " with accounts " + uneval(accounts[q]));
 	}
 

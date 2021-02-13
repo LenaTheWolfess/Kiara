@@ -18,7 +18,7 @@ KIARA.GarrisonManager.prototype.raiseAlert = function(gameState, holder)
 	let out = false;
 	if (holder.getMetadata(PlayerID, "alert") !== undefined && holder.getMetadata(PlayerID, "alert")) {
 		if (out)
-			API3.warn("alert raised allready");
+			KIARA.Logger.debug("alert raised allready");
 		return false;
 	}
 	this.registerHolder(gameState, holder, true);
@@ -39,18 +39,18 @@ KIARA.GarrisonManager.prototype.raiseAlert = function(gameState, holder)
 		let spos = saveHouse.position();
 		if (!spos) {
 			if (out)
-				API3.warn(saveHouse + " : no position");
+				KIARA.Logger.debug(saveHouse + " : no position");
 			continue;
 		}
 		let sAcc = KIARA.getLandAccess(gameState, saveHouse);
 		if (holderAccess != sAcc) {
 			if (out)
-				API3.warn(saveHouse + " : wrong access");
+				KIARA.Logger.debug(saveHouse + " : wrong access");
 			continue;
 		}
 		if (API3.SquareVectorDistance(spos, holderPos) > 4*range*range) {
 			if (out)
-				API3.warn(saveHouse + " : too far from holder");
+				KIARA.Logger.debug(saveHouse + " : too far from holder");
 			continue;
 		}
 		this.setAlert(saveHouse);
@@ -60,50 +60,50 @@ KIARA.GarrisonManager.prototype.raiseAlert = function(gameState, holder)
 	for (let unit of units) {
 		if (!unit.canGarrison()) {
 			if (out)
-				API3.warn(unit + " : cannot garrison");
+				KIARA.Logger.debug(unit + " : cannot garrison");
 			continue;
 		}
 		if (unit.getMetadata(PlayerID, "garrisonHolder") != undefined) {
 			if (out)
-				API3.warn(unit + " has set garrisonHolder");
+				KIARA.Logger.debug(unit + " has set garrisonHolder");
 			continue;
 		}
 		let pos = unit.position();
 		if (!pos) {
 			if (out)
-				API3.warn(unit + " : no position");
+				KIARA.Logger.debug(unit + " : no position");
 			continue;
 		}
 		let unitAccess = KIARA.getLandAccess(gameState, unit);
 		if (unitAccess != holderAccess) {
 			if (out)
-				API3.warn(unit + ": wrong access");
+				KIARA.Logger.debug(unit + ": wrong access");
 			continue;
 		}
 		let dist = API3.SquareVectorDistance(pos, holderPos);
 		if (dist > range*range) {
 			if (out)
-				API3.warn(unit + " : too far" + dist + " vs " + (range*range));
+				KIARA.Logger.debug(unit + " : too far" + dist + " vs " + (range*range));
 			continue;
 		}
 		for (let saveHouse of validStructures) {
 			if (out)
-				API3.warn(unit + " looking to " + saveHouse);
+				KIARA.Logger.debug(unit + " looking to " + saveHouse);
 			let spos = saveHouse.position();
 			if (API3.SquareVectorDistance(pos, spos) > searchRange*searchRange) {
 				if (out)
-					API3.warn(saveHouse + " : too far from unit" + API3.SquareVectorDistance(pos, spos) + " vs " + (searchRange*searchRange));
+					KIARA.Logger.debug(saveHouse + " : too far from unit" + API3.SquareVectorDistance(pos, spos) + " vs " + (searchRange*searchRange));
 				continue;
 			}
 			if (!reserved.has(saveHouse))
 				reserved.set(saveHouse, saveHouse.garrisonMax() - this.numberOfGarrisonedUnits(saveHouse));
 			if (!reserved.get(saveHouse)) {
 				if (out)
-					API3.warn(saveHouse + " : no place for more units");
+					KIARA.Logger.debug(saveHouse + " : no place for more units");
 				continue;
 			}
 			if (out)
-				API3.warn(unit + " garrison to saveHouse " + saveHouse + " because alert");
+				KIARA.Logger.debug(unit + " garrison to saveHouse " + saveHouse + " because alert");
 			this.garrison(gameState, unit, saveHouse, "alert");
 			break;
 		}
@@ -115,7 +115,7 @@ KIARA.GarrisonManager.prototype.endAlert = function(gameState, holder)
 {
 	let out = true;
 	if (out) {
-		API3.warn(holder + " is ending alert");
+		KIARA.Logger.debug(holder + " is ending alert");
 	}
 	if (holder.getMetadata(PlayerID, "alert") === undefined || !holder.getMetadata(PlayerID, "alert")) {
 		return;
@@ -225,9 +225,9 @@ KIARA.GarrisonManager.prototype.update = function(gameState, events)
 				}
 				else
 				{
-					if (gameState.ai.Config.debug > 0)
+					if (KIARA.Logger.isError())
 					{
-						API3.warn("Kiara garrison error: unit " + ent.id() + " (" + ent.genericName() +
+						KIARA.Logger.error("Kiara garrison error: unit " + ent.id() + " (" + ent.genericName() +
 							  ") is expected to garrison in " + id + " (" + holder.genericName() +
 							  "), but has no such garrison order " + uneval(ent.unitAIOrderData()));
 						KIARA.dumpEntity(ent);
@@ -282,7 +282,7 @@ KIARA.GarrisonManager.prototype.update = function(gameState, events)
 				}
 			}
 			if (holder.getMetadata(PlayerID, "alertInit") && !around.meleeSiege && !around.rangeSiege && !around.unit && holder.getMetadata(PlayerID, "alert")) {
-				API3.warn( holder + " no enemy units around -> ending alert");
+				KIARA.Logger.debug( holder + " no enemy units around -> ending alert");
 				this.endAlert(gameState, holder);
 			}
 
@@ -352,10 +352,10 @@ KIARA.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type
 	this.registerHolder(gameState, holder);
 	this.holders.get(holder.id()).list.push(ent.id());
 
-	if (gameState.ai.Config.debug > 2)
+	if (KIARA.Logger.isTrace())
 	{
-		warn("garrison unit " + ent.genericName() + " in " + holder.genericName() + " with type " + type);
-		warn(" we try to garrison a unit with plan " + ent.getMetadata(PlayerID, "plan") + " and role " + ent.getMetadata(PlayerID, "role") +
+		KIARA.Logger.trace("garrison unit " + ent.genericName() + " in " + holder.genericName() + " with type " + type);
+		KIARA.Logger.trace(" we try to garrison a unit with plan " + ent.getMetadata(PlayerID, "plan") + " and role " + ent.getMetadata(PlayerID, "role") +
 		     " and subrole " + ent.getMetadata(PlayerID, "subrole") + " and transport " + ent.getMetadata(PlayerID, "transport"));
 	}
 
@@ -401,7 +401,7 @@ KIARA.GarrisonManager.prototype.cancelGarrison = function(ent)
 
 KIARA.GarrisonManager.prototype.markEndOfAlert = function(gameState, holder)
 {
-//	API3.warn(holder + " is marking units as not alert state");
+//	KIARA.Logger.debug(holder + " is marking units as not alert state");
 	holder.setMetadata(PlayerID, "alert", false);
 	for (let entId of holder.garrisoned())
 	{
@@ -458,7 +458,7 @@ KIARA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 	default:
 		if (ent.getMetadata(PlayerID, "onBoard") === "onBoard")  // transport is not (yet ?) managed by garrisonManager
 			return true;
-		API3.warn("unknown type in garrisonManager " + ent.getMetadata(PlayerID, "garrisonType") +
+		KIARA.Logger.debug("unknown type in garrisonManager " + ent.getMetadata(PlayerID, "garrisonType") +
 		          " for " + ent.genericName() + " id " + ent.id() +
 		          " inside " + holder.genericName() + " id " + holder.id());
 		ent.setMetadata(PlayerID, "garrisonType", "protection");
