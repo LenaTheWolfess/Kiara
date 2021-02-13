@@ -49,6 +49,11 @@ KIARA.Logger.isTrace = function()
 	return KIARA.Logger.TRACE >= KIARA.Logger.level;
 };
 
+KIARA.Logger.isSerialization = function()
+{
+	return false;
+};
+
 KIARA.KiaraBot = function(settings)
 {
 	API3.BaseAI.call(this, settings);
