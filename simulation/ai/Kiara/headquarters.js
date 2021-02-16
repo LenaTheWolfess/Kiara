@@ -2572,9 +2572,9 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		return;
 	}
 
-	if (this.canBuild(gameState, "structures/{civ}/elephant_stables") && !gameState.getOwnEntitiesByClass("ElephantStable", true).hasEntities())
+	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Elephants]) && !gameState.getOwnEntitiesByClass("ElephantStable", true).hasEntities())
 	{
-		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/elephant_stables", { "militaryBase": true }));
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Elephants], { "militaryBase": true }));
 		return;
 	}
 
@@ -3297,10 +3297,16 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		this.checkPhaseRequirements(gameState, queues);
 	if (this.researchManager.checkPhase(gameState, queues))
 			this.phasingQued = true;
-	if (pop < 200 && pop < this.lastPopGrow) {
+
+	// Handle strategy switching
+	if (this.strategy == KIARA.Strategy.RECOVER) {
+		if (pop > 200)
+			this.strategy = KIARA.Strategy.ATTACK;
+	}
+	else if (pop < 200 && pop < this.lastPopGrow && this.lastPopGrow > 200) {
 		this.strategy = KIARA.Strategy.RECOVER;
 	}
-	else if (pop > 200 && this.strategy == KIARA.Strategy.RECOVER || pop > 100) {
+	else if (pop > 100) {
 		this.strategy = KIARA.Strategy.ATTACK;
 	} else if (this.cavalryRush && pop > 20) {
 		this.strategy = KIARA.Strategy.EARLY_RAID;
@@ -3308,7 +3314,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		this.cavalryRush = false;
 	}
 
-if (
+	if (
 			!gameState.getOwnEntitiesByClass("Farmstead", true).length && 
 			!queues.dropsites.hasQueuedUnitsWithClass("Farmstead") &&
 			!gameState.getOwnFoundationsByClass("Farmstead", true).length
@@ -3347,7 +3353,7 @@ if (
 			!queues.dropsites.hasQueuedUnitsWithClass(cl, true) &&
 			!gameState.getOwnFoundationsByClass(cl, true).length
 		) {
-//			KIARA.Logger.debug("building for : " + res + " : " + cl);
+			KIARA.Logger.debug("building for : " + res + " : " + cl);
 			let dq = this.buildDropsite(gameState, queues, "dropsites", res);
 			if (!dq && res == "food") {
 				if (nFields < 2*this.currentPhase && !quedFields)
@@ -3358,10 +3364,10 @@ if (
 				this.isResourceExhausted(res)
 			) {
 				needToExpand = res;
-		//		KIARA.Logger.debug("need expand " + res);
+				KIARA.Logger.debug("need expand " + res);
 			}
 		} else {
-	//		KIARA.Logger.debug("has qued or foundation for : " + res + " : " + cl);
+			KIARA.Logger.debug("has qued or foundation for : " + res + " : " + cl);
 		}
 	}
 
