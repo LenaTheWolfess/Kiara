@@ -9,7 +9,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 {
 	this.Config = Config;
 	this.name = uniqueID;
-	this.type = type || "Attack";
+	this.type = type || KIARA.AttackTypes.ATTACK;
 	this.state = "unexecuted";
 	this.forced = false;  // true when this attacked has been forced to help an ally
 
@@ -115,7 +115,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	this.unitStat = {};
 
 	// neededShips is the minimal number of ships which should be available for transport
-	if (type == "Rush")
+	if (type == KIARA.AttackTypes.RUSH)
 	{
 		priority = 250;
 		this.unitStat.Infantry = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 10, "classes": ["Infantry"],
@@ -126,14 +126,14 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 			this.unitStat.Infantry.targetSize = data.targetSize;
 		this.neededShips = 1;
 	}
-	else if (type == "EarlyRaid")
+	else if (type == KIARA.AttackTypes.EARLY_RAID)
 	{
 		priority = 310;
 		this.unitStat.FastMoving = { "priority": 1, "minSize": 10, "targetSize": 15, "batchSize": 5, "classes": ["FastMoving"],
 			"interests": [ ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
 		this.neededShips = 1;
 	}
-	else if (type == "Raid")
+	else if (type == KIARA.AttackTypes.RAID)
 	{
 		priority = 150;
 		this.unitStat.FastMoving = { "priority": 1, "minSize": 5, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "CitizenSoldier"],
@@ -141,7 +141,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		this.unitStat.Siege = {"priority": 2, "minSize": 1, "targetSize": 2, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 		this.neededShips = 1;
 	}
-	else if (type == "HugeAttack")
+	else if (type == KIARA.AttackTypes.HUGE_ATTACK)
 	{
 		priority = 350;
 		if (popCaped) {
@@ -324,7 +324,7 @@ KIARA.AttackPlan.prototype.mustStart = function()
 	if (MaxReachedEverywhere)
 		return true;
 	if (MinReachedEverywhere)
-		return this.type == "Raid" && this.target && this.target.foundationProgress() &&
+		return this.type == KIARA.AttackTypes.RAID && this.target && this.target.foundationProgress() &&
 		                                             this.target.foundationProgress() > 0 && this.target.foundationProgress() < 90;
 	return false;
 };
@@ -406,7 +406,7 @@ KIARA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 	}
 
 	this.siegeState = 2;
-	let targetSize = this.type == "HugeAttack" ? 5 : 4;
+	let targetSize = this.type == KIARA.AttackTypes.HUGE_ATTACK ? 5 : 4;
 	if (!targetSize)
 		return true;
 	// no minsize as we don't want the plan to fail at the last minute though.
@@ -449,11 +449,13 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 	if (this.overseas && !gameState.ai.HQ.navalManager.seaTransportShips[this.overseas].length)
 		return 1;
 
-	if (this.type != "Raid" || !this.forced)    // Forced Raids have special purposes (as relic capture)
+	if (this.type != KIARA.AttackTypes.RAID || !this.forced)    // Forced Raids have special purposes (as relic capture)
 		this.assignUnits(gameState);
-	if (this.type == "Raid" && gameState.ai.HQ.attackManager.getAttackInPreparation("Raid") !== undefined)
+	if (this.type == KIARA.AttackTypes.RAID &&
+		gameState.ai.HQ.attackManager.getAttackInPreparation(KIARA.AttackTypes.RAID) !== undefined)
 		this.reassignCavUnit(gameState, this.type);    // reassign some cav (if any) to fasten raid preparations
-	if (this.type == "EarlyRaid" && gameState.ai.HQ.attackManager.getAttackInPreparation("EarlyRaid") !== undefined)
+	if (this.type == KIARA.AttackTypes.EARLY_RAID &&
+		gameState.ai.HQ.attackManager.getAttackInPreparation(KIARA.AttackTypes.EARLY_RAID) !== undefined)
 		this.reassignCavUnit(gameState, this.type);    // reassign some cav (if any) to fasten early raid preparations
 
 	// Fasten the end game.
@@ -481,7 +483,7 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 		}
 		else	// Abort the plan so that its units will be reassigned to other plans.
 		{
-			if (this.getType() == "HugeAttack") {
+			if (this.getType() == KIARA.AttackTypes.HUGE_ATTACK) {
 				this.forceStart();
 				return 1;
 			}
@@ -533,11 +535,11 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 	if (!this.overseas)
 		this.getPathToTarget(gameState);
 
-	if (this.type == "Raid" || this.type == "EarlyRaid")
+	if (this.type == KIARA.AttackTypes.RAID || this.type == KIARA.AttackTypes.EARLY_RAID)
 		this.maxCompletingTime = this.forced ? 0 : gameState.ai.elapsedTime + 20;
 	else
 	{
-		if (this.type == "Rush" || this.forced)
+		if (this.type == KIARA.AttackTypes.RUSH || this.forced)
 			this.maxCompletingTime = gameState.ai.elapsedTime + 40;
 		else
 			this.maxCompletingTime = gameState.ai.elapsedTime + 60;
@@ -746,7 +748,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 		return added;
 	}
 
-	if (this.type == "EarlyRaid")
+	if (this.type == KIARA.AttackTypes.EARLY_RAID)
 	{
 		// Raid are fast FastMoving attack: assign all cav except some for hunting
 		let num = 0;
@@ -762,7 +764,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 		}
 		return added;
 	}
-	if (this.type == "Raid")
+	if (this.type == KIARA.AttackTypes.RAID)
 	{
 		// Raids are quick attacks: assign all FastMoving soldiers except some for hunting.
 		let num = 0;
@@ -805,7 +807,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	// Otherwise, assign only some idle workers if too much of them
 	let num = 0;
 	let numbase = {};
-	let keep = this.type != "Rush" ? 6 + 4 * gameState.getNumPlayerEnemies() : 8;
+	let keep = this.type != KIARA.AttackTypes.RUSH ? 6 + 4 * gameState.getNumPlayerEnemies() : 8;
 	keep = Math.round(this.Config.popScaling * keep);
 	for (let ent of gameState.getOwnEntitiesByRole("worker", true).values())
 	{
@@ -822,7 +824,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 		}
 		if (num++ < keep || numbase[baseID] < 5)
 			continue;
-		if (this.type != "Rush" && ent.getMetadata(PlayerID, "subrole") != "idle")
+		if (this.type != KIARA.AttackTypes.RUSH && ent.getMetadata(PlayerID, "subrole") != "idle")
 			continue;
 		ent.setMetadata(PlayerID, "plan", plan);
 		this.unitCollection.updateEnt(ent);
@@ -964,12 +966,12 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 	}
 	else
 	{
-		if (this.type == "Raid")
+		if (this.type == KIARA.AttackTypes.RAID)
 			targets = this.raidTargetFinder(gameState);
-		else if (this.type == "EarlyRaid") {
+		else if (this.type == KIARA.AttackTypes.EARLY_RAID) {
 			targets = this.earlyRaidTargetFinder(gameState);
 		}
-		else if (this.type == "Rush" || this.type == "Attack")
+		else if (this.type == KIARA.AttackTypes.RUSH || this.type == KIARA.AttackTypes.ATTACK)
 		{
 			targets = this.rushTargetFinder(gameState, this.targetPlayer);
 			if (!targets.hasEntities() && (this.hasSiegeUnits() || this.forced))
@@ -994,7 +996,7 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 			continue;
 		let dist = API3.SquareVectorDistance(ent.position(), position);
 		// In normal attacks, disfavor fields
-		if (this.type != "Rush" && this.type != "Raid" && ent.hasClass("Field"))
+		if (this.type != KIARA.AttackTypes.RUSH && this.type != KIARA.AttackTypes.RAID && ent.hasClass("Field"))
 			dist += 100000;
 		if (dist < minDist)
 		{
@@ -1129,7 +1131,7 @@ KIARA.AttackPlan.prototype.rushTargetFinder = function(gameState, playerEnemy)
 	if (target)
 		targets.addEnt(target);
 
-	if (!targets.hasEntities() && this.type == "Rush" && playerEnemy)
+	if (!targets.hasEntities() && this.type == KIARA.AttackTypes.RUSH && playerEnemy)
 		targets = this.rushTargetFinder(gameState);
 
 	return targets;
@@ -1325,7 +1327,9 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 	KIARA.Logger.debug("start attack " + this.name + " with type " + this.type);
 
 	// if our target was destroyed during preparation, choose a new one
-	if ((this.targetPlayer === undefined || !this.target || !gameState.getEntityById(this.target.id())) && this.type != "Raid" &&
+	if ((this.targetPlayer === undefined || !this.target ||
+		!gameState.getEntityById(this.target.id())) &&
+		this.type != KIARA.AttackTypes.RAID &&
 	    !this.chooseTarget(gameState))
 		return false;
 
@@ -1410,7 +1414,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 			ent.stopMoving();
 			ent.setMetadata(PlayerID, "subrole", "attacking");
 		});
-		if (this.type == "Rush")   // try to find a better target for rush
+		if (this.type == KIARA.AttackTypes.RUSH)   // try to find a better target for rush
 		{
 			let newtarget = this.getNearestTarget(gameState, this.position);
 			if (newtarget)
@@ -1419,7 +1423,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 				this.targetPos = this.target.position();
 			}
 		}
-		if (this.type == "EarlyRaid") // try to find better target for early raid
+		if (this.type == KIARA.AttackTypes.EARLY_RAID) // try to find better target for early raid
 		{
 			let newtarget = this.getNearestTarget(gameState, this.position);
 			if (newtarget)
@@ -1575,9 +1579,9 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 
 		let targetClassesUnit;
 		let targetClassesSiege;
-		if (this.type == "EarlyRaid")
+		if (this.type == KIARA.AttackTypes.EARLY_RAID)
 			targetClassesUnit = { "attack": ["FemaleCitizen"], "avoid": ["Structure"], "vetoEntities": veto };
-		else if (this.type == "Rush")
+		else if (this.type == KIARA.AttackTypes.RUSH)
 			targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Storehouse", "Farmstead", "Field", "Blacksmith", "Palisade", "StoneWall", "Tower", "Fortress"], "vetoEntities": veto };
 		else
 		{
@@ -2226,9 +2230,9 @@ KIARA.AttackPlan.prototype.checkEvents = function(gameState, events)
 	{
 		if (!this.target || this.target.id() != evt.entity)
 			continue;
-		if (this.type == "Raid" && !this.isStarted())
+		if (this.type == KIARA.AttackTypes.RAID && !this.isStarted())
 			this.target = undefined;
-		else if (this.type == "EarlyRaid" && !this.isStarted())
+		else if (this.type == KIARA.AttackTypes.EARLY_RAID && !this.isStarted())
 			this.target = undefined;
 		else
 			this.target = gameState.getEntityById(evt.newentity);

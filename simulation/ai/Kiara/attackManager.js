@@ -249,8 +249,8 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 	this.checkEvents(gameState, events);
 
 	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
-	let unexecutedAttacks = { "Rush": 0, "EarlyRaid": 0 ,"Raid": 0, "Attack": 0, "HugeAttack": 0, "MeleeRangeInfCav": 0, "MeleeRangeCav": 0, "MeleeCav": 0, "RangeCav": 0};
-	let stopAllAttacks = gameState.ai.HQ.strategy == KIARA.HQ.Strategy.RECOVER;
+	let unexecutedAttacks = { "Anihilation": 0, "Rush": 0, "EarlyRaid": 0 ,"Raid": 0, "Attack": 0, "HugeAttack": 0, "MeleeRangeInfCav": 0, "MeleeRangeCav": 0, "MeleeCav": 0, "RangeCav": 0};
+	let stopAllAttacks = gameState.ai.HQ.strategy == KIARA.Strategy.RECOVER;
 
 	for (let attackType in this.upcomingAttacks)
 	{
@@ -323,8 +323,8 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 
 	// creating plans after updating because an aborted plan might be reused in that case.
 
-	let doSmallAttacks = this.Config.behavior == "aggressive" && gameState.ai.HQ.strategy == KIARA.HQ.Strategy.ATTACK;
-	let doEarlyRaid = gameState.ai.HQ.strategy == KIARA.HQ.Strategy.EARLY_RAID;
+	let doSmallAttacks = this.Config.behavior == "aggressive" && gameState.ai.HQ.strategy == KIARA.Strategy.ATTACK;
+	let doEarlyRaid = gameState.ai.HQ.strategy == KIARA.Strategy.EARLY_RAID;
 
 	let barracksNb = gameState.getOwnEntitiesByClass("Barracks", true).filter(API3.Filters.isBuilt()).length;
 	if (doSmallAttacks && this.rushNumber < this.maxRushes && barracksNb >= 1)
@@ -333,7 +333,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 		{
 			// we have a barracks and we want to rush, rush.
 			let data = { "targetSize": this.rushSize[this.rushNumber] };
-			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, "Rush", data);
+			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, KIARA.AttackTypes.RUSH, data);
 			if (!attackPlan.failed)
 			{
 				KIARA.Logger.debug("Military Manager: Rushing plan " + this.totalNumber + " with maxRushes " + this.maxRushes);
@@ -363,10 +363,10 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 				data = { "targetSize": this.raidSize[this.raidNumber], "target": ent };
 			else
 				data = { "targetSize": this.raidSize[this.raidNumber] };
-			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, "EarlyRaid", data);
+			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, KIARA.AttackTypes.EARLY_RAID, data);
 			if (!attackPlan.failed)
 			{
-				KIARA.Logger.debug("Military Manager: EarlyRaid plan " + this.totalNumber + " with maxRaids " + this.maxRaids);
+				KIARA.Logger.debug("Military Manager: "+KIARA.AttackTypes.EARLY_RAID+" plan " + this.totalNumber + " with maxRaids " + this.maxRaids);
 				this.totalNumber++;
 				attackPlan.init(gameState);
 				this.upcomingAttacks.EarlyRaid.push(attackPlan);
@@ -381,12 +381,12 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 		if (barracksNb >= 1 && (gameState.currentPhase() > 1 || gameState.isResearching(gameState.getPhaseName(2))) ||
 			!gameState.ai.HQ.baseManagers[1])	// if we have no base ... nothing else to do than attack
 		{
-			let type = this.attackNumber < 2 || this.startedAttacks.HugeAttack.length > 0 ? "Attack" : "HugeAttack";
+			let type = this.attackNumber < 2 || this.startedAttacks.HugeAttack.length > 0 ? KIARA.AttackTypes.ATTACK : KIARA.AttackTypes.HUGE_ATTACK;
 			if (popCaped)
-				type = "HugeAttack";
+				type = KIARA.AttackTypes.HUGE_ATTACK;
 
 			//This is hack, because i am lazy to do it properly
-			type = "HugeAttack";
+			type = KIARA.AttackTypes.HUGE_ATTACK;
 			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, type);
 			if (attackPlan.failed)
 				this.attackPlansEncounteredWater = true; // hack
@@ -506,7 +506,7 @@ KIARA.AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 	for (let i in this.defeated)
 		veto[i] = true;
 	// No rush if enemy too well defended (i.e. iberians)
-	if (attack.type == "Rush"|| attack.type == "EarlyRaid")
+	if (attack.type == KIARA.AttackTypes.RUSH || attack.type == KIARA.AttackTypes.EARLY_RAID)
 	{
 		for (let i = 1; i < gameState.sharedScript.playersData.length; ++i)
 		{
@@ -536,7 +536,7 @@ KIARA.AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 
 	// then if not a huge attack, continue attacking our previous target as long as it has some entities,
 	// otherwise target the most accessible one
-	if (attack.type != "HugeAttack")
+	if (attack.type != KIARA.AttackTypes.HUGE_ATTACK)
 	{
 		if (attack.targetPlayer === undefined && this.currentEnemyPlayer !== undefined &&
 			!this.defeated[this.currentEnemyPlayer] &&
@@ -686,7 +686,7 @@ KIARA.AttackManager.prototype.cancelAttacksAgainstPlayer = function(gameState, p
 KIARA.AttackManager.prototype.raidTargetEntity = function(gameState, ent)
 {
 	let data = { "target": ent };
-	let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, "Raid", data);
+	let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, KIARA.AttackTypes.RAID, data);
 	if (attackPlan.failed)
 		return null;
 	KIARA.Logger.debug("Military Manager: Raiding plan " + this.totalNumber);
@@ -731,7 +731,7 @@ KIARA.AttackManager.prototype.switchDefenseToAttack = function(gameState, target
 	}
 	let attackData = data.uniqueTarget ? { "uniqueTargetId": target.id() } : undefined;
 	let pos = target.position();
-	let attackType = "Attack";
+	let attackType = KIARA.AttackTypes.ATTACK;
 	let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, attackType, attackData);
 	if (attackPlan.failed)
 		return false;

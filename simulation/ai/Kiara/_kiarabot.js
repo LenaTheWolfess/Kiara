@@ -3,12 +3,31 @@ Engine.IncludeModule("common-api");
 var KIARA = {};
 
 KIARA.Logger = function(){};
-
 KIARA.Logger.TRACE = 0;
 KIARA.Logger.DEBUG = 1;
 KIARA.Logger.WARN = 2;
 KIARA.Logger.ERROR = 3;
 
+KIARA.Strategy = function() {};
+KIARA.Strategy.NONE = "none";
+KIARA.Strategy.BOOM = "boom";
+KIARA.Strategy.EARLY_RAID = "earlyRaid";
+KIARA.Strategy.ATTACK = "attack";
+KIARA.Strategy.RECOVER = "recover";
+
+KIARA.AttackTypes = function() {};
+KIARA.AttackTypes.ANIHILATION = "Anihilation";
+KIARA.AttackTypes.RUSH = "Rush";
+KIARA.AttackTypes.EARLY_RAID = "EarlyRaid";
+KIARA.AttackTypes.RAID = "Raid";
+KIARA.AttackTypes.ATTACK = "Attack";
+KIARA.AttackTypes.HUGE_ATTACK = "HugeAttack";
+KIARA.AttackTypes.MELLE_RANGE_INF_CAV = "MeleeRangeInfCav";
+KIARA.AttackTypes.MELLE_RANGE_CAV = "MeleeRangeCav";
+KIARA.AttackTypes.MELLE_CAV = "MeleeCav";
+KIARA.AttackTypes.RANGE_CAV = "RangeCav";
+
+KIARA.Strategy.DEFAULT = KIARA.Strategy.NONE;
 KIARA.Logger.level = KIARA.Logger.DEBUG;
 
 KIARA.Logger.warn = function(output)
