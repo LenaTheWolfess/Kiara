@@ -1,7 +1,6 @@
 KIARA.Config = function(difficulty, behavior)
 {
-	// 0 is sandbox, 1 is very easy, 2 is easy, 3 is medium, 4 is hard and 5 is very hard.
-	this.difficulty = difficulty !== undefined ? difficulty : 3;
+	this.difficulty = difficulty !== undefined ? difficulty : KIARA.Difficulty.DEFAULT;
 
 	this.behavior = behavior || KIARA.Behaviour.DEFAULT;
 
@@ -162,7 +161,7 @@ KIARA.Config = function(difficulty, behavior)
 
 KIARA.Config.prototype.setConfig = function(gameState)
 {
-	if (this.difficulty > 0)
+	if (this.difficulty > KIARA.Difficulty.SANDBOX)
 	{
 		// Setup personality traits according to the user choice:
 		// The parameter used to define the personality is basically the aggressivity or (1-defensiveness)
@@ -229,7 +228,7 @@ KIARA.Config.prototype.setConfig = function(gameState)
 //	this.Economy.targetNumWorkers = Math.max(this.Economy.targetNumWorkers, this.Economy.popPhase2);
 	this.Economy.workPhase3 = Math.min(this.Economy.workPhase3, this.Economy.targetNumWorkers);
 	this.Economy.workPhase4 = Math.min(this.Economy.workPhase4, this.Economy.targetNumWorkers);
-	if (this.difficulty < 2)
+	if (this.difficulty < KIARA.Difficulty.EASY)
 		this.Economy.workPhase3 = Infinity;	// prevent the phasing to city phase
 
 //	KIARA.Logger.trace(" >>>  Kiara bot: personality = " + uneval(this.personality));

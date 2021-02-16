@@ -24,7 +24,7 @@ KIARA.BaseManager = function(gameState, Config)
 
 	this.constructing = false;
 	// Defenders to train in this cc when its construction is finished
-	this.neededDefenders = this.Config.difficulty > 2 ? 3 + 2*(this.Config.difficulty - 3) : 0;
+	this.neededDefenders = this.Config.difficulty > KIARA.Difficulty.EASY ? 3 + 2*(this.Config.difficulty - 3) : 0;
 
 	// vector for iterating, to check one use the HQ map.
 	this.territoryIndices = [];
@@ -73,7 +73,7 @@ KIARA.BaseManager.prototype.reset = function(gameState, state)
 	else
 		this.constructing = false;
 
-	if (state != "captured" || this.Config.difficulty < 3)
+	if (state != "captured" || this.Config.difficulty < KIARA.Difficulty.MEDIUM)
 		this.neededDefenders = 0;
 	else
 		this.neededDefenders = 3 + 2 * (this.Config.difficulty - 3);

@@ -34,9 +34,18 @@ KIARA.Behaviour.AGGRESIVE = "aggressive";
 KIARA.Behaviour.DEFENSIVE = "defensive";
 KIARA.Behaviour.RANDOM = "random";
 
+KIARA.Difficulty = function() {};
+KIARA.Difficulty.SANDBOX = 0;
+KIARA.Difficulty.VERY_EASY = 1;
+KIARA.Difficulty.EASY = 2;
+KIARA.Difficulty.MEDIUM = 3;
+KIARA.Difficulty.HARD = 4;
+KIARA.Difficulty.VERY_HARD = 5;
+
 KIARA.Strategy.DEFAULT = KIARA.Strategy.NONE;
 KIARA.Logger.level = KIARA.Logger.DEBUG;
 KIARA.Behaviour.DEFAULT = KIARA.Behaviour.RANDOM;
+KIARA.Difficulty.DEFAULT = KIARA.Difficulty.MEDIUM;
 
 KIARA.Logger.warn = function(output)
 {

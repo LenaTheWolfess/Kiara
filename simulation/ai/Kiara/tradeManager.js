@@ -641,7 +641,7 @@ KIARA.TradeManager.prototype.update = function(gameState, events, queues)
 	if (gameState.ai.HQ.canBarter && Resources.GetBarterableCodes().length)
 		this.performBarter(gameState);
 
-	if (this.Config.difficulty <= 1)
+	if (this.Config.difficulty <= KIARA.Difficulty.VERY_EASY)
 		return;
 
 	if (this.checkEvents(gameState, events))  // true if one market was built or destroyed
