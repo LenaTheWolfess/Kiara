@@ -41,7 +41,7 @@ KIARA.HQ.prototype.gameAnalysis = function(gameState)
 	this.canBuildUnits = true;
 	if (!gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).hasEntities())
 	{
-		let template = gameState.applyCiv("structures/{civ}/civil_centre");
+		let template = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.CC]);
 		if (!gameState.isTemplateAvailable(template) || !gameState.getTemplate(template).available(gameState))
 		{
 			KIARA.Logger.warn(" this AI is unable to produce any units");
@@ -247,7 +247,7 @@ KIARA.HQ.prototype.buildFirstBase = function(gameState)
 {
 	if (gameState.ai.queues.civilCentre.hasQueuedUnits())
 		return;
-	let templateName = gameState.applyCiv("structures/{civ}/civil_centre");
+	let templateName = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.CC]);
 	if (gameState.isTemplateDisabled(templateName))
 		return;
 	let template = gameState.getTemplate(templateName);
@@ -347,7 +347,7 @@ KIARA.HQ.prototype.buildFirstBase = function(gameState)
 		gameState.ai.queues.dock.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/dock", { "sea": sea, "proximity": startingPoint[imax].pos }));
 	}
 	else
-		gameState.ai.queues.civilCentre.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/civil_centre", { "base": -1, "resource": "wood", "proximity": startingPoint[imax].pos }));
+		gameState.ai.queues.civilCentre.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.CC], { "base": -1, "resource": "wood", "proximity": startingPoint[imax].pos }));
 };
 
 /**
@@ -556,7 +556,7 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 	// and build immediately a corral if needed
 	if (this.needCorral)
 	{
-		template = gameState.applyCiv("structures/{civ}/corral");
+		template = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Corral]);
 		if (!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() && this.canBuild(gameState, template))
 			gameState.ai.queues.corral.addPlan(new KIARA.ConstructionPlan(gameState, template, { "base": this.baseManagers[1].ID }));
 	}

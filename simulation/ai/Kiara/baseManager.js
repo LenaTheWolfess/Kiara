@@ -326,7 +326,7 @@ KIARA.BaseManager.prototype.removeDropsite = function(gameState, ent)
 
 KIARA.BaseManager.prototype.findBestFarmsteadLocation = function(gameState, resource)
 {
-	let template = gameState.getTemplate(gameState.applyCiv("structures/{civ}/farmstead"));
+	let template = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Farmstead]));
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
@@ -421,26 +421,26 @@ KIARA.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut =
 		return;
 	}
 
-	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/storehouse"))) {
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Dropsite]))) {
 		KIARA.Logger.trace("signalNoSupply: cannot build storehouse");
 		return;
 	}
 
 	let newDP = this.findBestDropsiteLocation(gameState, res);
 	if (newDP.quality > cut)
-		gameState.ai.queues["dropsites"].addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/storehouse", {"base": this.ID, "type": res}, newDP.pos));
+		gameState.ai.queues["dropsites"].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Dropsite], {"base": this.ID, "type": res}, newDP.pos));
 	else
 		gameState.ai.HQ.signalNoSupply(gameState, resource);
 }
 
 KIARA.BaseManager.prototype.buildFoodSupply = function(gameState, queues, type, res)
 {
-	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/farmstead")))
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Farmstead])))
 		return false;
 
 	let newSF = this.findBestFarmsteadLocation(gameState, res);
 	if (newSF.quality > 10) {
-		queues[type].addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/farmstead", {"base": this.ID, "type": "food"}, newSF.pos));
+		queues[type].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Farmstead], {"base": this.ID, "type": "food"}, newSF.pos));
 		return true;
 	}
 
@@ -449,9 +449,9 @@ KIARA.BaseManager.prototype.buildFoodSupply = function(gameState, queues, type, 
 
 KIARA.BaseManager.prototype.buildField = function(gameState, queues)
 {
-	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/field")))
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Field])))
 		return false;
-	queues.economicBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/field"));
+	queues.economicBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Field]));
 	return true;
 }
 
@@ -469,7 +469,7 @@ KIARA.BaseManager.prototype.signalNoNeedSupply = function(gameState, resource)
 KIARA.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resource)
 {
 
-	let template = gameState.getTemplate(gameState.applyCiv("structures/{civ}/storehouse"));
+	let template = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Dropsite]));
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;

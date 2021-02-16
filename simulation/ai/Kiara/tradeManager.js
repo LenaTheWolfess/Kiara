@@ -398,7 +398,7 @@ KIARA.TradeManager.prototype.checkEvents = function(gameState, events)
 KIARA.TradeManager.prototype.activateProspection = function(gameState)
 {
 	this.routeProspection = true;
-	gameState.ai.HQ.buildManager.setBuildable(gameState.applyCiv("structures/{civ}/market"));
+	gameState.ai.HQ.buildManager.setBuildable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Market]));
 	gameState.ai.HQ.buildManager.setBuildable(gameState.applyCiv("structures/{civ}/dock"));
 };
 
@@ -584,12 +584,12 @@ KIARA.TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
 {
 	if (queues.economicBuilding.hasQueuedUnitsWithClass("Trade") || queues.dock.hasQueuedUnitsWithClass("Trade"))
 		return;
-	if (!gameState.ai.HQ.canBuild(gameState, "structures/{civ}/market"))
+	if (!gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Market]))
 		return;
 	if (!gameState.updatingCollection("OwnMarkets", API3.Filters.byClass("Trade"), gameState.getOwnStructures()).hasEntities() &&
 	    !gameState.updatingCollection("diplo-ExclusiveAllyMarkets", API3.Filters.byClass("Trade"), gameState.getExclusiveAllyEntities()).hasEntities())
 		return;
-	let template = gameState.getTemplate(gameState.applyCiv("structures/{civ}/market"));
+	let template = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Market]));
 	if (!template)
 		return;
 	this.checkRoutes(gameState);
@@ -597,7 +597,7 @@ KIARA.TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
 	if (!marketPos || marketPos[3] == 0)   // marketPos[3] is the expected gain
 	{	// no position found
 		if (gameState.getOwnEntitiesByClass("Market", true).hasEntities())
-			gameState.ai.HQ.buildManager.setUnbuildable(gameState, gameState.applyCiv("structures/{civ}/market"));
+			gameState.ai.HQ.buildManager.setUnbuildable(gameState, gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Market]));
 		else
 			this.routeProspection = false;
 		return;
@@ -618,7 +618,7 @@ KIARA.TradeManager.prototype.prospectForNewMarket = function(gameState, queues)
 
 	if (!this.tradeRoute)
 		gameState.ai.queueManager.changePriority("economicBuilding", 2 * this.Config.priorities.economicBuilding);
-	let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/market");
+	let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Market]);
 	if (!this.tradeRoute)
 		plan.queueToReset = "economicBuilding";
 	queues.economicBuilding.addPlan(plan);

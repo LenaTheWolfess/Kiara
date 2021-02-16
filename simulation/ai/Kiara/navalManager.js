@@ -742,7 +742,7 @@ KIARA.NavalManager.prototype.buildNavalStructures = function(gameState, queues)
 		return;
 	// Use in priority resources to build a Market.
 	if (!gameState.getOwnEntitiesByClass("Market", true).hasEntities() &&
-	    gameState.ai.HQ.canBuild(gameState, "structures/{civ}/market"))
+	    gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Market]))
 		return;
 	let template;
 	if (gameState.ai.HQ.canBuild(gameState, "structures/{civ}/super_dock"))

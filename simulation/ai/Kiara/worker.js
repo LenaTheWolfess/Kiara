@@ -799,8 +799,8 @@ KIARA.Worker.prototype.startGathering = function(gameState)
 	{
 		if (gameState.ai.HQ.turnCache.allowDistantFood === undefined)
 			gameState.ai.HQ.turnCache.allowDistantFood =
-				!gameState.ai.HQ.canBuild(gameState, "structures/{civ}/field") &&
-				!gameState.ai.HQ.canBuild(gameState, "structures/{civ}/corral");
+				!gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Field]) &&
+				!gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Corral]);
 		allowDistant = gameState.ai.HQ.turnCache.allowDistantFood;
 	}
 	if (allowDistant)

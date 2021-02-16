@@ -608,9 +608,9 @@ KIARA.HQ.prototype.checkPhaseRequirements = function(gameState, queues)
 			    !queues.defenseBuilding.hasQueuedUnits())
 			{
 				if (!gameState.getOwnEntitiesByClass("Market", true).hasEntities() &&
-				    this.canBuild(gameState, "structures/{civ}/market"))
+				    this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Market]))
 				{
-					plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/market", { "phaseUp": true });
+					plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Market], { "phaseUp": true });
 					queue = "economicBuilding";
 					break;
 				}
@@ -684,7 +684,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 		if (!fHouse && !nHouses) {
 			KIARA.Logger.debug("add house");
-			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
+			let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
 			// change the starting condition according to the situation.
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
@@ -694,7 +694,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	}
 
 	let civ = gameState.getPlayerCiv();
-	let tHouse = gameState.getTemplate(gameState.applyCiv("structures/{civ}/house"));
+	let tHouse = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]));
 	let pHouse = tHouse.getPopulationBonus();
 
 	let numberInTraining = 0;
@@ -849,7 +849,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 				this.wantPop = pop;
 				while (nHouses < 3 && missing > 0) {
 					warn("add house");
-					let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
+					let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
 					// change the starting condition according to the situation.
 					plan.goRequirement = "houseNeeded";
 					queues.house.addPlan(plan);
@@ -898,7 +898,7 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 
 	if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 		if (!fHouse && !queues.house.length()) {
-			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
+			let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
 			// change the starting condition according to the situation.
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
@@ -974,7 +974,7 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 	let free = gameState.getPopulationLimit() - (gameState.getPopulation() + numberInTraining);
 
 	let nHouses = queues.house.length();
-	let tHouse = gameState.getTemplate(gameState.applyCiv("structures/{civ}/house"));
+	let tHouse = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]));
 	let pHouse = tHouse.getPopulationBonus();
 
 	if (pop > 5)
@@ -1008,7 +1008,7 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 
 	let supportRatio = this.supportRatio;
 	let alpha = 0.85;
-	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/field")))
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Field])))
 		supportRatio = Math.min(this.supportRatio, 0.1);
 	if (this.attackManager.rushNumber < this.attackManager.maxRushes || this.attackManager.upcomingAttacks.Rush.length)
 		alpha = 0.7;
@@ -2067,7 +2067,7 @@ KIARA.HQ.prototype.buildTemple = function(gameState, queues)
 KIARA.HQ.prototype.buildMarket = function(gameState, queues)
 {
 	if (gameState.getOwnEntitiesByClass("Market", true).hasEntities() ||
-		!this.canBuild(gameState, "structures/{civ}/market"))
+		!this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Market]))
 		return;
 
 	if (queues.economicBuilding.hasQueuedUnitsWithClass("Market"))
@@ -2094,7 +2094,7 @@ KIARA.HQ.prototype.buildMarket = function(gameState, queues)
 	}
 
 	gameState.ai.queueManager.changePriority("economicBuilding", 3 * this.Config.priorities.economicBuilding);
-	let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/market");
+	let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Market]);
 	plan.queueToReset = "economicBuilding";
 	queues.economicBuilding.addPlan(plan);
 };
@@ -2102,13 +2102,13 @@ KIARA.HQ.prototype.buildMarket = function(gameState, queues)
 /** Build a farmstead */
 KIARA.HQ.prototype.buildFoodSupply = function(gameState, queues, type, res)
 {
-		if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/farmstead")))
+		if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Farmstead])))
 		return false;
 
 	for (let x = 1; x < this.numActiveBases() + 1; x++) {
 		let newSF = this.baseManagers[x].findBestFarmsteadLocation(gameState, res);
 		if (newSF.quality > 10) {
-			queues[type].addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/farmstead", {"base": this.baseManagers[x].ID, "type": "food"}, newSF.pos));
+			queues[type].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Farmstead], {"base": this.baseManagers[x].ID, "type": "food"}, newSF.pos));
 	//		KIARA.Logger.debug("Build food supply for " + res);
 			return true;
 		}
@@ -2120,7 +2120,7 @@ KIARA.HQ.prototype.buildFoodSupply = function(gameState, queues, type, res)
 /** Build field */
 KIARA.HQ.prototype.buildField = function(gameState, queues)
 {
-	if (!this.canBuild(gameState, "structures/{civ}/field"))
+	if (!this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Field]))
 	// Only build one farmstead for the time being ("DropsiteFood" does not refer to CCs)
 	if (gameState.getOwnEntitiesByClass("Farmstead", true).hasEntities())
 		return;
@@ -2131,10 +2131,10 @@ KIARA.HQ.prototype.buildField = function(gameState, queues)
 		return;
 	if (queues.economicBuilding.hasQueuedUnitsWithClass("DropsiteFood"))
 		return;
-	if (!this.canBuild(gameState, "structures/{civ}/field"))
+	if (!this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Field]))
 		return;
 
-	queues.economicBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/field"));
+	queues.economicBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Field]));
 };
 
 /**
@@ -2145,12 +2145,12 @@ KIARA.HQ.prototype.buildWonder = function(gameState, queues, force = false)
 {
 	if (queues.wonder && queues.wonder.hasQueuedUnits() ||
 	    gameState.getOwnEntitiesByClass("Wonder", true).hasEntities() ||
-	    !this.canBuild(gameState, "structures/{civ}/wonder"))
+	    !this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Wonder]))
 		return;
 
 	if (!force)
 	{
-		let template = gameState.getTemplate(gameState.applyCiv("structures/{civ}/wonder"));
+		let template = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Wonder]));
 		// Check that we have enough resources to start thinking to build a wonder
 		let cost = template.cost();
 		let resources = gameState.getResources();
@@ -2167,7 +2167,7 @@ KIARA.HQ.prototype.buildWonder = function(gameState, queues, force = false)
 			return;
 	}
 
-	queues.wonder.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/wonder"));
+	queues.wonder.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Wonder]));
 };
 
 /** Build a corral, and train animals there */
@@ -2177,12 +2177,12 @@ KIARA.HQ.prototype.manageCorral = function(gameState, queues)
 		return;
 
 	let nCorral = gameState.getOwnEntitiesByClass("Corral", true).length;
-	if (!nCorral || !gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/field")) &&
+	if (!nCorral || !gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Field])) &&
 	                nCorral < this.currentPhase && gameState.getPopulation() > 30 * nCorral)
 	{
-		if (this.canBuild(gameState, "structures/{civ}/corral"))
+		if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Corral]))
 		{
-			queues.corral.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/corral"));
+			queues.corral.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Corral]));
 			return;
 		}
 		if (!nCorral)
@@ -2234,7 +2234,7 @@ KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res)
 {
 	if (res == "food" || res == "farm")
 		return this.buildFoodSupply(gameState, queues, type, res);
-	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/storehouse"))) {
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Dropsite]))) {
 		KIARA.Logger.debug("signalNoSupply: cannot build storehouse");
 		return false;
 	}
@@ -2245,7 +2245,7 @@ KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res)
 		let newDP = this.baseManagers[x].findBestDropsiteLocation(gameState, res);
 		if (newDP.quality > cut) {
 		//	warn("build new dropsite for " + res);
-			queues[type].addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/storehouse", {"base": this.baseManagers[x].ID, "type": res}, newDP.pos));
+			queues[type].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Dropsite], {"base": this.baseManagers[x].ID, "type": res}, newDP.pos));
 			return true;
 		} else {
 	//		warn("rejected dropsite for " + res + " with " + newDP.quality);
@@ -2260,14 +2260,14 @@ KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res)
  */
 KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 {
-	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}/house")) ||
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation])) ||
 	    gameState.getPopulationMax() <= gameState.getPopulationLimit())
 		return;
 
 	let numPlanned = queues.house.length();
 	if (numPlanned < 3 || numPlanned < 5 && gameState.getPopulation() > 80)
 	{
-		let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
+		let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
 		// change the starting condition according to the situation.
 		plan.goRequirement = "houseNeeded";
 		queues.house.addPlan(plan);
@@ -2275,7 +2275,7 @@ KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 
 	if (numPlanned > 0 && this.phasing && gameState.getPhaseEntityRequirements(this.phasing).length)
 	{
-		let houseTemplateName = gameState.applyCiv("structures/{civ}/house");
+		let houseTemplateName = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
 		let houseTemplate = gameState.getTemplate(houseTemplateName);
 
 		let needed = 0;
@@ -2307,7 +2307,7 @@ KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 
 	if (this.requireHouses)
 	{
-		let houseTemplate = gameState.getTemplate(gameState.applyCiv("structures/{civ}/house"));
+		let houseTemplate = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]));
 		if (!this.phasing || gameState.getPhaseEntityRequirements(this.phasing).every(req =>
 			!houseTemplate.hasClass(req.class) || gameState.getOwnStructures().filter(API3.Filters.byClass(req.class)).length >= req.count))
 			this.requireHouses = undefined;
@@ -2316,7 +2316,7 @@ KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 	// When population limit too tight
 	//    - if no room to build, try to improve with technology
 	//    - otherwise increase temporarily the priority of houses
-	let house = gameState.applyCiv("structures/{civ}/house");
+	let house = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
 	let HouseNb = gameState.getOwnFoundations().filter(API3.Filters.byClass("House")).length;
 	let popBonus = gameState.getTemplate(house).getPopulationBonus();
 	let freeSlots = gameState.getPopulationLimit() + HouseNb*popBonus - this.getAccountedPopulation(gameState);
@@ -2372,17 +2372,17 @@ KIARA.HQ.prototype.buildNewBase = function(gameState, queues, resource)
 	let hasOwnCC = false;
 	for (let ent of gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre")).values())
 	{
-		if (ent.owner() != PlayerID || ent.templateName() != gameState.applyCiv("structures/{civ}/civil_centre"))
+		if (ent.owner() != PlayerID || ent.templateName() != gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.CC]))
 			continue;
 		hasOwnCC = true;
 		break;
 	}
-	if (hasOwnCC && this.canBuild(gameState, "structures/{civ}/military_colony"))
-		template = "structures/{civ}/military_colony";
-	else if (this.canBuild(gameState, "structures/{civ}/civil_centre"))
-		template = "structures/{civ}/civil_centre";
-	else if (!hasOwnCC && this.canBuild(gameState, "structures/{civ}/military_colony"))
-		template = "structures/{civ}/military_colony";
+	if (hasOwnCC && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Colony]))
+		template = KIARA.Templates[KIARA.TemplateConstants.Colony];
+	else if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.CC]))
+		template = KIARA.Templates[KIARA.TemplateConstants.CC];
+	else if (!hasOwnCC && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Colony]))
+		template = KIARA.Templates[KIARA.TemplateConstants.Colony];
 	else
 		return false;
 
@@ -2399,12 +2399,12 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 	let numFortresses = gameState.getOwnEntitiesByClass("Fortress", true).length;
 	if (this.currentPhase > 2 && !queues.defenseBuilding.hasQueuedUnits()) {
 		// try to build fortresses
-		if (!numFortresses && this.canBuild(gameState, "structures/{civ}/fortress"))
+		if (!numFortresses && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Fortress]))
 		{
 			this.fortressStartTime = gameState.ai.elapsedTime;
 			if (!numFortresses)
 				gameState.ai.queueManager.changePriority("defenseBuilding", 3*this.Config.priorities.defenseBuilding);
-			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/fortress");
+			let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Fortress]);
 			plan.queueToReset = "defenseBuilding";
 			queues.defenseBuilding.addPlan(plan);
 			return;
@@ -2449,14 +2449,14 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 	if (!this.saveResources && (this.currentPhase > 2 || gameState.isResearching(gameState.getPhaseName(3))))
 	{
 		// Try to build fortresses.
-		if (this.canBuild(gameState, "structures/{civ}/fortress"))
+		if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Fortress]))
 		{
 			if ((!numFortresses || gameState.ai.elapsedTime > (1 + 0.10*numFortresses)*this.fortressLapseTime + this.fortressStartTime))
 			{
 				this.fortressStartTime = gameState.ai.elapsedTime;
 				if (!numFortresses)
 					gameState.ai.queueManager.changePriority("defenseBuilding", 2 * this.Config.priorities.defenseBuilding);
-				let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/fortress");
+				let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Fortress]);
 				plan.queueToReset = "defenseBuilding";
 				queues.defenseBuilding.addPlan(plan);
 				return;
@@ -2494,12 +2494,12 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	if (numBarracks && this.strategy != "attack")
 		return;
 
-	let barracksTemplate = this.canBuild(gameState, "structures/{civ}/barracks") ? "structures/{civ}/barracks" : undefined;
+	let barracksTemplate = this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.MeleeAndRanged]) ? KIARA.Templates[KIARA.TemplateConstants.MeleeAndRanged] : undefined;
 
-	let rangeTemplate = this.canBuild(gameState, "structures/{civ}/range") ? "structures/{civ}/range" : undefined;
+	let rangeTemplate = this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Ranged]) ? KIARA.Templates[KIARA.TemplateConstants.Ranged] : undefined;
 	let numRanges = gameState.getOwnEntitiesByClass("Range", true).length;
 
-	let stableTemplate = this.canBuild(gameState, "structures/{civ}/stable") ? "structures/{civ}/stable" : undefined;
+	let stableTemplate = this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Cavalry]) ? KIARA.Templates[KIARA.TemplateConstants.Cavalry] : undefined;
 	let numStables = gameState.getOwnEntitiesByClass("Stable", true).length;
 
 	if (this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks1 ||
@@ -2566,9 +2566,9 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		return;
 
 	let nArsenals = gameState.getOwnEntitiesByClass("Arsenal", true).length;
-	if (this.canBuild(gameState, "structures/{civ}/arsenal") && nArsenals < 3)
+	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege]) && nArsenals < 3)
 	{
-		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/arsenal", { "militaryBase": true }));
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege], { "militaryBase": true }));
 		return;
 	}
 
@@ -3386,7 +3386,7 @@ if (
 
 	if (this.currentPhase > 1 && gameState.ai.playedTurn % 3 == 0)
 	{
-		if (!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() && gameState.ai.HQ.canBuild(gameState, "structures/{civ}/corral"))
+		if (!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() && gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Corral]))
 			this.manageCorral(gameState, queues);
 
 		if (!this.canBarter)

@@ -919,7 +919,7 @@ KIARA.ConstructionPlan.prototype.isGo = function(gameState)
 		return false;
 	if (this.goRequirement && this.goRequirement == "houseNeeded")
 	{
-		if (!gameState.ai.HQ.canBuild(gameState, "structures/{civ}/house"))
+		if (!gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]))
 			return false;
 		if (gameState.getPopulationMax() <= gameState.getPopulationLimit())
 			return false;

@@ -7,6 +7,7 @@ KIARA.Logger.TRACE = 0;
 KIARA.Logger.DEBUG = 1;
 KIARA.Logger.WARN = 2;
 KIARA.Logger.ERROR = 3;
+KIARA.Logger.level = KIARA.Logger.ERROR;
 
 KIARA.Strategy = function() {};
 KIARA.Strategy.NONE = "none";
@@ -14,6 +15,7 @@ KIARA.Strategy.BOOM = "boom";
 KIARA.Strategy.EARLY_RAID = "earlyRaid";
 KIARA.Strategy.ATTACK = "attack";
 KIARA.Strategy.RECOVER = "recover";
+KIARA.Strategy.DEFAULT = KIARA.Strategy.NONE;
 
 KIARA.AttackTypes = function() {};
 KIARA.AttackTypes.ANIHILATION = "Anihilation";
@@ -33,6 +35,7 @@ KIARA.Behaviour.BALANCED = "balanced";
 KIARA.Behaviour.AGGRESIVE = "aggressive";
 KIARA.Behaviour.DEFENSIVE = "defensive";
 KIARA.Behaviour.RANDOM = "random";
+KIARA.Behaviour.DEFAULT = KIARA.Behaviour.RANDOM;
 
 KIARA.Difficulty = function() {};
 KIARA.Difficulty.SANDBOX = 0;
@@ -41,11 +44,41 @@ KIARA.Difficulty.EASY = 2;
 KIARA.Difficulty.MEDIUM = 3;
 KIARA.Difficulty.HARD = 4;
 KIARA.Difficulty.VERY_HARD = 5;
-
-KIARA.Strategy.DEFAULT = KIARA.Strategy.NONE;
-KIARA.Logger.level = KIARA.Logger.DEBUG;
-KIARA.Behaviour.DEFAULT = KIARA.Behaviour.RANDOM;
 KIARA.Difficulty.DEFAULT = KIARA.Difficulty.MEDIUM;
+
+KIARA.TemplateConstants = function() {};
+KIARA.TemplateConstants.MorePopulation = "MorePopulation";
+KIARA.TemplateConstants.Dropsite = "Dropsite";
+KIARA.TemplateConstants.Farmstead = "Farmstead";
+KIARA.TemplateConstants.Market = "Market";
+KIARA.TemplateConstants.Field = "Field";
+KIARA.TemplateConstants.Wonder = "Wonder";
+KIARA.TemplateConstants.Corral = "Corral";
+KIARA.TemplateConstants.CC = "CC";
+KIARA.TemplateConstants.Colony = "Colony";
+KIARA.TemplateConstants.Fortress = "Fortress";
+KIARA.TemplateConstants.MeleeAndRanged = "MeleeAndRanged";
+KIARA.TemplateConstants.Ranged = "Ranged";
+KIARA.TemplateConstants.Cavalry = "Cavalry";
+KIARA.TemplateConstants.Siege = "Siege";
+KIARA.TemplateConstants.Elephants = "Elephants";
+
+KIARA.Templates = function() {};
+KIARA.Templates[KIARA.TemplateConstants.MorePopulation] = "structures/{civ}/house";
+KIARA.Templates[KIARA.TemplateConstants.Dropsite] = "structures/{civ}/storehouse";
+KIARA.Templates[KIARA.TemplateConstants.Farmstead] = "structures/{civ}/farmstead";
+KIARA.Templates[KIARA.TemplateConstants.Market] = "structures/{civ}/market";
+KIARA.Templates[KIARA.TemplateConstants.Field] = "structures/{civ}/field";
+KIARA.Templates[KIARA.TemplateConstants.Wonder] = "structures/{civ}/wonder";
+KIARA.Templates[KIARA.TemplateConstants.Corral] = "structures/{civ}/corral";
+KIARA.Templates[KIARA.TemplateConstants.CC] = "structures/{civ}/civil_centre";
+KIARA.Templates[KIARA.TemplateConstants.Colony] = "structures/{civ}/military_colony";
+KIARA.Templates[KIARA.TemplateConstants.Fortress] = "structures/{civ}/fortress";
+KIARA.Templates[KIARA.TemplateConstants.MeleeAndRanged] = "structures/{civ}/barracks";
+KIARA.Templates[KIARA.TemplateConstants.Cavalry] = "structures/{civ}/stable";
+KIARA.Templates[KIARA.TemplateConstants.Ranged] = "structures/{civ}/range";
+KIARA.Templates[KIARA.TemplateConstants.Siege] = "structures/{civ}/arsenal";
+KIARA.Templates[KIARA.TemplateConstants.Elephants] = "structures/{civ}/elephant_stables";
 
 KIARA.Logger.warn = function(output)
 {

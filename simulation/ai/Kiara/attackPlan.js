@@ -598,7 +598,7 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 	let popLimit = gameState.getPopulationLimit();
 	let wantPop = gameState.ai.HQ.wantPop;
 	let nHouses = gameState.ai.queues.house.length();
-	let tHouse = gameState.getTemplate(gameState.applyCiv("structures/{civ}/house"));
+	let tHouse = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]));
 	let pHouse = tHouse.getPopulationBonus();
 
 	let addTotal = 0;
@@ -719,7 +719,7 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 	if (wantPop >= popLimit + (pHouse * fHouse) + (nHouses * fHouse)) {
 		let missing = wantPop - (popLimit + (pHouse * fHouse) + (nHouses * fHouse));
 		while (nHouses < 3 && missing > 0) {
-			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/house");
+			let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
 			// change the starting condition according to the situation.
 			plan.goRequirement = "houseNeeded";
 			gameState.ai.queues.house.addPlan(plan);
