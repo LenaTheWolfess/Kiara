@@ -27,8 +27,16 @@ KIARA.AttackTypes.MELLE_RANGE_CAV = "MeleeRangeCav";
 KIARA.AttackTypes.MELLE_CAV = "MeleeCav";
 KIARA.AttackTypes.RANGE_CAV = "RangeCav";
 
+// for instance "balanced", "aggressive" or "defensive"
+KIARA.Behaviour = function() {};
+KIARA.Behaviour.BALANCED = "balanced";
+KIARA.Behaviour.AGGRESIVE = "aggressive";
+KIARA.Behaviour.DEFENSIVE = "defensive";
+KIARA.Behaviour.RANDOM = "random";
+
 KIARA.Strategy.DEFAULT = KIARA.Strategy.NONE;
 KIARA.Logger.level = KIARA.Logger.DEBUG;
+KIARA.Behaviour.DEFAULT = KIARA.Behaviour.RANDOM;
 
 KIARA.Logger.warn = function(output)
 {

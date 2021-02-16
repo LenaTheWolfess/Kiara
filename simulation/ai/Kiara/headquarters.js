@@ -33,7 +33,7 @@ KIARA.HQ = function(Config)
 	this.fortressStartTime = 0;	// Fortresses, will start as soon as available (city phase).
 	this.fortressLapseTime = this.Config.Military.fortressLapseTime;
 	this.extraTowers = 5;
-	if (this.Config.behaviour == "aggressive")
+	if (this.Config.behaviour == KIARA.Behaviour.AGGRESIVE)
 		this.extraTowers = 0;
 	this.extraFortresses = 1;
 
@@ -64,11 +64,11 @@ KIARA.HQ = function(Config)
 	this.strategy = KIARA.Strategy.DEFAULT;
 
 	let beh = this.Config.behaviour;
-	if (beh == "balanced")
+	if (beh == KIARA.Behaviour.BALANCED)
 		this.strategy = KIARA.Strategy.BOOM;
-	if (beh == "defensive")
+	if (beh == KIARA.Behaviour.DEFENSIVE)
 		this.strategy = KIARA.Strategy.NONE;
-	if (beh == "agressive")
+	if (beh == KIARA.Behaviour.AGGRESIVE)
 		this.strategy = KIARA.Strategy.BOOM;
 };
 

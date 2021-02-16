@@ -3,8 +3,7 @@ KIARA.Config = function(difficulty, behavior)
 	// 0 is sandbox, 1 is very easy, 2 is easy, 3 is medium, 4 is hard and 5 is very hard.
 	this.difficulty = difficulty !== undefined ? difficulty : 3;
 
-	// for instance "balanced", "aggressive" or "defensive"
-	this.behavior = behavior || "random";
+	this.behavior = behavior || KIARA.Behaviour.DEFAULT;
 
 	this.chat = true;	// false to prevent AI's chats
 
