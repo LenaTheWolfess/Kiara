@@ -581,7 +581,7 @@ KIARA.VictoryManager.prototype.update = function(gameState, events, queues)
 	    !gameState.getVictoryConditions().has("capture_the_relic"))
 		return;
 
-	this.manageCriticalEntGuards(gameState);
+//	this.manageCriticalEntGuards(gameState);
 
 	if (gameState.getVictoryConditions().has("wonder"))
 		gameState.ai.HQ.buildWonder(gameState, queues, true);

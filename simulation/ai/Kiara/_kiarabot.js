@@ -7,7 +7,7 @@ KIARA.Logger.TRACE = 0;
 KIARA.Logger.DEBUG = 1;
 KIARA.Logger.WARN = 2;
 KIARA.Logger.ERROR = 3;
-KIARA.Logger.level = KIARA.Logger.ERROR;
+KIARA.Logger.level = KIARA.Logger.WARN;
 
 KIARA.Strategy = function() {};
 KIARA.Strategy.NONE = "none";

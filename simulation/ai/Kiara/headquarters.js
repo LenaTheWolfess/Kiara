@@ -804,13 +804,18 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 				template = this.findBestTrainableUnitSpecial(gameState, siegeClass, siegeRequirements, t);
 				if (template)
 				{
-					wwx = "attack";
+					//wwx = "attack";
+					wwx = undefined;
 					size = 2;
 					mmin = 2;
 				}
 			}
-			if (!template && wantChampions)
+			if (!template && wantChampions) {
 				template = this.findBestTrainableUnitSpecial(gameState, championClass, championRequirements, t);
+				if (template) {
+					wwx = undefined;
+				}
+			}
 			if (!template)
 				template = this.findBestTrainableUnitSpecial(gameState, classes, requirements, t);
 			if (!template && wantDefenders && this.rangedSwitcher)
@@ -867,9 +872,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 					return;
 			}
 
-			let role = {"base": 0, "role": wwx, "support": true};
-			if (!actualTemplate.hasClass("Support"))
-				role.support = false;
+			let role = {"base": 0, "role": wwx, "support": actualTemplate.hasClass("Support")};
 			KIARA.Logger.debug("addPlan " + template + " " + size);
 			q.addPlan(new KIARA.TrainingPlan(gameState, template, role, size, mSize));
 			if (wantDefenders)
