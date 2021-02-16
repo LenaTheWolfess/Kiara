@@ -250,7 +250,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 
 	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
 	let unexecutedAttacks = { "Rush": 0, "EarlyRaid": 0 ,"Raid": 0, "Attack": 0, "HugeAttack": 0, "MeleeRangeInfCav": 0, "MeleeRangeCav": 0, "MeleeCav": 0, "RangeCav": 0};
-	let stopAllAttacks = gameState.ai.HQ.strategy == "recover";
+	let stopAllAttacks = gameState.ai.HQ.strategy == KIARA.HQ.Strategy.RECOVER;
 
 	for (let attackType in this.upcomingAttacks)
 	{
@@ -323,8 +323,8 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 
 	// creating plans after updating because an aborted plan might be reused in that case.
 
-	let doSmallAttacks = this.Config.behavior == "aggressive" && gameState.ai.HQ.strategy == "attack";
-	let doEarlyRaid = gameState.ai.HQ.strategy == "earlyRaid";
+	let doSmallAttacks = this.Config.behavior == "aggressive" && gameState.ai.HQ.strategy == KIARA.HQ.Strategy.ATTACK;
+	let doEarlyRaid = gameState.ai.HQ.strategy == KIARA.HQ.Strategy.EARLY_RAID;
 
 	let barracksNb = gameState.getOwnEntitiesByClass("Barracks", true).filter(API3.Filters.isBuilt()).length;
 	if (doSmallAttacks && this.rushNumber < this.maxRushes && barracksNb >= 1)

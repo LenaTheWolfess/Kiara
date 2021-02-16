@@ -1,3 +1,11 @@
+var KIARA.HQ.Strategy = function() {};
+KIARA.HQ.Strategy.NONE = "none";
+KIARA.HQ.Strategy.BOOM = "boom";
+KIARA.HQ.Strategy.EARLY_RAID = "earlyRaid";
+KIARA.HQ.Strategy.ATTACK = "attack";
+KIARA.HQ.Strategy.RECOVER = "recover";
+KIARA.HQ.Strategy.DEFAULT = KIARA.HQ.Strategy.NONE;
+
 /**
  * Headquarters
  * Deal with high level logic for the AI. Most of the interesting stuff gets done here.
@@ -61,16 +69,15 @@ KIARA.HQ = function(Config)
 	for (let res of Resources.GetCodes())
 		this.needDropsite[res] = false;
 
-//	this.strategy = "boom";
-	this.strategy = "none";
+	this.strategy = KIARA.HQ.Strategy.DEFAULT;
 
 	let beh = this.Config.behaviour;
 	if (beh == "balanced")
-		this.strategy = "boom";
+		this.strategy = KIARA.HQ.Strategy.BOOM;
 	if (beh == "defensive")
-		this.strategy = "none";
+		this.strategy = KIARA.HQ.Strategy.NONE;
 	if (beh == "agressive")
-		this.strategy = "boom";
+		this.strategy = KIARA.HQ.Strategy.BOOM;
 };
 
 /** More initialisation for stuff that needs the gameState */
@@ -2509,7 +2516,7 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		let civ = gameState.getPlayerCiv();
 		if (numStables == 0 && stableTemplate && civ == "brit")
 		{
-			this.strategy = "earlyRaid";
+			this.strategy = KIARA.HQ.Strategy.EARLY_RAID;
 			this.attackManager.maxRaids = 1;
 			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
 		}
@@ -3299,12 +3306,12 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 	if (this.researchManager.checkPhase(gameState, queues))
 			this.phasingQued = true;
 	if (pop < 200 && pop < this.lastPopGrow) {
-		this.strategy = "recover";
+		this.strategy = KIARA.HQ.Strategy.RECOVER;
 	}
-	else if (pop > 200 && this.strategy == "recover" || pop > 100) {
-		this.strategy = "attack";
+	else if (pop > 200 && this.strategy == KIARA.HQ.Strategy.RECOVER || pop > 100) {
+		this.strategy = KIARA.HQ.Strategy.ATTACK;
 	} else if (this.cavalryRush && pop > 20) {
-		this.strategy = "earlyRaid";
+		this.strategy = KIARA.HQ.Strategy.EARLY_RAID;
 		this.attackManager.maxRaids = 2;
 		this.cavalryRush = false;
 	}
