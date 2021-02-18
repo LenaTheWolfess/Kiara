@@ -1344,7 +1344,8 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 		let stance = ent.isPackable() ? "standground" : KIARA.isSiegeUnit(ent) ? KIARA.Behaviour.AGGRESIVE : "defensive";
 		if (ent.getStance() != stance)
 			ent.setStance(stance);
-		Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [2, 2, 0] });
+		if (KIARA.Logger.isTrace())
+			Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [2, 2, 0] });
 	}
 
 	let rallyAccess = gameState.ai.accessibility.getAccessValue(this.rallyPoint);
@@ -1381,7 +1382,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 {
 	KIARA.Logger.warn("attackplan update");
 	if (!this.unitCollection.hasEntities()) {
-		KIARA.Logger.warn("attackplan update -> no entities -> abort");
+		KIARA.Logger.warn("attackplan "+ this.type + " " + this.name + " update -> no entities -> abort");
 		return 0;
 	}
 
@@ -1391,8 +1392,10 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 
 	if (this.unitCollection.length < this.nUnits / 2) {
 		Engine.ProfileStop();
-		KIARA.Logger.warn("attackplan " + this.type + " update -> half of units -> abort");
+		KIARA.Logger.warn("attackplan " + this.type + " " + this.name + " update -> half of units -> abort");
 		return 0;
+	} else {
+		KIARA.Logger.warn("Attack: " + this.type + "." + this.name + " units = " + this.unitCollection.length + " vs " + (this.nUnits / 2));
 	}
 
 
@@ -1403,7 +1406,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 
 	if (this.state == "walking" && !this.UpdateWalking(gameState, events))
 	{
-		KIARA.Logger.debug("attackplan update -> walking && !UpdateWalking -> abort WHAT??");
+		KIARA.Logger.debug("attackplan update" +  " " + this.name + " -> walking && !UpdateWalking -> abort WHAT??");
 		Engine.ProfileStop();
 		return 0;
 	}
@@ -1443,10 +1446,13 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 		// First update the target and/or its position if needed
 		if (!this.UpdateTarget(gameState))
 		{
-			KIARA.Logger.warn("Attack " + this.type + " target undefined -> abort");
+			KIARA.Logger.warn("Attack " + this.type + " " + this.name + " target undefined -> abort");
 			Engine.ProfileStop();
 			return false;
 		}
+
+		if (this.target && KIARA.Logger.isTrace())
+			Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [this.target.id()], "rgb": [1, 0, 1] });
 
 		let time = gameState.ai.elapsedTime;
 		let attackedByStructure = {};
@@ -1484,7 +1490,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 					ourUnit.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 				}
 			}
-			else
+			else // we are not siege unit
 			{
 				if (this.isBlocked && !ourUnit.hasClass("Ranged") && attacker.hasClass("Ranged"))
 				{
@@ -1504,7 +1510,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 						ent.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 					}
 				}
-				else
+				else // Attacker is unit
 				{
 					// Look first for nearby units to help us if possible
 					let collec = this.unitCollection.filterNearest(ourUnit.position(), 2);
@@ -1556,6 +1562,8 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 		let unitTargets = {};
 		for (let ent of this.unitCollection.values())
 		{
+			if (KIARA.Logger.isTrace())
+				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 0] });
 			if (ent.hasClass("Ship"))	// TODO What to do with ships
 				continue;
 			let orderData = ent.unitAIOrderData();
@@ -1882,7 +1890,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 	this.lastPosition = this.position;
 	Engine.ProfileStop();
 
-	KIARA.Logger.warn("Attack: " + this.type + " status " + this.state + " target " + this.target);
+	KIARA.Logger.warn("Attack: " + this.type + " " + this.name + ": status " + this.state + ", target = " + this.target);
 	return this.unitCollection.length;
 };
 
@@ -2119,7 +2127,7 @@ KIARA.AttackPlan.prototype.UpdateTarget = function(gameState)
 		this.targetPos = this.target.position();
 		if (this.target) {
 			// regroup army
-		//	this.Regroup(gameState);
+			this.Regroup(gameState);
 		}
 	}
 	return true;
@@ -2149,7 +2157,7 @@ KIARA.AttackPlan.prototype.RecreateGroups = function(gameState, moveThem = false
 		else
 			group.form("special/formations/line_closed");
 		if (moveThem)
-			group.moveToRange(this.path[0][0], this.path[0][1], 0, 15, true);
+			group.moveToRange(this.path[0][0], this.path[0][1], 0, 20, true);
 	}
 };
 
@@ -2205,7 +2213,8 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 				ent.stopMoving();
 			if (rallyPoint)
 				ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 15);
-			Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 1] });
+			if (KIARA.Logger.isTrace())
+				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 1] });
 			this.removeUnit(ent);
 		}
 	}

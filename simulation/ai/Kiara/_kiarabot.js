@@ -7,7 +7,8 @@ KIARA.Logger.TRACE = 0;
 KIARA.Logger.DEBUG = 1;
 KIARA.Logger.WARN = 2;
 KIARA.Logger.ERROR = 3;
-KIARA.Logger.level = KIARA.Logger.WARN;
+KIARA.Logger.RELEASE = 4;
+KIARA.Logger.level = KIARA.Logger.RELEASE;
 
 KIARA.Strategy = function() {};
 KIARA.Strategy.NONE = "none";
@@ -100,7 +101,8 @@ KIARA.Logger.trace = function(output)
 
 KIARA.Logger.error = function(output)
 {
-	API3.error(output);
+	if (KIARA.Logger.isError())
+		API3.error(output);
 };
 
 KIARA.Logger.isDebug = function()
@@ -117,6 +119,12 @@ KIARA.Logger.isTrace = function()
 {
 	return KIARA.Logger.TRACE >= KIARA.Logger.level;
 };
+
+KIARA.Logger.isError = function()
+{
+	return KIARA.Logger.ERROR >= KIARA.Logger.level;
+};
+
 
 KIARA.Logger.isSerialization = function()
 {

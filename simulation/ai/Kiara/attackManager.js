@@ -260,7 +260,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			if (stopAllAttacks)
 			{
 				attack.Abort(gameState);
-				KIARA.Logger.debug("Kiara stop attack " + attack.getType());
+				KIARA.Logger.warn("Kiara stop attack " + attack.getType());
 				this.upcomingAttacks[attackType].splice(i--, 1);
 				continue;
 			}
@@ -280,7 +280,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			}
 			else if (updateStep == 0)
 			{
-				KIARA.Logger.debug("Attack Manager: " + attack.getType() + " plan " + attack.getName() + " aborted.");
+				KIARA.Logger.warn("Attack Manager: " + attack.getType() + " plan " + attack.getName() + " aborted.");
 				attack.Abort(gameState);
 				this.upcomingAttacks[attackType].splice(i--, 1);
 			}
@@ -294,7 +294,10 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 					this.startedAttacks[attackType].push(attack);
 				}
 				else
+				{
+					KIARA.Logger.warn("Failed to start " + attack.getType() + " -> abort");
 					attack.Abort(gameState);
+				}
 				this.upcomingAttacks[attackType].splice(i--, 1);
 			}
 		}
@@ -308,13 +311,13 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			attack.checkEvents(gameState, events);
 			// okay so then we'll update the attack.
 			if (attack.isPaused()) {
-				KIARA.Logger.debug("attack '"+attackType+"' is paused");
+				KIARA.Logger.warn("attack '"+attackType+"' is paused");
 				continue;
 			}
 			let remaining = attack.update(gameState, events);
 			if (!remaining)
 			{
-				KIARA.Logger.debug("Military Manager: " + attack.getType() + " plan " + attack.getName() + " is finished with remaining " + remaining);
+				KIARA.Logger.warn("Military Manager: " + attack.getType() + " plan " + attack.getName() + " is finished with remaining " + remaining);
 				attack.Abort(gameState);
 				this.startedAttacks[attackType].splice(i--, 1);
 			}
