@@ -1,6 +1,3 @@
-var KIARA = function(m)
-{
-
 /**
  * Manage the garrisonHolders
  * When a unit is ordered to garrison, it must be done through this.garrison() function so that
@@ -9,104 +6,104 @@ var KIARA = function(m)
  * Futhermore garrison units have a metadata garrisonType describing its reason (protection, transport, ...)
  */
 
-m.GarrisonManager = function(Config)
+KIARA.GarrisonManager = function(Config)
 {
 	this.Config = Config;
 	this.holders = new Map();
 	this.decayingStructures = new Map();
 };
 
-m.GarrisonManager.prototype.raiseAlert = function(gameState, holder)
+KIARA.GarrisonManager.prototype.raiseAlert = function(gameState, holder)
 {
 	let out = false;
 	if (holder.getMetadata(PlayerID, "alert") !== undefined && holder.getMetadata(PlayerID, "alert")) {
 		if (out)
-			API3.warn("alert raised allready");
+			KIARA.Logger.debug("alert raised allready");
 		return false;
 	}
 	this.registerHolder(gameState, holder, true);
 	holder.setMetadata(PlayerID, "alert", true);
 	holder.setMetadata(PlayerID, "alertInit", true);
-	
+
 	let holderPos = holder.position();
 	let reserved = new Map();
 	let units = gameState.getOwnUnits().filter(API3.Filters.byClass("Support")).filterNearest(holderPos).values();
-	let holderAccess = m.getLandAccess(gameState, holder);
+	let holderAccess = KIARA.getLandAccess(gameState, holder);
 	let range = holder.attackRange("Ranged") ? holder.attackRange("Ranged").max : 80;
 	let searchRange = range;
 	let structures = gameState.getOwnStructures().filter(API3.Filters.and(API3.Filters.byClassesOr(["DefenseTower", "House", "Fortress", "CivCentre"]),API3.Filters.not(API3.Filters.isFoundation()))).values();
-	
+
 	let validStructures = [];
-	
+
 	for (let saveHouse of structures) {
 		let spos = saveHouse.position();
 		if (!spos) {
 			if (out)
-				API3.warn(saveHouse + " : no position");
+				KIARA.Logger.debug(saveHouse + " : no position");
 			continue;
 		}
-		let sAcc = m.getLandAccess(gameState, saveHouse);
+		let sAcc = KIARA.getLandAccess(gameState, saveHouse);
 		if (holderAccess != sAcc) {
 			if (out)
-				API3.warn(saveHouse + " : wrong access");
+				KIARA.Logger.debug(saveHouse + " : wrong access");
 			continue;
 		}
 		if (API3.SquareVectorDistance(spos, holderPos) > 4*range*range) {
 			if (out)
-				API3.warn(saveHouse + " : too far from holder");
+				KIARA.Logger.debug(saveHouse + " : too far from holder");
 			continue;
 		}
 		this.setAlert(saveHouse);
 		validStructures.push(saveHouse);
 	}
-	
+
 	for (let unit of units) {
 		if (!unit.canGarrison()) {
 			if (out)
-				API3.warn(unit + " : cannot garrison");
+				KIARA.Logger.debug(unit + " : cannot garrison");
 			continue;
 		}
 		if (unit.getMetadata(PlayerID, "garrisonHolder") != undefined) {
 			if (out)
-				API3.warn(unit + " has set garrisonHolder");
+				KIARA.Logger.debug(unit + " has set garrisonHolder");
 			continue;
 		}
 		let pos = unit.position();
 		if (!pos) {
 			if (out)
-				API3.warn(unit + " : no position");
+				KIARA.Logger.debug(unit + " : no position");
 			continue;
 		}
-		let unitAccess = m.getLandAccess(gameState, unit);
+		let unitAccess = KIARA.getLandAccess(gameState, unit);
 		if (unitAccess != holderAccess) {
 			if (out)
-				API3.warn(unit + ": wrong access");
+				KIARA.Logger.debug(unit + ": wrong access");
 			continue;
 		}
 		let dist = API3.SquareVectorDistance(pos, holderPos);
 		if (dist > range*range) {
 			if (out)
-				API3.warn(unit + " : too far" + dist + " vs " + (range*range));
+				KIARA.Logger.debug(unit + " : too far" + dist + " vs " + (range*range));
 			continue;
 		}
 		for (let saveHouse of validStructures) {
 			if (out)
-				API3.warn(unit + " looking to " + saveHouse);
+				KIARA.Logger.debug(unit + " looking to " + saveHouse);
 			let spos = saveHouse.position();
 			if (API3.SquareVectorDistance(pos, spos) > searchRange*searchRange) {
 				if (out)
-					API3.warn(saveHouse + " : too far from unit" + API3.SquareVectorDistance(pos, spos) + " vs " + (searchRange*searchRange));
+					KIARA.Logger.debug(saveHouse + " : too far from unit" + API3.SquareVectorDistance(pos, spos) + " vs " + (searchRange*searchRange));
 				continue;
 			}
 			if (!reserved.has(saveHouse))
 				reserved.set(saveHouse, saveHouse.garrisonMax() - this.numberOfGarrisonedUnits(saveHouse));
 			if (!reserved.get(saveHouse)) {
 				if (out)
-					API3.warn(saveHouse + " : no place for more units");
+					KIARA.Logger.debug(saveHouse + " : no place for more units");
 				continue;
 			}
 			if (out)
-				API3.warn(unit + " garrison to saveHouse " + saveHouse + " because alert");
+				KIARA.Logger.debug(unit + " garrison to saveHouse " + saveHouse + " because alert");
 			this.garrison(gameState, unit, saveHouse, "alert");
 			break;
 		}
@@ -114,11 +111,11 @@ m.GarrisonManager.prototype.raiseAlert = function(gameState, holder)
 	return true;
 }
 
-m.GarrisonManager.prototype.endAlert = function(gameState, holder)
+KIARA.GarrisonManager.prototype.endAlert = function(gameState, holder)
 {
 	let out = true;
 	if (out) {
-		API3.warn(holder + " is ending alert");
+		KIARA.Logger.debug(holder + " is ending alert");
 	}
 	if (holder.getMetadata(PlayerID, "alert") === undefined || !holder.getMetadata(PlayerID, "alert")) {
 		return;
@@ -137,7 +134,7 @@ m.GarrisonManager.prototype.endAlert = function(gameState, holder)
 	}
 }
 
-m.GarrisonManager.prototype.update = function(gameState, events)
+KIARA.GarrisonManager.prototype.update = function(gameState, events)
 {
 	// First check for possible upgrade of a structure
 	for (let evt of events.EntityRenamed)
@@ -228,12 +225,12 @@ m.GarrisonManager.prototype.update = function(gameState, events)
 				}
 				else
 				{
-					if (gameState.ai.Config.debug > 0)
+					if (KIARA.Logger.isError())
 					{
-						API3.warn("Kiara garrison error: unit " + ent.id() + " (" + ent.genericName() +
+						KIARA.Logger.error("Kiara garrison error: unit " + ent.id() + " (" + ent.genericName() +
 							  ") is expected to garrison in " + id + " (" + holder.genericName() +
 							  "), but has no such garrison order " + uneval(ent.unitAIOrderData()));
-						m.dumpEntity(ent);
+						KIARA.dumpEntity(ent);
 					}
 					list.splice(j--, 1);
 				}
@@ -271,7 +268,7 @@ m.GarrisonManager.prototype.update = function(gameState, events)
 					continue;
 				if (ent.hasClass("Structure"))
 					around.defenseStructure = true;
-				else if (m.isSiegeUnit(ent))
+				else if (KIARA.isSiegeUnit(ent))
 				{
 					if (ent.attackTypes().indexOf("Melee") !== -1)
 						around.meleeSiege = true;
@@ -284,12 +281,11 @@ m.GarrisonManager.prototype.update = function(gameState, events)
 					break;
 				}
 			}
-			
 			if (holder.getMetadata(PlayerID, "alertInit") && !around.meleeSiege && !around.rangeSiege && !around.unit && holder.getMetadata(PlayerID, "alert")) {
-				API3.warn( holder + " no enemy units around -> ending alert");
+				KIARA.Logger.debug( holder + " no enemy units around -> ending alert");
 				this.endAlert(gameState, holder);
 			}
-			
+
 			// Keep defenseManager.garrisonUnitsInside in sync to avoid garrisoning-ungarrisoning some units
 			data.allowMelee = around.defenseStructure || around.unit;
 
@@ -311,9 +307,8 @@ m.GarrisonManager.prototype.update = function(gameState, events)
 				}
 				list.splice(j--, 1);
 			}
-			if (this.numberOfGarrisonedUnits(holder) === 0) {
+			if (this.numberOfGarrisonedUnits(holder) === 0)
 				this.holders.delete(id);
-			}
 			else
 				holder.setMetadata(PlayerID, "holderTimeUpdate", gameState.ai.elapsedTime);
 		}
@@ -332,7 +327,7 @@ m.GarrisonManager.prototype.update = function(gameState, events)
 };
 
 /** TODO should add the units garrisoned inside garrisoned units */
-m.GarrisonManager.prototype.numberOfGarrisonedUnits = function(holder)
+KIARA.GarrisonManager.prototype.numberOfGarrisonedUnits = function(holder)
 {
 	if (!this.holders.has(holder.id()))
 		return holder.garrisoned().length;
@@ -340,7 +335,7 @@ m.GarrisonManager.prototype.numberOfGarrisonedUnits = function(holder)
 	return holder.garrisoned().length + this.holders.get(holder.id()).list.length;
 };
 
-m.GarrisonManager.prototype.allowMelee = function(holder)
+KIARA.GarrisonManager.prototype.allowMelee = function(holder)
 {
 	if (!this.holders.has(holder.id()))
 		return undefined;
@@ -349,7 +344,7 @@ m.GarrisonManager.prototype.allowMelee = function(holder)
 };
 
 /** This is just a pre-garrison state, while the entity walk to the garrison holder */
-m.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type)
+KIARA.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type)
 {
 	if (this.numberOfGarrisonedUnits(holder) >= holder.garrisonMax() || !ent.canGarrison())
 		return;
@@ -357,10 +352,10 @@ m.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type)
 	this.registerHolder(gameState, holder);
 	this.holders.get(holder.id()).list.push(ent.id());
 
-	if (gameState.ai.Config.debug > 2)
+	if (KIARA.Logger.isTrace())
 	{
-		warn("garrison unit " + ent.genericName() + " in " + holder.genericName() + " with type " + type);
-		warn(" we try to garrison a unit with plan " + ent.getMetadata(PlayerID, "plan") + " and role " + ent.getMetadata(PlayerID, "role") +
+		KIARA.Logger.trace("garrison unit " + ent.genericName() + " in " + holder.genericName() + " with type " + type);
+		KIARA.Logger.trace(" we try to garrison a unit with plan " + ent.getMetadata(PlayerID, "plan") + " and role " + ent.getMetadata(PlayerID, "role") +
 		     " and subrole " + ent.getMetadata(PlayerID, "subrole") + " and transport " + ent.getMetadata(PlayerID, "transport"));
 	}
 
@@ -380,7 +375,7 @@ m.GarrisonManager.prototype.garrison = function(gameState, ent, holder, type)
  This function is for internal use inside garrisonManager. From outside, you should also update
  the holder and then using cancelGarrison should be the preferred solution
  */
-m.GarrisonManager.prototype.leaveGarrison = function(ent)
+KIARA.GarrisonManager.prototype.leaveGarrison = function(ent)
 {
 	ent.setMetadata(PlayerID, "subrole", undefined);
 	if (ent.getMetadata(PlayerID, "plan") === -2)
@@ -391,7 +386,7 @@ m.GarrisonManager.prototype.leaveGarrison = function(ent)
 };
 
 /** Cancel a pre-garrison state */
-m.GarrisonManager.prototype.cancelGarrison = function(ent)
+KIARA.GarrisonManager.prototype.cancelGarrison = function(ent)
 {
 	ent.stopMoving();
 	this.leaveGarrison(ent);
@@ -404,9 +399,9 @@ m.GarrisonManager.prototype.cancelGarrison = function(ent)
 		list.splice(index, 1);
 };
 
-m.GarrisonManager.prototype.markEndOfAlert = function(gameState, holder)
+KIARA.GarrisonManager.prototype.markEndOfAlert = function(gameState, holder)
 {
-//	API3.warn(holder + " is marking units as not alert state");
+//	KIARA.Logger.debug(holder + " is marking units as not alert state");
 	holder.setMetadata(PlayerID, "alert", false);
 	for (let entId of holder.garrisoned())
 	{
@@ -415,9 +410,9 @@ m.GarrisonManager.prototype.markEndOfAlert = function(gameState, holder)
 			ent.setMetadata(PlayerID, "garrisonType", "protection");
 	//	API3.warn ( ent + " has state " + ent.getMetadata(PlayerID, "garrisonType"));
 	}
-}
+};
 
-m.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
+KIARA.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 {
 	switch (ent.getMetadata(PlayerID, "garrisonType"))
 	{
@@ -447,8 +442,8 @@ m.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 		if (ent.attackTypes() && ent.attackTypes().indexOf("Melee") !== -1)
 			return false;
 		if (around.unit)
-			return ent.hasClass("Support") || m.isSiegeUnit(ent);	// only ranged siege here and below as melee siege already released above
-		if (m.isSiegeUnit(ent))
+			return ent.hasClass("Support") || KIARA.isSiegeUnit(ent);	// only ranged siege here and below as melee siege already released above
+		if (KIARA.isSiegeUnit(ent))
 			return around.meleeSiege;
 		return holder.buffHeal() && ent.needsHeal();
 	case 'decay':
@@ -463,27 +458,26 @@ m.GarrisonManager.prototype.keepGarrisoned = function(ent, holder, around)
 	default:
 		if (ent.getMetadata(PlayerID, "onBoard") === "onBoard")  // transport is not (yet ?) managed by garrisonManager
 			return true;
-	/*	API3.warn("unknown type in garrisonManager " + ent.getMetadata(PlayerID, "garrisonType") +
+		KIARA.Logger.debug("unknown type in garrisonManager " + ent.getMetadata(PlayerID, "garrisonType") +
 		          " for " + ent.genericName() + " id " + ent.id() +
 		          " inside " + holder.genericName() + " id " + holder.id());
-	*/
 		ent.setMetadata(PlayerID, "garrisonType", "protection");
 		return true;
 	}
 };
 
-m.GarrisonManager.prototype.setAlert = function(holder)
+KIARA.GarrisonManager.prototype.setAlert = function(holder)
 {
 	if (this.holders.has(holder.id()))
 		holder.setMetadata(PlayerID, "alert", true);
-}
+};
 
 /** Add this holder in the list managed by the garrisonManager */
-m.GarrisonManager.prototype.registerHolder = function(gameState, holder)
+KIARA.GarrisonManager.prototype.registerHolder = function(gameState, holder)
 {
 	if (this.holders.has(holder.id()))    // already registered
 		return;
-	this.holders.set(holder.id(), { "list": [], "allowMelee": true});
+	this.holders.set(holder.id(), { "list": [], "allowMelee": true });
 	holder.setMetadata(PlayerID, "holderTimeUpdate", gameState.ai.elapsedTime);
 	holder.setMetadata(PlayerID, "alert", false);
 	holder.setMetadata(PlayerID, "alertInit", false);
@@ -494,7 +488,7 @@ m.GarrisonManager.prototype.registerHolder = function(gameState, holder)
  * do it only for structures useful for defense, except if we are expanding (justCaptured=true)
  * in which case we also do it for structures useful for unit trainings (TODO only Barracks are done)
  */
-m.GarrisonManager.prototype.addDecayingStructure = function(gameState, entId, justCaptured)
+KIARA.GarrisonManager.prototype.addDecayingStructure = function(gameState, entId, justCaptured)
 {
 	if (this.decayingStructures.has(entId))
 		return true;
@@ -508,23 +502,20 @@ m.GarrisonManager.prototype.addDecayingStructure = function(gameState, entId, ju
 	return true;
 };
 
-m.GarrisonManager.prototype.removeDecayingStructure = function(entId)
+KIARA.GarrisonManager.prototype.removeDecayingStructure = function(entId)
 {
 	if (!this.decayingStructures.has(entId))
 		return;
 	this.decayingStructures.delete(entId);
 };
 
-m.GarrisonManager.prototype.Serialize = function()
+KIARA.GarrisonManager.prototype.Serialize = function()
 {
-	return { "holders": this.holders, "decayingStructures": this.decayingStructures};
+	return { "holders": this.holders, "decayingStructures": this.decayingStructures };
 };
 
-m.GarrisonManager.prototype.Deserialize = function(data)
+KIARA.GarrisonManager.prototype.Deserialize = function(data)
 {
 	for (let key in data)
 		this[key] = data[key];
 };
-
-return m;
-}(KIARA);

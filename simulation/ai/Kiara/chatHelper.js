@@ -1,7 +1,4 @@
-var KIARA = function(m)
-{
-
-m.launchAttackMessages = {
+KIARA.launchAttackMessages = {
 	"hugeAttack": [
 		markForTranslation("I am starting a massive military campaign against %(_player_)s, come and join me."),
 		markForTranslation("I have set up a huge army to crush %(_player_)s. Join me and you will have your share of the loot.")
@@ -12,7 +9,7 @@ m.launchAttackMessages = {
 	]
 };
 
-m.answerRequestAttackMessages = {
+KIARA.answerRequestAttackMessages = {
 	"join": [
 		markForTranslation("Let me regroup my army and I will then join you against %(_player_)s."),
 		markForTranslation("I am finishing preparations to attack %(_player_)s.")
@@ -26,24 +23,24 @@ m.answerRequestAttackMessages = {
 	]
 };
 
-m.sentTributeMessages = [
+KIARA.sentTributeMessages = [
 	markForTranslation("Here is a gift for you, %(_player_)s. Make good use of it."),
 	markForTranslation("I see you are in a bad situation, %(_player_)s. I hope this helps."),
 	markForTranslation("I can help you this time, %(_player_)s, but you should manage your resources more carefully in the future.")
 ];
 
-m.requestTributeMessages = [
+KIARA.requestTributeMessages = [
 	markForTranslation("I am in need of %(resource)s, can you help? I will make it up to you."),
 	markForTranslation("I would participate more efficiently in our common war effort if you could provide me some %(resource)s."),
 	markForTranslation("If you can spare me some %(resource)s, I will be able to strengthen my army.")
 ];
 
-m.newTradeRouteMessages = [
+KIARA.newTradeRouteMessages = [
 	markForTranslation("I have set up a new route with %(_player_)s. Trading will be profitable for all of us."),
 	markForTranslation("A new trade route is set up with %(_player_)s. Take your share of the profits.")
 ];
 
-m.newDiplomacyMessages = {
+KIARA.newDiplomacyMessages = {
 	"ally": [
 		markForTranslation("%(_player_)s and I are now allies.")
 	],
@@ -55,7 +52,7 @@ m.newDiplomacyMessages = {
 	]
 };
 
-m.answerDiplomacyRequestMessages = {
+KIARA.answerDiplomacyRequestMessages = {
 	"ally": {
 		"decline": [
 			markForTranslation("I cannot accept your offer to become allies, %(_player_)s.")
@@ -82,7 +79,7 @@ m.answerDiplomacyRequestMessages = {
 		"acceptWithTribute": [
 			markForTranslation("I will ally with you, %(_player_)s, but only if you send me a tribute of %(_amount_)s %(_resource_)s."),
 			markForTranslation("%(_player_)s, you must send me a tribute of %(_amount_)s %(_resource_)s before I accept an alliance with you."),
-			markForTranslation("Unless you send me %(_amount_)s %(_resource_)s, an alliance won’t be formed, %(_player_)s,")
+			markForTranslation("Unless you send me %(_amount_)s %(_resource_)s, an alliance won’t be formed, %(_player_)s.")
 		],
 		"waitingForTribute": [
 			markForTranslation("%(_player_)s, my offer still stands. I will ally with you only if you send me a tribute of %(_amount_)s %(_resource_)s."),
@@ -113,7 +110,7 @@ m.answerDiplomacyRequestMessages = {
 	}
 };
 
-m.sendDiplomacyRequestMessages = {
+KIARA.sendDiplomacyRequestMessages = {
 	"ally": {
 		"sendRequest": [
 			markForTranslation("%(_player_)s, it would help both of our civilizations if we formed an alliance. If you become allies with me, I will respond in kind.")
@@ -135,7 +132,7 @@ m.sendDiplomacyRequestMessages = {
 	}
 };
 
-m.chatLaunchAttack = function(gameState, player, type)
+KIARA.chatLaunchAttack = function(gameState, player, type)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
@@ -146,7 +143,7 @@ m.chatLaunchAttack = function(gameState, player, type)
 	});
 };
 
-m.chatAnswerRequestAttack = function(gameState, player, answer, other)
+KIARA.chatAnswerRequestAttack = function(gameState, player, answer, other)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
@@ -157,7 +154,7 @@ m.chatAnswerRequestAttack = function(gameState, player, answer, other)
 	});
 };
 
-m.chatSentTribute = function(gameState, player)
+KIARA.chatSentTribute = function(gameState, player)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
@@ -168,7 +165,7 @@ m.chatSentTribute = function(gameState, player)
 	});
 };
 
-m.chatRequestTribute = function(gameState, resource)
+KIARA.chatRequestTribute = function(gameState, resource)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
@@ -179,7 +176,7 @@ m.chatRequestTribute = function(gameState, resource)
 	});
 };
 
-m.chatNewTradeRoute = function(gameState, player)
+KIARA.chatNewTradeRoute = function(gameState, player)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
@@ -190,7 +187,7 @@ m.chatNewTradeRoute = function(gameState, player)
 	});
 };
 
-m.chatNewPhase = function(gameState, phase, status)
+KIARA.chatNewPhase = function(gameState, phase, status)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
@@ -201,7 +198,7 @@ m.chatNewPhase = function(gameState, phase, status)
 	});
 };
 
-m.chatNewDiplomacy = function(gameState, player, newDiplomaticStance)
+KIARA.chatNewDiplomacy = function(gameState, player, newDiplomaticStance)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
@@ -212,7 +209,7 @@ m.chatNewDiplomacy = function(gameState, player, newDiplomaticStance)
 	});
 };
 
-m.chatAnswerRequestDiplomacy = function(gameState, player, requestType, response, requiredTribute)
+KIARA.chatAnswerRequestDiplomacy = function(gameState, player, requestType, response, requiredTribute)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
@@ -226,7 +223,7 @@ m.chatAnswerRequestDiplomacy = function(gameState, player, requestType, response
 	});
 };
 
-m.chatNewRequestDiplomacy = function(gameState, player, requestType, status)
+KIARA.chatNewRequestDiplomacy = function(gameState, player, requestType, status)
 {
 	Engine.PostCommand(PlayerID, {
 		"type": "aichat",
@@ -237,6 +234,3 @@ m.chatNewRequestDiplomacy = function(gameState, player, requestType, status)
 		"parameters": { "_player_": player }
 	});
 };
-
-return m;
-}(KIARA);

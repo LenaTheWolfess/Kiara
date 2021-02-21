@@ -1,12 +1,9 @@
-var KIARA = function(m)
-{
-
 /** map functions */
 
-m.TERRITORY_PLAYER_MASK = 0x1F;
-m.TERRITORY_BLINKING_MASK = 0x40;
+KIARA.TERRITORY_PLAYER_MASK = 0x1F;
+KIARA.TERRITORY_BLINKING_MASK = 0x40;
 
-m.createObstructionMap = function(gameState, accessIndex, template)
+KIARA.createObstructionMap = function(gameState, accessIndex, template)
 {
 	let passabilityMap = gameState.getPassabilityMap();
 	let territoryMap = gameState.ai.territoryMap;
@@ -44,8 +41,8 @@ m.createObstructionMap = function(gameState, accessIndex, template)
 
 	for (let k = 0; k < territoryMap.data.length; ++k)
 	{
-		let tilePlayer = territoryMap.data[k] & m.TERRITORY_PLAYER_MASK;
-		let isConnected = (territoryMap.data[k] & m.TERRITORY_BLINKING_MASK) == 0;
+		let tilePlayer = territoryMap.data[k] & KIARA.TERRITORY_PLAYER_MASK;
+		let isConnected = (territoryMap.data[k] & KIARA.TERRITORY_BLINKING_MASK) == 0;
 		if (tilePlayer === PlayerID)
 		{
 			if (!buildOwn || !buildNeutral && !isConnected)
@@ -114,14 +111,14 @@ m.createObstructionMap = function(gameState, accessIndex, template)
 };
 
 
-m.createTerritoryMap = function(gameState)
+KIARA.createTerritoryMap = function(gameState)
 {
 	let map = gameState.ai.territoryMap;
 
 	let ret = new API3.Map(gameState.sharedScript, "territory", map.data);
-	ret.getOwner = function(p) { return this.point(p) & m.TERRITORY_PLAYER_MASK; };
-	ret.getOwnerIndex = function(p) { return this.map[p] & m.TERRITORY_PLAYER_MASK; };
-	ret.isBlinking = function(p) { return (this.point(p) & m.TERRITORY_BLINKING_MASK) != 0; };
+	ret.getOwner = function(p) { return this.point(p) & KIARA.TERRITORY_PLAYER_MASK; };
+	ret.getOwnerIndex = function(p) { return this.map[p] & KIARA.TERRITORY_PLAYER_MASK; };
+	ret.isBlinking = function(p) { return (this.point(p) & KIARA.TERRITORY_BLINKING_MASK) != 0; };
 	return ret;
 };
 
@@ -135,14 +132,14 @@ m.createTerritoryMap = function(gameState)
  *     - large border (inside our territory, exclusive of narrow)   => bit 3
  */
 
-m.outside_Mask = 1;
-m.border_Mask = 2;
-m.fullBorder_Mask = m.outside_Mask | m.border_Mask;
-m.narrowFrontier_Mask = 4;
-m.largeFrontier_Mask = 8;
-m.fullFrontier_Mask = m.narrowFrontier_Mask | m.largeFrontier_Mask;
+KIARA.outside_Mask = 1;
+KIARA.border_Mask = 2;
+KIARA.fullBorder_Mask = KIARA.outside_Mask | KIARA.border_Mask;
+KIARA.narrowFrontier_Mask = 4;
+KIARA.largeFrontier_Mask = 8;
+KIARA.fullFrontier_Mask = KIARA.narrowFrontier_Mask | KIARA.largeFrontier_Mask;
 
-m.createBorderMap = function(gameState)
+KIARA.createBorderMap = function(gameState)
 {
 	let map = new API3.Map(gameState.sharedScript, "territory");
 	let width = map.width;
@@ -160,13 +157,13 @@ m.createBorderMap = function(gameState)
 			let radius = dx*dx + dy*dy;
 			if (radius < radcut)
 				continue;
-			map.map[j] = m.outside_Mask;
+			map.map[j] = KIARA.outside_Mask;
 			let ind = API3.getMapIndices(j, map, passabilityMap);
 			for (let k of ind)
 			{
 				if (passabilityMap.data[k] & obstructionMask)
 					continue;
-				map.map[j] = m.border_Mask;
+				map.map[j] = KIARA.border_Mask;
 				break;
 			}
 		}
@@ -180,24 +177,24 @@ m.createBorderMap = function(gameState)
 			let iy = Math.floor(j/width);
 			if (ix < border || ix >= borderCut || iy < border || iy >= borderCut)
 			{
-				map.map[j] = m.outside_Mask;
+				map.map[j] = KIARA.outside_Mask;
 				let ind = API3.getMapIndices(j, map, passabilityMap);
 				for (let k of ind)
 				{
 					if (passabilityMap.data[k] & obstructionMask)
 						continue;
-					map.map[j] = m.border_Mask;
+					map.map[j] = KIARA.border_Mask;
 					break;
 				}
 			}
 		}
 	}
 
-//	map.dumpIm("border.png", 5);
+	// map.dumpIm("border.png", 5);
 	return map;
 };
 
-m.debugMap = function(gameState, map)
+KIARA.debugMap = function(gameState, map)
 {
 	let width = map.width;
 	let cell = map.cellSize;
@@ -216,6 +213,3 @@ m.debugMap = function(gameState, map)
 			Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [0, 0, 2] });
 	});
 };
-
-return m;
-}(KIARA);

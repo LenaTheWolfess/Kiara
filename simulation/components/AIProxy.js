@@ -87,7 +87,7 @@ AIProxy.prototype.OnValueModification = function(msg)
 		return;
 	if (!this.NotifyChange())
 		return;
-	
+
 	if (
 		msg.valueNames.indexOf("Attack/Ranged/MaxRange") != -1 ||
 		msg.valueNames.indexOf("Attack/Ranged/MinRange") != -1
@@ -276,9 +276,9 @@ AIProxy.prototype.GetFullRepresentation = function()
 		ret.hitpoints = cmpHealth.GetHitpoints();
 	}
 
-	let cmpDamageReceiver = Engine.QueryInterface(this.entity, IID_DamageReceiver);
-	if (cmpDamageReceiver)
-		ret.invulnerability = cmpDamageReceiver.IsInvulnerable();
+	let cmpResistance = Engine.QueryInterface(this.entity, IID_Resistance);
+	if (cmpResistance)
+		ret.invulnerability = cmpResistance.IsInvulnerable();
 
 	let cmpOwnership = Engine.QueryInterface(this.entity, IID_Ownership);
 	if (cmpOwnership)

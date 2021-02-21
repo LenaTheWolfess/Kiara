@@ -1,6 +1,3 @@
-var KIARA = function(m)
-{
-
 /**
  * Manage the diplomacy:
  *     update our cooperative trait
@@ -23,7 +20,7 @@ var KIARA = function(m)
  * sent through AIInterface. It is expected that the other player will change their diplomacy stance to the stance
  * that we suggested within a period of time, or else the request will be deleted from this.sentDiplomacyRequests.
  */
-m.DiplomacyManager = function(Config)
+KIARA.DiplomacyManager = function(Config)
 {
 	this.Config = Config;
 	this.nextTributeUpdate = 90;
@@ -41,7 +38,7 @@ m.DiplomacyManager = function(Config)
  * If there are any players that are allied/neutral with us but we are not allied/neutral with them,
  * treat this situation like an ally/neutral request.
  */
-m.DiplomacyManager.prototype.init = function(gameState)
+KIARA.DiplomacyManager.prototype.init = function(gameState)
 {
 	this.lastManStandingCheck(gameState);
 
@@ -63,9 +60,12 @@ m.DiplomacyManager.prototype.init = function(gameState)
  * Check if any allied needs help (tribute) and sent it if we have enough resource
  * or ask for a tribute if we are in need and one ally can help
  */
-m.DiplomacyManager.prototype.tributes = function(gameState)
+KIARA.DiplomacyManager.prototype.tributes = function(gameState)
 {
 	this.nextTributeUpdate = gameState.ai.elapsedTime + 30;
+	let resTribCodes = Resources.GetTributableCodes();
+	if (!resTribCodes.length)
+		return;
 	let totalResources = gameState.getResources();
 	let availableResources = gameState.ai.queueManager.getAvailableResources(gameState);
 	let mostNeeded;
@@ -78,7 +78,7 @@ m.DiplomacyManager.prototype.tributes = function(gameState)
 		let allyPop = gameState.sharedScript.playersData[i].popCount;
 		let tribute = {};
 		let toSend = false;
-		for (let res in allyResources)
+		for (let res of resTribCodes)
 		{
 			if (donor && availableResources[res] > 200 && allyResources[res] < 0.2 * availableResources[res])
 			{
@@ -97,16 +97,15 @@ m.DiplomacyManager.prototype.tributes = function(gameState)
 				if (this.nextTributeRequest.has(res) && gameState.ai.elapsedTime < this.nextTributeRequest.get(res))
 					continue;
 				if (!mostNeeded)
-					mostNeeded = gameState.ai.HQ.pickMostNeededResources(gameState);
-				for (let k = 0; k < 2; ++k)
+					mostNeeded = gameState.ai.HQ.pickMostNeededResources(gameState, resTribCodes);
+				for (let k = 0; k < mostNeeded.length; ++k)
 				{
 					if (mostNeeded[k].type == res && mostNeeded[k].wanted > 0)
 					{
 						this.nextTributeRequest.set("all", gameState.ai.elapsedTime + 90);
 						this.nextTributeRequest.set(res, gameState.ai.elapsedTime + 240);
-						m.chatRequestTribute(gameState, res);
-						if (this.Config.debug > 1)
-							API3.warn("Tribute on " + res + " requested to player " + i);
+						KIARA.chatRequestTribute(gameState, res);
+						KIARA.Logger.debug("Tribute on " + res + " requested to player " + i);
 						break;
 					}
 				}
@@ -114,15 +113,14 @@ m.DiplomacyManager.prototype.tributes = function(gameState)
 		}
 		if (!toSend)
 			continue;
-		if (this.Config.debug > 1)
-			API3.warn("Tribute " + uneval(tribute) + " sent to player " + i);
+		KIARA.Logger.debug("Tribute " + uneval(tribute) + " sent to player " + i);
 		if (this.Config.chat)
-			m.chatSentTribute(gameState, i);
+			KIARA.chatSentTribute(gameState, i);
 		Engine.PostCommand(PlayerID, { "type": "tribute", "player": i, "amounts": tribute });
 	}
 };
 
-m.DiplomacyManager.prototype.checkEvents = function(gameState, events)
+KIARA.DiplomacyManager.prototype.checkEvents = function(gameState, events)
 {
 	// Increase slowly the cooperative personality trait either when we receive tribute from our allies
 	// or if our allies attack enemies inside our territory
@@ -131,14 +129,13 @@ m.DiplomacyManager.prototype.checkEvents = function(gameState, events)
 		if (evt.to === PlayerID && !gameState.isPlayerAlly(evt.from) && this.receivedDiplomacyRequests.has(evt.from))
 		{
 			let request = this.receivedDiplomacyRequests.get(evt.from);
-			if (request.status === "waitingForTribute")
+			if (request.status === "waitingForTribute" && request.type in evt.amounts)
 			{
 				request.wanted -= evt.amounts[request.type];
 
 				if (request.wanted <= 0)
 				{
-					if (this.Config.debug > 1)
-						API3.warn("Player " + uneval(evt.from) + " has sent the required tribute amount");
+					KIARA.Logger.debug("Player " + uneval(evt.from) + " has sent the required tribute amount");
 
 					this.changePlayerDiplomacy(gameState, evt.from, request.requestType);
 					request.status = "accepted";
@@ -214,7 +211,7 @@ m.DiplomacyManager.prototype.checkEvents = function(gameState, events)
 		{
 			let response = request !== undefined && (request.status === "declinedRequest" || request.status === "allianceBroken") ?
 				"decline" : "declineSuggestNeutral";
-			m.chatAnswerRequestDiplomacy(gameState, evt.player, "ally", response);
+			KIARA.chatAnswerRequestDiplomacy(gameState, evt.player, "ally", response);
 		}
 		else if (gameState.sharedScript.playersData[evt.player].isAlly[PlayerID] && gameState.isPlayerNeutral(evt.player))
 			this.handleDiplomacyRequest(gameState, evt.player, "ally");
@@ -230,8 +227,7 @@ m.DiplomacyManager.prototype.checkEvents = function(gameState, events)
 
 		this.handleDiplomacyRequest(gameState, evt.source, evt.to);
 		let request = this.receivedDiplomacyRequests.get(evt.source);
-		if (this.Config.debug > 0)
-			API3.warn("Responding to diplomacy request from AI player " + evt.source + " with " + uneval(request));
+		KIARA.Logger.debug("Responding to diplomacy request from AI player " + evt.source + " with " + uneval(request));
 
 		// Our diplomacy will have changed already if the response was "accept"
 		if (request.status === "waitingForTribute")
@@ -258,8 +254,7 @@ m.DiplomacyManager.prototype.checkEvents = function(gameState, events)
 		{
 			let responseTribute = {};
 			responseTribute[evt.resourceType] = evt.resourceWanted;
-			if (this.Config.debug > 0)
-				API3.warn("Responding to tribute request from AI player " + evt.source + " with " + uneval(responseTribute));
+			KIARA.Logger.debug("Responding to tribute request from AI player " + evt.source + " with " + uneval(responseTribute));
 			Engine.PostCommand(PlayerID, { "type": "tribute", "player": evt.source, "amounts": responseTribute });
 			this.nextTributeUpdate = gameState.ai.elapsedTime + 15;
 		}
@@ -270,7 +265,7 @@ m.DiplomacyManager.prototype.checkEvents = function(gameState, events)
  * If the "Last Man Standing" option is enabled, check if the only remaining players are allies or neutral.
  * If so, turn against the strongest first, but be more likely to first turn against neutral players, if there are any.
  */
-m.DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
+KIARA.DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
 {
 	if (gameState.sharedScript.playersData[PlayerID].teamsLocked || gameState.isCeasefireActive() ||
 	    gameState.getAlliedVictory() && gameState.hasAllies())
@@ -351,7 +346,7 @@ m.DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
 		if (request && request.status !== "allianceBroken")
 		{
 			if (request.status === "waitingForTribute")
-				m.chatAnswerRequestDiplomacy(gameState, player, request.requestType, "decline");
+				KIARA.chatAnswerRequestDiplomacy(gameState, player, request.requestType, "decline");
 			request.status = request.status === "accepted" ? "allianceBroken" : "declinedRequest";
 		}
 		// If we had sent this player a diplomacy request, just rescind it
@@ -365,7 +360,7 @@ m.DiplomacyManager.prototype.lastManStandingCheck = function(gameState)
  * Do not become allies with a player if the game would be over.
  * Overall, be reluctant to become allies with any one player, but be more likely to accept neutral requests.
  */
-m.DiplomacyManager.prototype.handleDiplomacyRequest = function(gameState, player, requestType)
+KIARA.DiplomacyManager.prototype.handleDiplomacyRequest = function(gameState, player, requestType)
 {
 	if (gameState.sharedScript.playersData[PlayerID].teamsLocked)
 		return;
@@ -402,33 +397,45 @@ m.DiplomacyManager.prototype.handleDiplomacyRequest = function(gameState, player
 	}
 	else
 	{
-		response = "acceptWithTribute";
-		requiredTribute = gameState.ai.HQ.pickMostNeededResources(gameState)[0];
-		requiredTribute.wanted = Math.max(1000, gameState.getOwnUnits().length * requestType === "ally" ? 10 : 5);
-		this.receivedDiplomacyRequests.set(player, {
-			"status": "waitingForTribute",
-			"wanted": requiredTribute.wanted,
-			"type": requiredTribute.type,
-			"warnTime": gameState.ai.elapsedTime + 60,
-			"sentWarning": false,
-			"requestType": requestType
-		});
+		// Try to request a tribute.
+		// If a resource is not tributable, do not request it.
+		// If no resources are tributable, decline.
+		let resTribCodes = Resources.GetTributableCodes();
+		if (resTribCodes.length)
+		{
+			requiredTribute = gameState.ai.HQ.pickMostNeededResources(gameState, resTribCodes)[0];
+			response = "acceptWithTribute";
+			requiredTribute.wanted = Math.max(1000, gameState.getOwnUnits().length * (requestType === "ally" ? 10 : 5));
+			this.receivedDiplomacyRequests.set(player, {
+				"status": "waitingForTribute",
+				"wanted": requiredTribute.wanted,
+				"type": requiredTribute.type,
+				"warnTime": gameState.ai.elapsedTime + 60,
+				"sentWarning": false,
+				"requestType": requestType
+			});
+		}
+		else
+		{
+			this.receivedDiplomacyRequests.set(player, { "requestType": requestType, "status": "declinedRequest" });
+			response = "decline";
+		}
 	}
-	m.chatAnswerRequestDiplomacy(gameState, player, requestType, response, requiredTribute);
+	KIARA.chatAnswerRequestDiplomacy(gameState, player, requestType, response, requiredTribute);
 };
 
-m.DiplomacyManager.prototype.changePlayerDiplomacy = function(gameState, player, newDiplomaticStance)
+KIARA.DiplomacyManager.prototype.changePlayerDiplomacy = function(gameState, player, newDiplomaticStance)
 {
 	if (gameState.isPlayerEnemy(player) && (newDiplomaticStance === "ally" || newDiplomaticStance === "neutral"))
 		gameState.ai.HQ.attackManager.cancelAttacksAgainstPlayer(gameState, player);
 	Engine.PostCommand(PlayerID, { "type": "diplomacy", "player": player, "to": newDiplomaticStance });
-	if (this.Config.debug > 1)
-		API3.warn("diplomacy stance with player " + player + " is now " + newDiplomaticStance);
+
+	KIARA.Logger.debug("diplomacy stance with player " + player + " is now " + newDiplomaticStance);
 	if (this.Config.chat)
-		m.chatNewDiplomacy(gameState, player, newDiplomaticStance);
+		KIARA.chatNewDiplomacy(gameState, player, newDiplomaticStance);
 };
 
-m.DiplomacyManager.prototype.checkRequestedTributes = function(gameState)
+KIARA.DiplomacyManager.prototype.checkRequestedTributes = function(gameState)
 {
 	for (let [player, data] of this.receivedDiplomacyRequests)
 		if (data.status === "waitingForTribute" && gameState.ai.elapsedTime > data.warnTime)
@@ -436,13 +443,13 @@ m.DiplomacyManager.prototype.checkRequestedTributes = function(gameState)
 			if (data.sentWarning)
 			{
 				this.receivedDiplomacyRequests.delete(player);
-				m.chatAnswerRequestDiplomacy(gameState, player, data.requestType, "decline");
+				KIARA.chatAnswerRequestDiplomacy(gameState, player, data.requestType, "decline");
 			}
 			else
 			{
 				data.sentWarning = true;
 				data.warnTime = gameState.ai.elapsedTime + 60;
-				m.chatAnswerRequestDiplomacy(gameState, player, data.requestType, "waitingForTribute", {
+				KIARA.chatAnswerRequestDiplomacy(gameState, player, data.requestType, "waitingForTribute", {
 					"wanted": data.wanted,
 					"type": data.type
 				});
@@ -454,7 +461,7 @@ m.DiplomacyManager.prototype.checkRequestedTributes = function(gameState)
  * Try to become allies with a player who has a lot of mutual enemies in common with us.
  * TODO: Possibly let human players demand tributes from AIs who send diplomacy requests.
  */
-m.DiplomacyManager.prototype.sendDiplomacyRequest = function(gameState)
+KIARA.DiplomacyManager.prototype.sendDiplomacyRequest = function(gameState)
 {
 	let player;
 	let max = 0;
@@ -490,28 +497,27 @@ m.DiplomacyManager.prototype.sendDiplomacyRequest = function(gameState)
 		"timeSent": gameState.ai.elapsedTime
 	});
 
-	if (this.Config.debug > 0)
-		API3.warn("Sending diplomacy request to player " + player + " with " + requestType);
+	KIARA.Logger.debug("Sending diplomacy request to player " + player + " with " + requestType);
 	Engine.PostCommand(PlayerID, { "type": "diplomacy-request", "source": PlayerID, "player": player, "to": requestType });
-	m.chatNewRequestDiplomacy(gameState, player, requestType, "sendRequest");
+	KIARA.chatNewRequestDiplomacy(gameState, player, requestType, "sendRequest");
 };
 
-m.DiplomacyManager.prototype.checkSentDiplomacyRequests = function(gameState)
+KIARA.DiplomacyManager.prototype.checkSentDiplomacyRequests = function(gameState)
 {
 	for (let [player, data] of this.sentDiplomacyRequests)
 		if (gameState.ai.elapsedTime > data.timeSent + 60 && !gameState.ai.HQ.saveResources &&
 		    gameState.getPopulation() > 70)
 		{
-			m.chatNewRequestDiplomacy(gameState, player, data.requestType, "requestExpired");
+			KIARA.chatNewRequestDiplomacy(gameState, player, data.requestType, "requestExpired");
 			this.sentDiplomacyRequests.delete(player);
 		}
 };
 
-m.DiplomacyManager.prototype.update = function(gameState, events)
+KIARA.DiplomacyManager.prototype.update = function(gameState, events)
 {
 	this.checkEvents(gameState, events);
 
-	if (!gameState.ai.HQ.saveResources && gameState.ai.elapsedTime > this.nextTributeUpdate)
+	if (Resources.GetTributableCodes().length && !gameState.ai.HQ.saveResources && gameState.ai.elapsedTime > this.nextTributeUpdate)
 		this.tributes(gameState);
 
 	if (this.waitingToBetray && gameState.ai.elapsedTime > this.betrayLapseTime)
@@ -535,7 +541,7 @@ m.DiplomacyManager.prototype.update = function(gameState, events)
 	this.checkSentDiplomacyRequests(gameState);
 };
 
-m.DiplomacyManager.prototype.Serialize = function()
+KIARA.DiplomacyManager.prototype.Serialize = function()
 {
 	return {
 		"nextTributeUpdate": this.nextTributeUpdate,
@@ -549,11 +555,8 @@ m.DiplomacyManager.prototype.Serialize = function()
 	};
 };
 
-m.DiplomacyManager.prototype.Deserialize = function(data)
+KIARA.DiplomacyManager.prototype.Deserialize = function(data)
 {
 	for (let key in data)
 		this[key] = data[key];
 };
-
-return m;
-}(KIARA);

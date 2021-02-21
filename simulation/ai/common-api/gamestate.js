@@ -25,9 +25,9 @@ m.GameState.prototype.init = function(SharedScript, state, player)
 	this.ceasefireTimeRemaining = SharedScript.ceasefireTimeRemaining;
 
 	// get the list of possible phases for this civ:
-	// we assume all of them are researchable from the civil centre
+	// we assume all of them are researchable from the civil center
 	this.phases = [];
-	let cctemplate = this.getTemplate(this.applyCiv("structures/{civ}_civil_centre"));
+	let cctemplate = this.getTemplate(this.applyCiv("structures/{civ}/civil_centre"));
 	if (!cctemplate)
 		return;
 	let civ = this.getPlayerCiv();
@@ -316,9 +316,9 @@ m.GameState.prototype.getTechReq = function(techTemplateName)
 			break;
 		}
 	}
-	
+
 	return res;
-}
+};
 
 m.GameState.prototype.getPassabilityMap = function()
 {
@@ -741,6 +741,7 @@ m.GameState.prototype.findTrainableUnits = function(classes, anticlasses)
 	});
 	let ret = [];
 	let limits = this.getEntityLimits();
+	let matchCounts = this.getEntityMatchCounts();
 	let current = this.getEntityCounts();
 	for (let trainable of allTrainable)
 	{
@@ -756,7 +757,9 @@ m.GameState.prototype.findTrainableUnits = function(classes, anticlasses)
 		let category = template.trainingCategory();
 		if (category && limits[category] && current[category] >= limits[category])
 			continue;
-
+		let limit = template.matchLimit();
+		if (matchCounts && limit && matchCounts[trainable] >= limit)
+			continue;
 		ret.push([trainable, template]);
 	}
 	return ret;
@@ -767,6 +770,7 @@ m.GameState.prototype.filterTrainableUnitsByClass = function(allTrainable, class
 	let ret = [];
 	let limits = this.getEntityLimits();
 	let current = this.getEntityCounts();
+	let matchCounts = this.getEntityMatchCounts();
 	for (let trainable of allTrainable)
 	{
 		let template = this.getTemplate(trainable);
@@ -774,17 +778,21 @@ m.GameState.prototype.filterTrainableUnitsByClass = function(allTrainable, class
 			continue;
 		if (anticlasses.some(c => template.hasClass(c)))
 			continue;
+		let limit = template.matchLimit();
+		if (matchCounts && limit && matchCounts[trainable] >= limit)
+			continue;
 
 		ret.push([trainable, template]);
 	}
 	return ret;
-}
+};
 
 m.GameState.prototype.filterTrainableUnits = function(allTrainable)
 {
 	let ret = [];
 	let limits = this.getEntityLimits();
 	let current = this.getEntityCounts();
+	let matchCounts = this.getEntityMatchCounts();
 	for (let trainable of allTrainable)
 	{
 		if (this.isTemplateDisabled(trainable))
@@ -795,11 +803,15 @@ m.GameState.prototype.filterTrainableUnits = function(allTrainable)
 		let category = template.trainingCategory();
 		if (category && limits[category] && current[category] >= limits[category])
 			continue;
+		let limit = template.matchLimit();
+		if (matchCounts && limit && matchCounts[trainable] >= limit)
+			continue;
 
 		ret.push(trainable);
 	}
 	return ret;
-}
+};
+
 /**
  * Return all techs which can currently be researched
  * Does not factor cost.
@@ -950,6 +962,11 @@ m.GameState.prototype.getEntityLimits = function()
 	return this.playerData.entityLimits;
 };
 
+m.GameState.prototype.getEntityMatchCounts = function()
+{
+	return this.playerData.matchEntityCounts;
+};
+
 m.GameState.prototype.getEntityCounts = function()
 {
 	return this.playerData.entityCounts;
@@ -980,8 +997,8 @@ m.GameState.prototype.isEntityLimitReached = function(category)
 
 m.GameState.prototype.getTraderTemplatesGains = function()
 {
-	let shipMechantTemplateName = this.applyCiv("units/{civ}_ship_merchant");
-	let supportTraderTemplateName = this.applyCiv("units/{civ}_support_trader");
+	let shipMechantTemplateName = this.applyCiv("units/{civ}/ship_merchant");
+	let supportTraderTemplateName = this.applyCiv("units/{civ}/support_trader");
 	let shipMerchantTemplate = !this.isTemplateDisabled(shipMechantTemplateName) && this.getTemplate(shipMechantTemplateName);
 	let supportTraderTemplate = !this.isTemplateDisabled(supportTraderTemplateName) && this.getTemplate(supportTraderTemplateName);
 	let norm = TradeGainNormalization(this.sharedScript.mapSize);

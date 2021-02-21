@@ -1,11 +1,8 @@
-var KIARA = function(m)
+KIARA.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 5, m_trainer = undefined)
 {
-
-m.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 5, m_trainer = undefined)
-{
-	if (!m.QueuePlan.call(this, gameState, type, metadata))
+	if (!KIARA.QueuePlan.call(this, gameState, type, metadata))
 	{
-		API3.warn(" Plan training " + type + " canceled");
+		KIARA.Logger.debug(" Plan training " + type + " canceled");
 		return false;
 	}
 
@@ -17,15 +14,16 @@ m.TrainingPlan = function(gameState, type, metadata, number = 1, maxMerge = 5, m
 	this.category = "unit";
 	this.number = number;
 	this.maxMerge = maxMerge;
+
 	if (m_trainer)
 		this.trainer = m_trainer;
 
 	return true;
 };
 
-m.TrainingPlan.prototype = Object.create(m.QueuePlan.prototype);
+KIARA.TrainingPlan.prototype = Object.create(KIARA.QueuePlan.prototype);
 
-m.TrainingPlan.prototype.canStart = function(gameState)
+KIARA.TrainingPlan.prototype.canStart = function(gameState)
 {
 	if (this.allreadyStarted())
 		return false;
@@ -36,7 +34,7 @@ m.TrainingPlan.prototype.canStart = function(gameState)
 	return true;
 };
 
-m.TrainingPlan.prototype.getBestTrainers = function(gameState)
+KIARA.TrainingPlan.prototype.getBestTrainers = function(gameState)
 {
 	if (this.metadata && this.metadata.trainer)
 	{
@@ -70,7 +68,7 @@ m.TrainingPlan.prototype.getBestTrainers = function(gameState)
 	return trainers;
 };
 
-m.TrainingPlan.prototype.start = function(gameState)
+KIARA.TrainingPlan.prototype.start = function(gameState)
 {
 	if (this.allreadyStarted())
 		return false;
@@ -143,7 +141,7 @@ m.TrainingPlan.prototype.start = function(gameState)
 	let civ = gameState.getPlayerCiv();
 	let i = 1;
 	while (i < ln) {
-	//	API3.warn("spreading load with " + number);
+	//	KIARA.Logger.debug("spreading load with " + number);
 		if (this.metadata && this.metadata.base !== undefined && this.metadata.base === 0)
 			this.metadata.base = this.trainers[i].getMetadata(PlayerID, "base");
 		this.trainers[i].train(civ, this.type, number, this.metadata, pt);
@@ -161,13 +159,13 @@ m.TrainingPlan.prototype.start = function(gameState)
 	this.onStart(gameState);
 };
 
-m.TrainingPlan.prototype.addItem = function(amount = 1)
+KIARA.TrainingPlan.prototype.addItem = function(amount = 1)
 {
 	this.number += amount;
 };
 
 /** Find the promoted types corresponding to this.type */
-m.TrainingPlan.prototype.promotedTypes = function(gameState)
+KIARA.TrainingPlan.prototype.promotedTypes = function(gameState)
 {
 	let types = [];
 	let promotion = this.template.promotion();
@@ -180,23 +178,21 @@ m.TrainingPlan.prototype.promotedTypes = function(gameState)
 		template = gameState.getTemplate(promotion);
 		if (!template)
 		{
-			if (gameState.ai.Config.debug > 0)
-				API3.warn(" promotion template " + promotion + " is not found");
+			KIARA.Logger.error(" promotion template " + promotion + " is not found");
 			promotion = undefined;
 			break;
 		}
 		promotion = template.promotion();
 		if (previous === promotion)
 		{
-			if (gameState.ai.Config.debug > 0)
-				API3.warn(" unit " + promotion + " is its own promoted unit");
+			KIARA.Logger.error(" unit " + promotion + " is its own promoted unit");
 			promotion = undefined;
 		}
 	}
 	return types;
 };
 
-m.TrainingPlan.prototype.Serialize = function()
+KIARA.TrainingPlan.prototype.Serialize = function()
 {
 	return {
 		"category": this.category,
@@ -209,7 +205,7 @@ m.TrainingPlan.prototype.Serialize = function()
 	};
 };
 
-m.TrainingPlan.prototype.Deserialize = function(gameState, data)
+KIARA.TrainingPlan.prototype.Deserialize = function(gameState, data)
 {
 	for (let key in data)
 		this[key] = data[key];
@@ -217,6 +213,3 @@ m.TrainingPlan.prototype.Deserialize = function(gameState, data)
 	this.cost = new API3.Resources();
 	this.cost.Deserialize(data.cost);
 };
-
-return m;
-}(KIARA);

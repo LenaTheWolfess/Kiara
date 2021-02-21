@@ -1,10 +1,9 @@
-var KIARA = function(m)
-{
 /**
- * determines the strategy to adopt when starting a new game, depending on the initial conditions
+ * Determines the strategy to adopt when starting a new game,
+ * depending on the initial conditions
  */
 
-m.HQ.prototype.gameAnalysis = function(gameState)
+KIARA.HQ.prototype.gameAnalysis = function(gameState)
 {
 	// Analysis of the terrain and the different access regions
 	if (!this.regionAnalysis(gameState))
@@ -20,7 +19,7 @@ m.HQ.prototype.gameAnalysis = function(gameState)
 	this.structureAnalysis(gameState);
 
 	// Let's get our initial situation here.
-	let nobase = new m.BaseManager(gameState, this.Config);
+	let nobase = new KIARA.BaseManager(gameState, this.Config);
 	nobase.init(gameState);
 	nobase.accessIndex = 0;
 	this.baseManagers.push(nobase);   // baseManagers[0] will deal with unit/structure without base
@@ -42,11 +41,10 @@ m.HQ.prototype.gameAnalysis = function(gameState)
 	this.canBuildUnits = true;
 	if (!gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).hasEntities())
 	{
-		let template = gameState.applyCiv("structures/{civ}_civil_centre");
+		let template = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.CC]);
 		if (!gameState.isTemplateAvailable(template) || !gameState.getTemplate(template).available(gameState))
 		{
-			if (this.Config.debug > 1)
-				API3.warn(" this AI is unable to produce any units");
+			KIARA.Logger.warn(" this AI is unable to produce any units");
 			this.canBuildUnits = false;
 			this.dispatchUnits(gameState);
 		}
@@ -62,7 +60,7 @@ m.HQ.prototype.gameAnalysis = function(gameState)
 /**
  * Assign the starting entities to the different bases
  */
-m.HQ.prototype.assignStartingEntities = function(gameState)
+KIARA.HQ.prototype.assignStartingEntities = function(gameState)
 {
 	for (let ent of gameState.getOwnEntities().values())
 	{
@@ -75,7 +73,7 @@ m.HQ.prototype.assignStartingEntities = function(gameState)
 		{
 			// TODO should support recursive garrisoning. Make a warning for now
 			if (ent.isGarrisonHolder() && ent.garrisoned().length)
-				API3.warn("Kiara warning: support for garrisoned units inside garrisoned holders not yet implemented");
+				KIARA.Logger.debug("Kiara warning: support for garrisoned units inside garrisoned holders not yet implemented");
 			continue;
 		}
 
@@ -113,7 +111,7 @@ m.HQ.prototype.assignStartingEntities = function(gameState)
 			if (ent.hasClass("Structure") && !ent.decaying() && ent.resourceDropsiteTypes())
 				bestbase = this.createBase(gameState, ent, "anchorless");
 			else
-				bestbase = m.getBestBase(gameState, ent) || this.baseManagers[0];
+				bestbase = KIARA.getBestBase(gameState, ent) || this.baseManagers[0];
 			bestbase.assignEntity(gameState, ent);
 		}
 		// now assign entities garrisoned inside this entity
@@ -137,7 +135,7 @@ m.HQ.prototype.assignStartingEntities = function(gameState)
  * determine the main land Index (or water index if none)
  * as well as the list of allowed (land andf water) regions
  */
-m.HQ.prototype.regionAnalysis = function(gameState)
+KIARA.HQ.prototype.regionAnalysis = function(gameState)
 {
 	let accessibility = gameState.ai.accessibility;
 	let landIndex;
@@ -172,7 +170,7 @@ m.HQ.prototype.regionAnalysis = function(gameState)
 	}
 	if (!landIndex && !seaIndex)
 	{
-		API3.warn("Kiara error: it does not know how to interpret this map");
+		KIARA.Logger.debug("Kiara error: it does not know how to interpret this map");
 		return false;
 	}
 
@@ -217,13 +215,13 @@ m.HQ.prototype.regionAnalysis = function(gameState)
 			this.navalRegions[i] = true;
 	}
 
-	if (this.Config.debug < 3)
+	if (!KIARA.Logger.isTrace())
 		return true;
 	for (let region in this.landRegions)
-		API3.warn(" >>> zone " + region + " taille " + cellArea*gameState.ai.accessibility.regionSize[region]);
-	API3.warn(" navalMap " + this.navalMap);
-	API3.warn(" landRegions " + uneval(this.landRegions));
-	API3.warn(" navalRegions " + uneval(this.navalRegions));
+		KIARA.Logger.trace(" >>> zone " + region + " taille " + cellArea*gameState.ai.accessibility.regionSize[region]);
+	KIARA.Logger.trace(" navalMap " + this.navalMap);
+	KIARA.Logger.trace(" landRegions " + uneval(this.landRegions));
+	KIARA.Logger.trace(" navalRegions " + uneval(this.navalRegions));
 	return true;
 };
 
@@ -231,7 +229,7 @@ m.HQ.prototype.regionAnalysis = function(gameState)
  * load units and buildings from the config files
  * TODO: change that to something dynamic
  */
-m.HQ.prototype.structureAnalysis = function(gameState)
+KIARA.HQ.prototype.structureAnalysis = function(gameState)
 {
 	let civref = gameState.playerData.civ;
 	let civ = civref in this.Config.buildings ? civref : 'default';
@@ -245,11 +243,11 @@ m.HQ.prototype.structureAnalysis = function(gameState)
  * build our first base
  * if not enough resource, try first to do a dock
  */
-m.HQ.prototype.buildFirstBase = function(gameState)
+KIARA.HQ.prototype.buildFirstBase = function(gameState)
 {
 	if (gameState.ai.queues.civilCentre.hasQueuedUnits())
 		return;
-	let templateName = gameState.applyCiv("structures/{civ}_civil_centre");
+	let templateName = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.CC]);
 	if (gameState.isTemplateDisabled(templateName))
 		return;
 	let template = gameState.getTemplate(templateName);
@@ -267,7 +265,7 @@ m.HQ.prototype.buildFirstBase = function(gameState)
 				continue;
 			// If we can get a treasure around, just do it
 			if (ent.isIdle())
-				m.gatherTreasure(gameState, ent);
+				KIARA.gatherTreasure(gameState, ent);
 			// Then count the resources from the treasures being collected
 			let supplyId = ent.getMetadata(PlayerID, "supply");
 			if (!supplyId)
@@ -289,7 +287,7 @@ m.HQ.prototype.buildFirstBase = function(gameState)
 		{
 			if (gameState.ai.queues.dock.hasQueuedUnits())
 				return;
-			templateName = gameState.applyCiv("structures/{civ}_dock");
+			templateName = gameState.applyCiv("structures/{civ}/dock");
 			if (gameState.isTemplateDisabled(templateName))
 				return;
 			template = gameState.getTemplate(templateName);
@@ -305,20 +303,20 @@ m.HQ.prototype.buildFirstBase = function(gameState)
 	let startingPoint = [];
 	for (let ent of gameState.getOwnUnits().values())
 	{
-		if (!ent.hasClass("Worker") && !(ent.hasClass("Support") && ent.hasClass("Elephant")))
+		if (!ent.hasClass("Worker"))
 			continue;
-		if (ent.hasClass("Cavalry"))
+		if (KIARA.isFastMoving(ent))
 			continue;
 		let pos = ent.position();
 		if (!pos)
 		{
-			let holder = m.getHolder(gameState, ent);
+			let holder = KIARA.getHolder(gameState, ent);
 			if (!holder || !holder.position())
 				continue;
 			pos = holder.position();
 		}
 		let gamepos = gameState.ai.accessibility.gamePosToMapPos(pos);
-		let index = gamepos[0] + gamepos[1]*gameState.ai.accessibility.width;
+		let index = gamepos[0] + gamepos[1] * gameState.ai.accessibility.width;
 		let land = gameState.ai.accessibility.landPassMap[index];
 		let sea = gameState.ai.accessibility.navalPassMap[index];
 		let found = false;
@@ -346,10 +344,10 @@ m.HQ.prototype.buildFirstBase = function(gameState)
 	if (goal == "dock")
 	{
 		let sea = startingPoint[imax].sea > 1 ? startingPoint[imax].sea : undefined;
-		gameState.ai.queues.dock.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_dock", { "sea": sea, "proximity": startingPoint[imax].pos }));
+		gameState.ai.queues.dock.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/dock", { "sea": sea, "proximity": startingPoint[imax].pos }));
 	}
 	else
-		gameState.ai.queues.civilCentre.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_civil_centre", { "base": -1, "resource": "wood", "proximity": startingPoint[imax].pos }));
+		gameState.ai.queues.civilCentre.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.CC], { "base": -1, "resource": "wood", "proximity": startingPoint[imax].pos }));
 };
 
 /**
@@ -357,13 +355,13 @@ m.HQ.prototype.buildFirstBase = function(gameState)
  *   - if one of our allies has a cc, affect a small fraction of our army for his defense, the rest will attack
  *   - otherwise all units will attack
  */
-m.HQ.prototype.dispatchUnits = function(gameState)
+KIARA.HQ.prototype.dispatchUnits = function(gameState)
 {
 	let allycc = gameState.getExclusiveAllyEntities().filter(API3.Filters.byClass("CivCentre")).toEntityArray();
 	if (allycc.length)
 	{
-		if (this.Config.debug > 1)
-			API3.warn(" We have allied cc " + allycc.length + " and " + gameState.getOwnUnits().length + " units ");
+		if (KIARA.Logger.isTrace())
+			KIARA.Logger.trace(" We have allied cc " + allycc.length + " and " + gameState.getOwnUnits().length + " units ");
 		let units = gameState.getOwnUnits();
 		let num = Math.max(Math.min(Math.round(0.08*(1+this.Config.personality.cooperative)*units.length), 20), 5);
 		let num1 = Math.floor(num / 2);
@@ -374,16 +372,16 @@ m.HQ.prototype.dispatchUnits = function(gameState)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
 				return;
-			let access = m.getLandAccess(gameState, ent);
+			let access = KIARA.getLandAccess(gameState, ent);
 			for (let cc of allycc)
 			{
-				if (!cc.position() || m.getLandAccess(gameState, cc) != access)
+				if (!cc.position() || KIARA.getLandAccess(gameState, cc) != access)
 					continue;
 				--num;
 				--num1;
 				ent.setMetadata(PlayerID, "allied", true);
 				let range = 1.5 * cc.footprintRadius();
-				ent.moveToRange(cc.position()[0], cc.position()[1], range, range);
+				ent.moveToRange(cc.position()[0], cc.position()[1], range, range + 5);
 				break;
 			}
 		});
@@ -393,16 +391,16 @@ m.HQ.prototype.dispatchUnits = function(gameState)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
 				return;
-			let access = m.getLandAccess(gameState, ent);
+			let access = KIARA.getLandAccess(gameState, ent);
 			for (let cc of allycc)
 			{
-				if (!cc.position() || m.getLandAccess(gameState, cc) != access)
+				if (!cc.position() || KIARA.getLandAccess(gameState, cc) != access)
 					continue;
 				--num;
 				--num2;
 				ent.setMetadata(PlayerID, "allied", true);
 				let range = 1.5 * cc.footprintRadius();
-				ent.moveToRange(cc.position()[0], cc.position()[1], range, range);
+				ent.moveToRange(cc.position()[0], cc.position()[1], range, range + 5);
 				break;
 			}
 		});
@@ -412,16 +410,16 @@ m.HQ.prototype.dispatchUnits = function(gameState)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
 				return;
-			let access = m.getLandAccess(gameState, ent);
+			let access = KIARA.getLandAccess(gameState, ent);
 			for (let cc of allycc)
 			{
-				if (!cc.position() || m.getLandAccess(gameState, cc) != access)
+				if (!cc.position() || KIARA.getLandAccess(gameState, cc) != access)
 					continue;
 				if (!ent.hasClass("Support"))
 					--num;
 				ent.setMetadata(PlayerID, "allied", true);
 				let range = 1.5 * cc.footprintRadius();
-				ent.moveToRange(cc.position()[0], cc.position()[1], range, range);
+				ent.moveToRange(cc.position()[0], cc.position()[1], range, range + 5);
 				break;
 			}
 		});
@@ -433,7 +431,7 @@ m.HQ.prototype.dispatchUnits = function(gameState)
  *   - if on a small island, favor fishing
  *   - count the available wood resource, and allow rushes only if enough (we should otherwise favor expansion)
  */
-m.HQ.prototype.configFirstBase = function(gameState)
+KIARA.HQ.prototype.configFirstBase = function(gameState)
 {
 	if (this.baseManagers.length < 2)
 		return;
@@ -455,8 +453,7 @@ m.HQ.prototype.configFirstBase = function(gameState)
 	}
 	let cell = gameState.getPassabilityMap().cellSize;
 	startingSize = startingSize * cell * cell;
-	if (this.Config.debug > 1)
-		API3.warn("starting size " + startingSize + "(cut at 24000 for fish pushing)");
+	KIARA.Logger.debug("starting size " + startingSize + "(cut at 24000 for fish pushing)");
 	if (startingSize < 25000)
 	{
 		this.saveSpace = true;
@@ -500,8 +497,9 @@ m.HQ.prototype.configFirstBase = function(gameState)
 			}
 		}
 	}
+
 	this.cavalryRush = hunt > 2000;
-	API3.warn("cavalryRush = " + this.cavalryRush);
+	KIARA.Logger.debug("cavalryRush = " + this.cavalryRush);
 
 	if (startingFood < 800)
 	{
@@ -529,8 +527,7 @@ m.HQ.prototype.configFirstBase = function(gameState)
 			}
 		}
 	}
-	if (this.Config.debug > 1)
-		API3.warn("startingWood: " + startingWood + " (cut at 8500 for no rush and 6000 for saveResources)");
+	KIARA.Logger.debug("startingWood: " + startingWood + " (cut at 8500 for no rush and 6000 for saveResources)");
 	if (startingWood < 6000)
 	{
 		this.saveResources = true;
@@ -555,15 +552,12 @@ m.HQ.prototype.configFirstBase = function(gameState)
 		}
 		this.attackManager.setRushes(allowed);
 	}
+
 	// and build immediately a corral if needed
 	if (this.needCorral)
 	{
-		template = gameState.applyCiv("structures/{civ}_corral");
+		template = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Corral]);
 		if (!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() && this.canBuild(gameState, template))
-			gameState.ai.queues.corral.addPlan(new m.ConstructionPlan(gameState, template, { "base": this.baseManagers[1].ID }));
+			gameState.ai.queues.corral.addPlan(new KIARA.ConstructionPlan(gameState, template, { "base": this.baseManagers[1].ID }));
 	}
 };
-
-return m;
-
-}(KIARA);

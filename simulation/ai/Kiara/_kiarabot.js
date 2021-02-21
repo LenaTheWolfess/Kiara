@@ -1,9 +1,137 @@
 Engine.IncludeModule("common-api");
 
-var KIARA = (function() {
-var m = {};
+var KIARA = {};
 
-m.KiaraBot = function KiaraBot(settings)
+KIARA.Logger = function(){};
+KIARA.Logger.TRACE = 0;
+KIARA.Logger.DEBUG = 1;
+KIARA.Logger.WARN = 2;
+KIARA.Logger.ERROR = 3;
+KIARA.Logger.RELEASE = 4;
+KIARA.Logger.level = KIARA.Logger.RELEASE;
+
+KIARA.Strategy = function() {};
+KIARA.Strategy.NONE = "none";
+KIARA.Strategy.BOOM = "boom";
+KIARA.Strategy.EARLY_RAID = "earlyRaid";
+KIARA.Strategy.ATTACK = "attack";
+KIARA.Strategy.RECOVER = "recover";
+KIARA.Strategy.DEFAULT = KIARA.Strategy.NONE;
+
+KIARA.AttackTypes = function() {};
+KIARA.AttackTypes.ANIHILATION = "Anihilation";
+KIARA.AttackTypes.RUSH = "Rush";
+KIARA.AttackTypes.EARLY_RAID = "EarlyRaid";
+KIARA.AttackTypes.RAID = "Raid";
+KIARA.AttackTypes.ATTACK = "Attack";
+KIARA.AttackTypes.HUGE_ATTACK = "HugeAttack";
+KIARA.AttackTypes.MELLE_RANGE_INF_CAV = "MeleeRangeInfCav";
+KIARA.AttackTypes.MELLE_RANGE_CAV = "MeleeRangeCav";
+KIARA.AttackTypes.MELLE_CAV = "MeleeCav";
+KIARA.AttackTypes.RANGE_CAV = "RangeCav";
+
+// for instance "balanced", "aggressive" or "defensive"
+KIARA.Behaviour = function() {};
+KIARA.Behaviour.BALANCED = "balanced";
+KIARA.Behaviour.AGGRESIVE = "aggressive";
+KIARA.Behaviour.DEFENSIVE = "defensive";
+KIARA.Behaviour.RANDOM = "random";
+KIARA.Behaviour.DEFAULT = KIARA.Behaviour.RANDOM;
+
+KIARA.Difficulty = function() {};
+KIARA.Difficulty.SANDBOX = 0;
+KIARA.Difficulty.VERY_EASY = 1;
+KIARA.Difficulty.EASY = 2;
+KIARA.Difficulty.MEDIUM = 3;
+KIARA.Difficulty.HARD = 4;
+KIARA.Difficulty.VERY_HARD = 5;
+KIARA.Difficulty.DEFAULT = KIARA.Difficulty.MEDIUM;
+
+KIARA.TemplateConstants = function() {};
+KIARA.TemplateConstants.MorePopulation = "MorePopulation";
+KIARA.TemplateConstants.Dropsite = "Dropsite";
+KIARA.TemplateConstants.Farmstead = "Farmstead";
+KIARA.TemplateConstants.Market = "Market";
+KIARA.TemplateConstants.Field = "Field";
+KIARA.TemplateConstants.Wonder = "Wonder";
+KIARA.TemplateConstants.Corral = "Corral";
+KIARA.TemplateConstants.CC = "CC";
+KIARA.TemplateConstants.Colony = "Colony";
+KIARA.TemplateConstants.Fortress = "Fortress";
+KIARA.TemplateConstants.MeleeAndRanged = "MeleeAndRanged";
+KIARA.TemplateConstants.Ranged = "Ranged";
+KIARA.TemplateConstants.Cavalry = "Cavalry";
+KIARA.TemplateConstants.Siege = "Siege";
+KIARA.TemplateConstants.Elephants = "Elephants";
+
+KIARA.Templates = function() {};
+KIARA.Templates[KIARA.TemplateConstants.MorePopulation] = "structures/{civ}/house";
+KIARA.Templates[KIARA.TemplateConstants.Dropsite] = "structures/{civ}/storehouse";
+KIARA.Templates[KIARA.TemplateConstants.Farmstead] = "structures/{civ}/farmstead";
+KIARA.Templates[KIARA.TemplateConstants.Market] = "structures/{civ}/market";
+KIARA.Templates[KIARA.TemplateConstants.Field] = "structures/{civ}/field";
+KIARA.Templates[KIARA.TemplateConstants.Wonder] = "structures/{civ}/wonder";
+KIARA.Templates[KIARA.TemplateConstants.Corral] = "structures/{civ}/corral";
+KIARA.Templates[KIARA.TemplateConstants.CC] = "structures/{civ}/civil_centre";
+KIARA.Templates[KIARA.TemplateConstants.Colony] = "structures/{civ}/military_colony";
+KIARA.Templates[KIARA.TemplateConstants.Fortress] = "structures/{civ}/fortress";
+KIARA.Templates[KIARA.TemplateConstants.MeleeAndRanged] = "structures/{civ}/barracks";
+KIARA.Templates[KIARA.TemplateConstants.Cavalry] = "structures/{civ}/stable";
+KIARA.Templates[KIARA.TemplateConstants.Ranged] = "structures/{civ}/range";
+KIARA.Templates[KIARA.TemplateConstants.Siege] = "structures/{civ}/arsenal";
+KIARA.Templates[KIARA.TemplateConstants.Elephants] = "structures/{civ}/elephant_stables";
+
+KIARA.Logger.warn = function(output)
+{
+	if (KIARA.Logger.isWarn())
+		API3.warn(output);
+};
+
+KIARA.Logger.debug = function(output)
+{
+	if (KIARA.Logger.isDebug())
+		API3.warn(output);
+};
+
+KIARA.Logger.trace = function(output)
+{
+	if (KIARA.Logger.isTrace())
+		API3.warn(output);
+};
+
+KIARA.Logger.error = function(output)
+{
+	if (KIARA.Logger.isError())
+		API3.error(output);
+};
+
+KIARA.Logger.isDebug = function()
+{
+	return KIARA.Logger.DEBUG >= KIARA.Logger.level;
+};
+
+KIARA.Logger.isWarn = function()
+{
+	return KIARA.Logger.WARN >= KIARA.Logger.level;
+};
+
+KIARA.Logger.isTrace = function()
+{
+	return KIARA.Logger.TRACE >= KIARA.Logger.level;
+};
+
+KIARA.Logger.isError = function()
+{
+	return KIARA.Logger.ERROR >= KIARA.Logger.level;
+};
+
+
+KIARA.Logger.isSerialization = function()
+{
+	return false;
+};
+
+KIARA.KiaraBot = function(settings)
 {
 	API3.BaseAI.call(this, settings);
 
@@ -17,14 +145,14 @@ m.KiaraBot = function KiaraBot(settings)
 		"transports": 1	// transport plans start at 1 because 0 might be used as none
 	};
 
-	this.Config = new m.Config(settings.difficulty, settings.behavior);
+	this.Config = new KIARA.Config(settings.difficulty, settings.behavior);
 
 	this.savedEvents = {};
 };
 
-m.KiaraBot.prototype = new API3.BaseAI();
+KIARA.KiaraBot.prototype = Object.create(API3.BaseAI.prototype);
 
-m.KiaraBot.prototype.CustomInit = function(gameState)
+KIARA.KiaraBot.prototype.CustomInit = function(gameState)
 {
 	if (this.isDeserialized)
 	{
@@ -52,11 +180,11 @@ m.KiaraBot.prototype.CustomInit = function(gameState)
 
 		this.Config.Deserialize(this.data.config);
 
-		this.queueManager = new m.QueueManager(this.Config, {});
+		this.queueManager = new KIARA.QueueManager(this.Config, {});
 		this.queueManager.Deserialize(gameState, this.data.queueManager);
 		this.queues = this.queueManager.queues;
 
-		this.HQ = new m.HQ(this.Config);
+		this.HQ = new KIARA.HQ(this.Config);
 		this.HQ.init(gameState, this.queues);
 		this.HQ.Deserialize(gameState, this.data.HQ);
 
@@ -74,11 +202,11 @@ m.KiaraBot.prototype.CustomInit = function(gameState)
 		// this.queues can only be modified by the queue manager or things will go awry.
 		this.queues = {};
 		for (let i in this.Config.priorities)
-			this.queues[i] = new m.Queue();
+			this.queues[i] = new KIARA.Queue();
 
-		this.queueManager = new m.QueueManager(this.Config, this.queues);
+		this.queueManager = new KIARA.QueueManager(this.Config, this.queues);
 
-		this.HQ = new m.HQ(this.Config);
+		this.HQ = new KIARA.HQ(this.Config);
 
 		this.HQ.init(gameState, this.queues);
 
@@ -87,14 +215,14 @@ m.KiaraBot.prototype.CustomInit = function(gameState)
 	}
 };
 
-m.KiaraBot.prototype.OnUpdate = function(sharedScript)
+KIARA.KiaraBot.prototype.OnUpdate = function(sharedScript)
 {
 	if (this.gameFinished)
 		return;
 
 	for (let i in this.events)
 	{
-		if (i == "AIMetadata")   // not used inside kiara
+		if (i == "AIMetadata")   // not used inside petra
 			continue;
 		if(this.savedEvents[i] !== undefined)
 			this.savedEvents[i] = this.savedEvents[i].concat(this.events[i]);
@@ -129,7 +257,7 @@ m.KiaraBot.prototype.OnUpdate = function(sharedScript)
 	this.turn++;
 };
 
-m.KiaraBot.prototype.Serialize = function()
+KIARA.KiaraBot.prototype.Serialize = function()
 {
 	let savedEvents = {};
 	for (let key in this.savedEvents)
@@ -137,7 +265,7 @@ m.KiaraBot.prototype.Serialize = function()
 		savedEvents[key] = this.savedEvents[key].slice();
 		for (let i in savedEvents[key])
 		{
-			if (!savedEvents[key][i].entityObj)
+			if (!savedEvents[key][i] || !savedEvents[key][i].entityObj)
 				continue;
 			let evt = savedEvents[key][i];
 			let evtmod = {};
@@ -160,11 +288,8 @@ m.KiaraBot.prototype.Serialize = function()
 	};
 };
 
-m.KiaraBot.prototype.Deserialize = function(data, sharedScript)
+KIARA.KiaraBot.prototype.Deserialize = function(data, sharedScript)
 {
 	this.isDeserialized = true;
 	this.data = data;
 };
-
-return m;
-}());

@@ -1,6 +1,3 @@
-var KIARA = function(m)
-{
-
 /**
  * This is an attack plan:
  * It deals with everything in an attack, from picking a target to picking a path to it
@@ -8,11 +5,11 @@ var KIARA = function(m)
  * It also handles the actual attack, though much work is needed on that.
  */
 
-m.AttackPlan = function(gameState, Config, uniqueID, type, data)
+KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 {
 	this.Config = Config;
 	this.name = uniqueID;
-	this.type = type || "Attack";
+	this.type = type || KIARA.AttackTypes.ATTACK;
 	this.state = "unexecuted";
 	this.forced = false;  // true when this attacked has been forced to help an ally
 
@@ -40,7 +37,7 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	{
 		if (!base.anchor || !base.anchor.position())
 			continue;
-		let access = m.getLandAccess(gameState, base.anchor);
+		let access = KIARA.getLandAccess(gameState, base.anchor);
 		if (!rallyPoint)
 		{
 			rallyPoint = base.anchor.position();
@@ -55,7 +52,7 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		{
 			if (!ent.position())
 				continue;
-			let access = m.getLandAccess(gameState, ent);
+			let access = KIARA.getLandAccess(gameState, ent);
 			rallyPoint = ent.position();
 			rallyAccess = access;
 			allAccesses[access] = rallyPoint;
@@ -77,7 +74,7 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 				continue;
 			if (!structure.position())
 				continue;
-			let access = m.getLandAccess(gameState, structure);
+			let access = KIARA.getLandAccess(gameState, structure);
 			if (access in allAccesses)
 			{
 				this.overseas = 0;
@@ -91,7 +88,7 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 				{
 					if (this.target)
 					{
-						API3.warn("Kiara: " + this.type + " " + this.name + " has an inaccessible target " +
+						KIARA.Logger.error("Kiara: " + this.type + " " + this.name + " has an inaccessible target " +
 						          this.target.templateName() + " indices " + rallyAccess + " " + access);
 						this.failed = true;
 						return false;
@@ -118,77 +115,77 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	this.unitStat = {};
 
 	// neededShips is the minimal number of ships which should be available for transport
-	if (type == "Rush")
+	if (type == KIARA.AttackTypes.RUSH)
 	{
 		priority = 250;
 		this.unitStat.Infantry = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 10, "classes": ["Infantry"],
 			"interests": [["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"]] };
-		this.unitStat.Cavalry = { "priority": 1, "minSize": 2, "targetSize": 4, "batchSize": 4, "classes": ["Cavalry", "CitizenSoldier"],
-			"interests": [["strength", 1]] };
-		if (data && data.targetSize)
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 4, "batchSize": 4, "classes": ["FastMoving", "CitizenSoldier"],
+			"interests": [ ["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
+	if (data && data.targetSize)
 			this.unitStat.Infantry.targetSize = data.targetSize;
 		this.neededShips = 1;
 	}
-	else if (type == "EarlyRaid")
+	else if (type == KIARA.AttackTypes.EARLY_RAID)
 	{
 		priority = 310;
-		this.unitStat.Cavalry = { "priority": 1, "minSize": 5, "targetSize": 8, "batchSize": 2, "classes": ["Cavalry", "CitizenSoldier"],
-			"interests": [ ["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 10, "targetSize": 15, "batchSize": 5, "classes": ["FastMoving"],
+			"interests": [ ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
 		this.neededShips = 1;
 	}
-	else if (type == "Raid")
+	else if (type == KIARA.AttackTypes.RAID)
 	{
 		priority = 150;
-		this.unitStat.Cavalry = { "priority": 1, "minSize": 5, "targetSize": 5, "batchSize": 10, "classes": ["Cavalry", "CitizenSoldier"],
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 5, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "CitizenSoldier"],
 			"interests": [ ["strength", 1] ] };
 		this.unitStat.Siege = {"priority": 2, "minSize": 1, "targetSize": 2, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 		this.neededShips = 1;
 	}
-	else if (type == "HugeAttack")
+	else if (type == KIARA.AttackTypes.HUGE_ATTACK)
 	{
 		priority = 350;
 		if (popCaped) {
-			this.unitStat.RangedInfantry    = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "CitizenSoldier"],
+			this.unitStat.RangedInfantry    = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Ranged"],
 				"interests": [["strength", 3]] };
-			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "CitizenSoldier"],
+			this.unitStat.MeleeInfantry     = { "priority": 1.2, "minSize": 0, "targetSize": 30, "batchSize": 5, "classes": ["Infantry", "Melee"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Ranged", "Champion"],
+/*			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Melee", "Champion"],
+			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.RangedCavalry     = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Ranged", "CitizenSoldier"],
+*/			this.unitStat.RangedFastMoving     = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "Ranged"],
 				"interests": [["strength", 2]] };
-			this.unitStat.MeleeCavalry      = { "priority": 0.7, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Melee", "CitizenSoldier"],
+			this.unitStat.MeleeFastMoving      = { "priority": 1, "minSize": 0, "targetSize": 30, "batchSize": 5, "classes": ["FastMoving", "Melee"],
 				"interests": [["strength", 2]] };
-			this.unitStat.ChampRangedCavalry  = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Cavalry", "Ranged", "Champion"],
+	/*		this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged", "Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeCavalry   = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Cavalry", "Melee", "Champion"],
+			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee", "Champion"],
 				"interests": [["strength", 2]] };
-			this.unitStat.Healer = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
-			this.unitStat.Siege = {"priority": 2, "minSize": 0, "targetSize": 5, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
+		*/	this.unitStat.Healer = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
+			this.unitStat.Siege = {"priority": 2, "minSize": 2, "targetSize": 5, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 			this.neededShips = 10;
 		} else {
 			// basically we want a mix of citizen soldiers so our barracks have a purpose, and champion units.
-			this.unitStat.RangedInfantry    = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "CitizenSoldier"],
+	/*		this.unitStat.RangedInfantry    = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "CitizenSoldier"],
 				"interests": [["strength", 3]] };
 			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "CitizenSoldier"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Infantry", "Ranged", "Champion"],
+*/			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 20, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Infantry", "Melee", "Champion"],
+			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 10, "targetSize": 40, "batchSize": 5, "classes": ["Infantry", "Melee"],
 				"interests": [["strength", 3]] };
-			this.unitStat.RangedCavalry     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Ranged", "CitizenSoldier"],
+/*			this.unitStat.RangedFastMoving     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged", "CitizenSoldier"],
 				"interests": [["strength", 2]] };
-			this.unitStat.MeleeCavalry      = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Cavalry", "Melee", "CitizenSoldier"],
+			this.unitStat.MeleeFastMoving      = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee", "CitizenSoldier"],
 				"interests": [["strength", 2]] };
-			this.unitStat.ChampRangedCavalry  = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Cavalry", "Ranged", "Champion"],
+*/			this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeCavalry   = { "priority": 1, "minSize": 4, "targetSize": 10, "batchSize": 2, "classes": ["Cavalry", "Melee", "Champion"],
+			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee"],
 				"interests": [["strength", 2]] };
 			this.unitStat.Hero                = { "priority": 1, "minSize": 0, "targetSize":  1, "batchSize": 1, "classes": ["Hero"],
 				"interests": [["strength", 2]] };
 			this.unitStat.Healer 			  = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
-			this.unitStat.Siege = {"priority": 2, "minSize": 0, "targetSize": 5, "batchSize": 2, "classes": ["Siege"] , "interests":  [["strength", 1]]};
+			this.unitStat.Siege = {"priority": 2, "minSize": 3, "targetSize": 5, "batchSize": 5, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 			this.neededShips = 5;
 		}
 	}
@@ -199,7 +196,7 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 			"interests": [["canGather", 1], ["strength", 1.6], ["costsResource", 0.3, "stone"], ["costsResource", 0.3, "metal"]] };
 		this.unitStat.MeleeInfantry  = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 6, "classes": ["Infantry", "Melee"],
 			"interests": [["canGather", 1], ["strength", 1.6], ["costsResource", 0.3, "stone"], ["costsResource", 0.3, "metal"]] };
-		this.unitStat.Cavalry = { "priority": 1, "minSize": 2, "targetSize": 6, "batchSize": 6, "classes": ["Cavalry", "CitizenSoldier"],
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 6, "batchSize": 6, "classes": ["FastMoving", "CitizenSoldier"],
 			"interests": [["strength", 1]] };
 		this.neededShips = 3;
 	}
@@ -231,12 +228,12 @@ m.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	this.position5TurnsAgo = [0, 0];
 	this.lastPosition = [0, 0];
 	this.position = [0, 0];
-	this.isBlocked = false;     // true when this attack faces walls
+	this.isBlocked = false;	     // true when this attack faces walls
 
 	return true;
 };
 
-m.AttackPlan.prototype.init = function(gameState)
+KIARA.AttackPlan.prototype.init = function(gameState)
 {
 	this.queue = gameState.ai.queues["plan_" + this.name];
 	this.queueChamp = gameState.ai.queues["plan_" + this.name +"_champ"];
@@ -244,9 +241,9 @@ m.AttackPlan.prototype.init = function(gameState)
 
 	this.unitCollection = gameState.getOwnUnits().filter(API3.Filters.byMetadata(PlayerID, "plan", this.name));
 	this.unitCollection.registerUpdates();
-	
+
 	this.formationList = [];
-	
+
 	this.unit = {};
 
 	// defining the entity collections. Will look for units I own, that are part of this plan.
@@ -261,27 +258,27 @@ m.AttackPlan.prototype.init = function(gameState)
 	}
 };
 
-m.AttackPlan.prototype.getName = function()
+KIARA.AttackPlan.prototype.getName = function()
 {
 	return this.name;
 };
 
-m.AttackPlan.prototype.getType = function()
+KIARA.AttackPlan.prototype.getType = function()
 {
 	return this.type;
 };
 
-m.AttackPlan.prototype.isStarted = function()
+KIARA.AttackPlan.prototype.isStarted = function()
 {
 	return this.state !== "unexecuted" && this.state !== "completing";
 };
 
-m.AttackPlan.prototype.isPaused = function()
+KIARA.AttackPlan.prototype.isPaused = function()
 {
 	return this.paused;
 };
 
-m.AttackPlan.prototype.setPaused = function(boolValue)
+KIARA.AttackPlan.prototype.setPaused = function(boolValue)
 {
 	this.paused = boolValue;
 };
@@ -290,7 +287,7 @@ m.AttackPlan.prototype.setPaused = function(boolValue)
  * Returns true if the attack can be executed at the current time
  * Basically it checks we have enough units.
  */
-m.AttackPlan.prototype.canStart = function()
+KIARA.AttackPlan.prototype.canStart = function()
 {
 	if (!this.canBuildUnits)
 		return true;
@@ -302,7 +299,7 @@ m.AttackPlan.prototype.canStart = function()
 	return true;
 };
 
-m.AttackPlan.prototype.mustStart = function()
+KIARA.AttackPlan.prototype.mustStart = function()
 {
 	if (this.isPaused())
 		return false;
@@ -327,12 +324,12 @@ m.AttackPlan.prototype.mustStart = function()
 	if (MaxReachedEverywhere)
 		return true;
 	if (MinReachedEverywhere)
-		return this.type == "Raid" && this.target && this.target.foundationProgress() &&
+		return this.type == KIARA.AttackTypes.RAID && this.target && this.target.foundationProgress() &&
 		                                             this.target.foundationProgress() > 0 && this.target.foundationProgress() < 90;
 	return false;
 };
 
-m.AttackPlan.prototype.forceStart = function()
+KIARA.AttackPlan.prototype.forceStart = function()
 {
 	for (let unitCat in this.unitStat)
 	{
@@ -343,8 +340,22 @@ m.AttackPlan.prototype.forceStart = function()
 	this.forced = true;
 };
 
+KIARA.AttackPlan.prototype.emptyQueues = function()
+{
+	this.queue.empty();
+	this.queueChamp.empty();
+	this.queueSiege.empty();
+};
+
+KIARA.AttackPlan.prototype.removeQueues = function(gameState)
+{
+	gameState.ai.queueManager.removeQueue("plan_" + this.name);
+	gameState.ai.queueManager.removeQueue("plan_" + this.name + "_champ");
+	gameState.ai.queueManager.removeQueue("plan_" + this.name + "_siege");
+};
+
 /** Adds a build order. If resetQueue is true, this will reset the queue. */
-m.AttackPlan.prototype.addBuildOrder = function(gameState, name, unitStats, resetQueue)
+KIARA.AttackPlan.prototype.addBuildOrder = function(gameState, name, unitStats, resetQueue)
 {
 	if (!this.isStarted())
 	{
@@ -355,21 +366,17 @@ m.AttackPlan.prototype.addBuildOrder = function(gameState, name, unitStats, rese
 		this.unit[name].registerUpdates();
 		this.buildOrders.push([0, Unit.classes, this.unit[name], Unit, name]);
 		if (resetQueue)
-		{
-			this.queue.empty();
-			this.queueChamp.empty();
-			this.queueSiege.empty();
-		}
+			this.emptyQueues();
 	}
 };
 
-m.AttackPlan.prototype.addSiegeUnits = function(gameState)
+KIARA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 {
 	if (this.siegeState == 2 || this.state !== "unexecuted")
 		return false;
 
 	let civ = gameState.getPlayerCiv();
-	let classes = [[ "Siege", "Melee"], ["Siege", "Ranged"], ["Elephant", "Melee", "Champion"]];
+	let classes = [["Siege", "Melee"], ["Siege", "Ranged"], ["Elephant", "Melee"]];
 	let hasTrainer = [false, false, false];
 	for (let ent of gameState.getOwnTrainingFacilities().values())
 	{
@@ -399,20 +406,18 @@ m.AttackPlan.prototype.addSiegeUnits = function(gameState)
 	}
 
 	this.siegeState = 2;
-	let targetSize = this.type == "HugeAttack" ? 5 : 4;
-	targetSize = Math.max(Math.round(this.Config.popScaling * targetSize), this.type == "HugeAttack" ? 1 : 0);
+	let targetSize = this.type == KIARA.AttackTypes.HUGE_ATTACK ? 5 : 4;
 	if (!targetSize)
 		return true;
 	// no minsize as we don't want the plan to fail at the last minute though.
 	let stat = { "priority": 1, "minSize": 0, "targetSize": targetSize, "batchSize": Math.min(targetSize, 2),
 		 "classes": classes[i], "interests": [ ["siegeStrength", 3] ] };
-	API3.warn("attackPlan add siege: " + uneval(classes[i]) + " size " + targetSize);
 	this.addBuildOrder(gameState, "Siege", stat, true);
 	return true;
 };
 
 /** Three returns possible: 1 is "keep going", 0 is "failed plan", 2 is "start". */
-m.AttackPlan.prototype.updatePreparation = function(gameState)
+KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 {
 	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
 	// the completing step is used to return resources and regroup the units
@@ -433,27 +438,30 @@ m.AttackPlan.prototype.updatePreparation = function(gameState)
 			// bloqued units which cannot finish their order should not stop the attack
 			if (gameState.ai.elapsedTime < this.maxCompletingTime && this.hasForceOrder())
 				return 1;
-			
 			return 2;
 		}
 	}
 
-	if (this.Config.debug > 3 && gameState.ai.playedTurn % 50 === 0)
+	if (KIARA.Logger.isTrace() && gameState.ai.playedTurn % 50 === 0)
 		this.debugAttack();
 
 	// if we need a transport, wait for some transport ships
 	if (this.overseas && !gameState.ai.HQ.navalManager.seaTransportShips[this.overseas].length)
 		return 1;
 
-	if (this.type != "Raid" || !this.forced)    // Forced Raids have special purposes (as relic capture)
+	if (this.type != KIARA.AttackTypes.RAID || !this.forced)    // Forced Raids have special purposes (as relic capture)
 		this.assignUnits(gameState);
-	if (this.type == "Raid" && gameState.ai.HQ.attackManager.getAttackInPreparation("Raid") !== undefined)
+	if (this.type == KIARA.AttackTypes.RAID &&
+		gameState.ai.HQ.attackManager.getAttackInPreparation(KIARA.AttackTypes.RAID) !== undefined)
 		this.reassignCavUnit(gameState, this.type);    // reassign some cav (if any) to fasten raid preparations
-	if (this.type == "EarlyRaid" && gameState.ai.HQ.attackManager.getAttackInPreparation("EarlyRaid") !== undefined)
+	if (this.type == KIARA.AttackTypes.EARLY_RAID &&
+		gameState.ai.HQ.attackManager.getAttackInPreparation(KIARA.AttackTypes.EARLY_RAID) !== undefined)
 		this.reassignCavUnit(gameState, this.type);    // reassign some cav (if any) to fasten early raid preparations
+	if (this.type == KIARA.AttackTypes.HUGE_ATTACK && !this.hasSiegeUnits())
+		this.assignUnits(gameState);
 
 	// Fasten the end game.
-	if (gameState.ai.playedTurn % 5 == 0 && (this.hasSiegeUnits() || popCaped))
+	if (gameState.ai.playedTurn % 5 == 0 && this.hasSiegeUnits() || popCaped)
 	{
 		let totEnemies = 0;
 		let hasEnemies = false;
@@ -472,30 +480,27 @@ m.AttackPlan.prototype.updatePreparation = function(gameState)
 	if (popCaped)
 	{
 		let lengthMin = 16;
-		if (this.unitCollection.length > lengthMin)
-		{
-			this.queue.empty();
-			this.queueChamp.empty();
-			this.queueSiege.empty();
+		if (this.unitCollection.length > lengthMin) {
+			this.emptyQueues();
 		}
 		else	// Abort the plan so that its units will be reassigned to other plans.
 		{
-			if (this.getType() == "HugeAttack") {
+			if (this.getType() == KIARA.AttackTypes.HUGE_ATTACK) {
 				this.forceStart();
 				return 1;
 			}
-	//		if (this.Config.debug > 1)
-	//		{
+			if (KIARA.Logger.isTrace())
+			{
 				let am = gameState.ai.HQ.attackManager;
-				API3.warn(" attacks upcoming: raid " + am.upcomingAttacks.Raid.length +
+				KIARA.Logger.trace(" attacks upcoming: raid " + am.upcomingAttacks.Raid.length +
 					  " rush " + am.upcomingAttacks.Rush.length +
 					  " attack " + am.upcomingAttacks.Attack.length +
 					  " huge " + am.upcomingAttacks.HugeAttack.length);
-				API3.warn(" attacks started: raid " + am.startedAttacks.Raid.length +
+				KIARA.Logger.trace(" attacks started: raid " + am.startedAttacks.Raid.length +
 					  " rush " + am.startedAttacks.Rush.length +
 					  " attack " + am.startedAttacks.Attack.length +
 					  " huge " + am.startedAttacks.HugeAttack.length);
-		//	}
+			}
 			return 0;
 		}
 	}
@@ -504,9 +509,7 @@ m.AttackPlan.prototype.updatePreparation = function(gameState)
 		if (gameState.countOwnQueuedEntitiesWithMetadata("plan", +this.name) > 0)
 		{
 			// keep on while the units finish being trained, then we'll start
-			this.queue.empty();
-			this.queueChamp.empty();
-			this.queueSiege.empty();
+			this.emptyQueues();
 			return 1;
 		}
 	}
@@ -529,18 +532,16 @@ m.AttackPlan.prototype.updatePreparation = function(gameState)
 	this.state = "completing";
 
 	// Raids have their predefined target
-	if (!this.target && !this.chooseTarget(gameState)) {
-		API3.warn("Attack plan " + this.getType() + " has no target");
+	if (!this.target && !this.chooseTarget(gameState))
 		return 0;
-	}
 	if (!this.overseas)
 		this.getPathToTarget(gameState);
 
-	if (this.type == "Raid" || this.type == "EarlyRaid")
+	if (this.type == KIARA.AttackTypes.RAID || this.type == KIARA.AttackTypes.EARLY_RAID)
 		this.maxCompletingTime = this.forced ? 0 : gameState.ai.elapsedTime + 20;
 	else
 	{
-		if (this.type == "Rush" || this.forced)
+		if (this.type == KIARA.AttackTypes.RUSH || this.forced)
 			this.maxCompletingTime = gameState.ai.elapsedTime + 40;
 		else
 			this.maxCompletingTime = gameState.ai.elapsedTime + 60;
@@ -576,8 +577,8 @@ m.AttackPlan.prototype.updatePreparation = function(gameState)
 		ent.setMetadata(PlayerID, "subrole", "completing");
 		let queued = false;
 		if (ent.resourceCarrying() && ent.resourceCarrying().length)
-			queued = m.returnResources(gameState, ent);
-		let index = m.getLandAccess(gameState, ent);
+			queued = KIARA.returnResources(gameState, ent);
+		let index = KIARA.getLandAccess(gameState, ent);
 		if (index == rallyIndex)
 			ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 15, queued);
 		else
@@ -585,15 +586,11 @@ m.AttackPlan.prototype.updatePreparation = function(gameState)
 	}
 
 	// reset all queued units
-	let plan = this.name;
-	gameState.ai.queueManager.removeQueue("plan_" + plan);
-	gameState.ai.queueManager.removeQueue("plan_" + plan + "_champ");
-	gameState.ai.queueManager.removeQueue("plan_" + plan + "_siege");
+	this.removeQueues(gameState);
 	return	1;
 };
 
-
-m.AttackPlan.prototype.trainMoreUnits = function(gameState)
+KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 {
 	// let's sort by training advancement, ie 'current size / target size'
 	// count the number of queued units too.
@@ -603,7 +600,7 @@ m.AttackPlan.prototype.trainMoreUnits = function(gameState)
 	let popLimit = gameState.getPopulationLimit();
 	let wantPop = gameState.ai.HQ.wantPop;
 	let nHouses = gameState.ai.queues.house.length();
-	let tHouse = gameState.getTemplate(gameState.applyCiv("structures/{civ}_house"));
+	let tHouse = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]));
 	let pHouse = tHouse.getPopulationBonus();
 
 	let addTotal = 0;
@@ -627,10 +624,10 @@ m.AttackPlan.prototype.trainMoreUnits = function(gameState)
 		return va - vb;
 	});
 
-	if (this.Config.debug > 1 && gameState.ai.playedTurn%50 === 0)
+	if (KIARA.Logger.isTrace() && gameState.ai.playedTurn%50 === 0)
 	{
-		API3.warn("====================================");
-		API3.warn("======== build order for plan " + this.name);
+		KIARA.Logger.trace("====================================");
+		KIARA.Logger.trace("======== build order for plan " + this.name);
 		for (let order of this.buildOrders)
 		{
 			let specialData = "Plan_"+this.name+"_"+order[4];
@@ -638,13 +635,19 @@ m.AttackPlan.prototype.trainMoreUnits = function(gameState)
 			let queue1 = this.queue.countQueuedUnitsWithMetadata("special", specialData);
 			let queue2 = this.queueChamp.countQueuedUnitsWithMetadata("special", specialData);
 			let queue3 = this.queueSiege.countQueuedUnitsWithMetadata("special", specialData);
-			API3.warn(" >>> " + order[4] + " done " + order[2].length + " training " + inTraining +
+			KIARA.Logger.trace(" >>> " + order[4] + " done " + order[2].length + " training " + inTraining +
 				  " queue " + queue1 + " champ " + queue2 + " siege " + queue3 + " >> need " + order[3].targetSize);
 		}
-		API3.warn("====================================");
+		KIARA.Logger.trace("====================================");
 	}
 
 	let firstOrder = this.buildOrders[0];
+	let nSiege = gameState.getOwnEntitiesByClass("Siege", true).length;
+	if (firstOrder[3].classes.indexOf("Siege") && nSiege > 10) {
+		this.buildOrders.splice(0, 1);
+	}
+	firstOrder = this.buildOrders[0];
+
 	if (firstOrder[0] < firstOrder[3].targetSize)
 	{
 		// find the actual queue we want
@@ -665,23 +668,21 @@ m.AttackPlan.prototype.trainMoreUnits = function(gameState)
 			{
 				// Request another trainer
 				let t = allTrainers[0];
-				let plan = new m.ConstructionPlan(gameState, t.templateName());
+				let plan = new KIARA.ConstructionPlan(gameState, t.templateName());
 				// change the starting condition according to the situation.
 				gameState.ai.queues.militaryBuilding.addPlan(plan);
-		//		API3.warn("attack plan adding house to reach " + wantPop);
+				KIARA.Logger.debug("attack plan adding "+t.templateName());
 			}
 			// HACK (TODO replace) : if we have no trainable template... Then we'll simply remove the buildOrder,
 			// effectively removing the unit from the plan.
 			let skip = false;
 			if (template === undefined && firstOrder[3].Fallback)
 			{
-				if (this.Config.debug > 1)
-					API3.warn("attack no template found " + firstOrder[1] + " fallback to " + firstOrder[3].Fallback);
+				KIARA.Logger.debug("attack no template found " + firstOrder[1] + " fallback to " + firstOrder[3].Fallback);
 				template = gameState.ai.HQ.findBestTrainableUnit(gameState, firstOrder[3].Fallback, firstOrder[3].interests);
 				if (template === undefined)
 				{
-					if (this.Config.debug > 1)
-						API3.warn("attack no template found " + firstOrder[3].Fallback);
+					KIARA.Logger.debug("attack no template found " + firstOrder[3].Fallback);
 					delete this.unitStat[firstOrder[4]];	// deleting the associated unitstat.
 					this.buildOrders.splice(0, 1);
 					skip = true;
@@ -689,8 +690,7 @@ m.AttackPlan.prototype.trainMoreUnits = function(gameState)
 			}
 			if (template === undefined && !firstOrder[3].Fallback)
 			{
-				if (this.Config.debug > 1)
-					API3.warn("attack no template found " + firstOrder[1]);
+				KIARA.Logger.debug("attack no template found " + firstOrder[1]);
 				delete this.unitStat[firstOrder[4]];	// deleting the associated unitstat.
 				this.buildOrders.splice(0, 1);
 				skip = true;
@@ -699,46 +699,44 @@ m.AttackPlan.prototype.trainMoreUnits = function(gameState)
 			if (!skip)
 			{
 				let max = firstOrder[3].batchSize;
-				if (this.Config.debug > 2)
-					API3.warn("attack template " + template + "size = " + max + " added for plan " + this.name);
+				KIARA.Logger.debug("attack template " + template + " added for plan " + this.name);
+
 				let specialData = "Plan_" + this.name + "_" + firstOrder[4];
 				let data = { "plan": this.name, "special": specialData, "base": 0 };
 				data.role = gameState.getTemplate(template).hasClass("CitizenSoldier") ? "worker" : "attack";
-				let trainingPlan = new m.TrainingPlan(gameState, template, data, max, max);
+				let trainingPlan = new KIARA.TrainingPlan(gameState, template, data, max, max);
 				if (trainingPlan.template) {
 					queue.addPlan(trainingPlan);
 					addTotal += max;
 				}
-				
-				else if (this.Config.debug > 1)
-					API3.warn("training plan canceled because no template for " + template + "   build1 " + uneval(firstOrder[1]) +
+				else if (KIARA.Logger.isDebug())
+					KIARA.Logger.debug("training plan canceled because no template for " + template + "   build1 " + uneval(firstOrder[1]) +
 						  " build3 " + uneval(firstOrder[3].interests));
 			}
 		}
 	}
-
 	wantPop = wantPop + addTotal;
 	gameState.ai.HQ.wantPop = wantPop;
 
 	if (wantPop >= popLimit + (pHouse * fHouse) + (nHouses * fHouse)) {
 		let missing = wantPop - (popLimit + (pHouse * fHouse) + (nHouses * fHouse));
 		while (nHouses < 3 && missing > 0) {
-			let plan = new m.ConstructionPlan(gameState, "structures/{civ}_house");
+			let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
 			// change the starting condition according to the situation.
 			plan.goRequirement = "houseNeeded";
 			gameState.ai.queues.house.addPlan(plan);
 			missing = missing - pHouse;
 			nHouses++;
-		//	API3.warn("attack plan adding house to reach " + wantPop);
+			KIARA.Logger.debug("attack plan adding house to reach " + wantPop);
 		}
 	}
 };
 
-m.AttackPlan.prototype.assignUnits = function(gameState)
+KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 {
 	let plan = this.name;
 	let added = false;
-	// If we can not build units, assign all available except those affected to allied defense to the current attack
+	// If we can not build units, assign all available except those affected to allied defense to the current attack.
 	if (!this.canBuildUnits && !this.noAll)
 	{
 		for (let ent of gameState.getOwnUnits().values())
@@ -752,13 +750,13 @@ m.AttackPlan.prototype.assignUnits = function(gameState)
 		return added;
 	}
 
-	if (this.type == "EarlyRaid")
+	if (this.type == KIARA.AttackTypes.EARLY_RAID)
 	{
-		// Raid are fast cavalry attack: assign all cav except some for hunting
+		// Raid are fast FastMoving attack: assign all cav except some for hunting
 		let num = 0;
 		for (let ent of gameState.getOwnUnits().values())
 		{
-			if (!ent.hasClass("Cavalry") || !this.isAvailableUnit(gameState, ent))
+			if (!ent.hasClass("FastMoving") || !this.isAvailableUnit(gameState, ent))
 				continue;
 			if (num++ < 2)
 				continue;
@@ -768,13 +766,13 @@ m.AttackPlan.prototype.assignUnits = function(gameState)
 		}
 		return added;
 	}
-	if (this.type == "Raid")
+	if (this.type == KIARA.AttackTypes.RAID)
 	{
-		// Raid are fast cavalry attack: assign all cav except some for hunting
+		// Raids are quick attacks: assign all FastMoving soldiers except some for hunting.
 		let num = 0;
 		for (let ent of gameState.getOwnUnits().values())
 		{
-			if (!ent.hasClass("Cavalry") || !this.isAvailableUnit(gameState, ent))
+			if (!ent.hasClass("FastMoving") || !this.isAvailableUnit(gameState, ent))
 				continue;
 			if (num++ < 2)
 				continue;
@@ -785,7 +783,7 @@ m.AttackPlan.prototype.assignUnits = function(gameState)
 		return added;
 	}
 
-	// Assign all units without specific role
+	// Assign all units without specific role.
 	for (let ent of gameState.getOwnEntitiesByRole(undefined, true).values())
 	{
 		if ((!ent.hasClass("Unit") && !ent.hasClass("Siege")) || !this.isAvailableUnit(gameState, ent))
@@ -796,7 +794,7 @@ m.AttackPlan.prototype.assignUnits = function(gameState)
 		this.unitCollection.updateEnt(ent);
 		added = true;
 	}
-	// Add units previously in a plan, but which left it because needed for defense or attack finished
+	// Add units previously in a plan, but which left it because needed for defense or attack finished.
 	for (let ent of gameState.ai.HQ.attackManager.outOfPlan.values())
 	{
 		if (!this.isAvailableUnit(gameState, ent))
@@ -811,8 +809,7 @@ m.AttackPlan.prototype.assignUnits = function(gameState)
 	// Otherwise, assign only some idle workers if too much of them
 	let num = 0;
 	let numbase = {};
-	let keep = this.type != "Rush" ?
-		6 + 4 * gameState.getNumPlayerEnemies() : 8;
+	let keep = this.type != KIARA.AttackTypes.RUSH ? 6 + 4 * gameState.getNumPlayerEnemies() : 8;
 	keep = Math.round(this.Config.popScaling * keep);
 	for (let ent of gameState.getOwnEntitiesByRole("worker", true).values())
 	{
@@ -823,13 +820,13 @@ m.AttackPlan.prototype.assignUnits = function(gameState)
 			numbase[baseID] = numbase[baseID] ? ++numbase[baseID] : 1;
 		else
 		{
-			API3.warn("Kiara problem ent without base ");
-			m.dumpEntity(ent);
+			KIARA.Logger.debug("Kiara problem ent without base ");
+			KIARA.dumpEntity(ent);
 			continue;
 		}
 		if (num++ < keep || numbase[baseID] < 5)
 			continue;
-		if (this.type != "Rush" && ent.getMetadata(PlayerID, "subrole") != "idle")
+		if (this.type != KIARA.AttackTypes.RUSH && ent.getMetadata(PlayerID, "subrole") != "idle")
 			continue;
 		ent.setMetadata(PlayerID, "plan", plan);
 		this.unitCollection.updateEnt(ent);
@@ -838,7 +835,7 @@ m.AttackPlan.prototype.assignUnits = function(gameState)
 	return added;
 };
 
-m.AttackPlan.prototype.isAvailableUnit = function(gameState, ent)
+KIARA.AttackPlan.prototype.isAvailableUnit = function(gameState, ent)
 {
 	if (!ent.position())
 		return false;
@@ -850,28 +847,28 @@ m.AttackPlan.prototype.isAvailableUnit = function(gameState, ent)
 	return true;
 };
 
-/** Reassign one (at each turn) Cav unit to fasten raid preparation. */
-m.AttackPlan.prototype.reassignCavUnit = function(gameState, type)
+/** Reassign one (at each turn) FastMoving unit to fasten raid preparation. */
+KIARA.AttackPlan.prototype.reassignCavUnit = function(gameState, type)
 {
 	for (let ent of this.unitCollection.values())
 	{
 		if (!ent.position() || ent.getMetadata(PlayerID, "transport") !== undefined)
 			continue;
-		if (!ent.hasClass("Cavalry") || !ent.hasClass("CitizenSoldier"))
+		if (!ent.hasClass("FastMoving") || !ent.hasClass("CitizenSoldier"))
 			continue;
 		let raid = gameState.ai.HQ.attackManager.getAttackInPreparation(type);
 		ent.setMetadata(PlayerID, "plan", raid.name);
 		this.unitCollection.updateEnt(ent);
 		raid.unitCollection.updateEnt(ent);
+		return;
 	}
 };
 
-m.AttackPlan.prototype.chooseTarget = function(gameState)
+KIARA.AttackPlan.prototype.chooseTarget = function(gameState)
 {
 	if (this.targetPlayer === undefined)
 	{
-		this.targetPlayer = gameState.ai.HQ.attackManager.getEnemyPlayer(gameState, this);	
-		API3.warn("targetPlayer " + this.getType() + " is " + this.targetPlayer);
+		this.targetPlayer = gameState.ai.HQ.attackManager.getEnemyPlayer(gameState, this);
 		if (this.targetPlayer === undefined)
 			return false;
 	}
@@ -892,7 +889,7 @@ m.AttackPlan.prototype.chooseTarget = function(gameState)
 	this.targetPos = this.target.position();
 	// redefine a new rally point for this target if we have a base on the same land
 	// find a new one on the pseudo-nearest base (dist weighted by the size of the island)
-	let targetIndex = m.getLandAccess(gameState, this.target);
+	let targetIndex = KIARA.getLandAccess(gameState, this.target);
 	let rallyIndex = gameState.ai.accessibility.getAccessValue(this.rallyPoint);
 	if (targetIndex != rallyIndex)
 	{
@@ -940,7 +937,7 @@ m.AttackPlan.prototype.chooseTarget = function(gameState)
 			}
 			else
 			{
-				API3.warn("Kiara: " + this.type + " " + this.name + " has an inaccessible target" +
+				KIARA.Logger.error("Kiara: " + this.type + " " + this.name + " has an inaccessible target" +
 				          " with indices " + rallyIndex + " " + targetIndex + " from " + this.target.templateName());
 				return false;
 			}
@@ -954,7 +951,7 @@ m.AttackPlan.prototype.chooseTarget = function(gameState)
 /**
  * sameLand true means that we look for a target for which we do not need to take a transport
  */
-m.AttackPlan.prototype.getNearestTarget = function(gameState, position, sameLand)
+KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, sameLand)
 {
 	this.isBlocked = false;
 	// Temporary variables needed by isValidTarget
@@ -971,12 +968,12 @@ m.AttackPlan.prototype.getNearestTarget = function(gameState, position, sameLand
 	}
 	else
 	{
-		if (this.type == "Raid")
+		if (this.type == KIARA.AttackTypes.RAID)
 			targets = this.raidTargetFinder(gameState);
-		else if (this.type == "EarlyRaid") {
+		else if (this.type == KIARA.AttackTypes.EARLY_RAID) {
 			targets = this.earlyRaidTargetFinder(gameState);
 		}
-		else if (this.type == "Rush" || this.type == "Attack")
+		else if (this.type == KIARA.AttackTypes.RUSH || this.type == KIARA.AttackTypes.ATTACK)
 		{
 			targets = this.rushTargetFinder(gameState, this.targetPlayer);
 			if (!targets.hasEntities() && (this.hasSiegeUnits() || this.forced))
@@ -1001,7 +998,7 @@ m.AttackPlan.prototype.getNearestTarget = function(gameState, position, sameLand
 			continue;
 		let dist = API3.SquareVectorDistance(ent.position(), position);
 		// In normal attacks, disfavor fields
-		if (this.type != "Rush" && this.type != "Raid" && ent.hasClass("Field"))
+		if (this.type != KIARA.AttackTypes.RUSH && this.type != KIARA.AttackTypes.RAID && ent.hasClass("Field"))
 			dist += 100000;
 		if (dist < minDist)
 		{
@@ -1029,7 +1026,7 @@ m.AttackPlan.prototype.getNearestTarget = function(gameState, position, sameLand
  * Default target finder aims for conquest critical targets
  * We must apply the *same* selection (isValidTarget) as done in getNearestTarget
  */
-m.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy)
+KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy)
 {
 	let targets = new API3.EntityCollection(gameState.sharedScript);
 	if (gameState.getVictoryConditions().has("wonder"))
@@ -1041,13 +1038,19 @@ m.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy)
 	if (gameState.getVictoryConditions().has("capture_the_relic"))
 		for (let ent of gameState.updatingGlobalCollection("allRelics", API3.Filters.byClass("Relic")).filter(relic => relic.owner() == playerEnemy).values())
 			targets.addEnt(ent);
-	targets = targets.filter(this.isValidTarget, this);
+
 	if (targets.hasEntities())
 		return targets;
 
 	let validTargets = gameState.getEnemyStructures(playerEnemy).filter(this.isValidTarget, this);
 	targets = validTargets.filter(API3.Filters.byClass("Fortress"));
-	
+	let towers = validTargets.filter(API3.Filters.byClass("Tower"));
+	if (!targets.hasEntities())
+		targets = towers;
+	else {
+		for(let ent of towers.values())
+			targets.addEnt(ent);
+	}
 	let ccs = validTargets.filter(API3.Filters.byClass("CivCentre"));
 	if (!targets.hasEntities())
 		targets = ccs;
@@ -1055,15 +1058,14 @@ m.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy)
 		for(let ent of ccs.values())
 			targets.addEnt(ent);
 	}
+
 	if (!targets.hasEntities())
 		targets = validTargets.filter(API3.Filters.byClass("ConquestCritical"));
-	
 	// If there's nothing, attack anything else that's less critical
 	if (!targets.hasEntities())
 		targets = validTargets.filter(API3.Filters.byClass("Town"));
 	if (!targets.hasEntities())
 		targets = validTargets.filter(API3.Filters.byClass("Village"));
-	
 	// No buildings, attack anything conquest critical, units included.
 	// TODO Should add naval attacks against the last remaining ships.
 	if (!targets.hasEntities())
@@ -1072,17 +1074,17 @@ m.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy)
 	return targets;
 };
 
-m.AttackPlan.prototype.isValidTarget = function(ent)
+KIARA.AttackPlan.prototype.isValidTarget = function(ent)
 {
 	if (!ent.position())
 		return false;
-	if (this.sameLand && m.getLandAccess(this.gameState, ent) != this.sameLand)
+	if (this.sameLand && KIARA.getLandAccess(this.gameState, ent) != this.sameLand)
 		return false;
 	return !ent.decaying() || ent.getDefaultArrow() || ent.isGarrisonHolder() && ent.garrisoned().length;
 };
 
 /** Rush target finder aims at isolated non-defended buildings */
-m.AttackPlan.prototype.rushTargetFinder = function(gameState, playerEnemy)
+KIARA.AttackPlan.prototype.rushTargetFinder = function(gameState, playerEnemy)
 {
 	let targets = new API3.EntityCollection(gameState.sharedScript);
 	let buildings;
@@ -1131,14 +1133,14 @@ m.AttackPlan.prototype.rushTargetFinder = function(gameState, playerEnemy)
 	if (target)
 		targets.addEnt(target);
 
-	if (!targets.hasEntities() && this.type == "Rush" && playerEnemy)
+	if (!targets.hasEntities() && this.type == KIARA.AttackTypes.RUSH && playerEnemy)
 		targets = this.rushTargetFinder(gameState);
 
 	return targets;
 };
 
 /** Raid target finder aims at destructing foundations from which our defenseManager has attacked the builders */
-m.AttackPlan.prototype.raidTargetFinder = function(gameState)
+KIARA.AttackPlan.prototype.raidTargetFinder = function(gameState)
 {
 	let targets = new API3.EntityCollection(gameState.sharedScript);
 	for (let targetId of gameState.ai.HQ.defenseManager.targetList)
@@ -1150,7 +1152,7 @@ m.AttackPlan.prototype.raidTargetFinder = function(gameState)
 	return targets;
 };
 
-m.AttackPlan.prototype.earlyRaidTargetFinder = function(gameState)
+KIARA.AttackPlan.prototype.earlyRaidTargetFinder = function(gameState)
 {
 	let targets = new API3.EntityCollection(gameState.sharedScript);
 	for (let ent of gameState.getEnemyUnits().filter(API3.Filters.byClass("FemaleCitizen")).values())
@@ -1163,9 +1165,9 @@ m.AttackPlan.prototype.earlyRaidTargetFinder = function(gameState)
  * otherwise we may be blocked by walls and try to react accordingly
  * This is done only when attacker and target are on the same land
  */
-m.AttackPlan.prototype.checkTargetObstruction = function(gameState, target, position)
+KIARA.AttackPlan.prototype.checkTargetObstruction = function(gameState, target, position)
 {
-	if (m.getLandAccess(gameState, target) != gameState.ai.accessibility.getAccessValue(position))
+	if (KIARA.getLandAccess(gameState, target) != gameState.ai.accessibility.getAccessValue(position))
 		return target;
 
 	let targetPos = target.position();
@@ -1184,7 +1186,7 @@ m.AttackPlan.prototype.checkTargetObstruction = function(gameState, target, posi
 		if (!struct.position() || !struct.get("Obstruction") || struct.hasClass("Field"))
 			continue;
 		// we consider that we can reach the target, but nonetheless check that we did not cross any enemy gate
-		if (dist < radius + 10 && !struct.hasClass("Gates"))
+		if (dist < radius + 10 && !struct.hasClass("Gate"))
 			continue;
 		// Check that we are really blocked by this structure, i.e. advancing by 1+0.8(clearance)m
 		// in the target direction would bring us inside its obstruction.
@@ -1260,16 +1262,7 @@ m.AttackPlan.prototype.checkTargetObstruction = function(gameState, target, posi
 		}
 	}
 
-	if (blocker && blocker.hasClass("StoneWall"))
-	{
-/*		if (this.hasSiegeUnits())
-		{ */
-			this.isBlocked = true;
-			return blocker;
-/*		}
-		return undefined; */
-	}
-	else if (blocker)
+	if (blocker)
 	{
 		this.isBlocked = true;
 		return blocker;
@@ -1278,10 +1271,10 @@ m.AttackPlan.prototype.checkTargetObstruction = function(gameState, target, posi
 	return target;
 };
 
-m.AttackPlan.prototype.getPathToTarget = function(gameState, fixedRallyPoint = false)
+KIARA.AttackPlan.prototype.getPathToTarget = function(gameState, fixedRallyPoint = false)
 {
 	let startAccess = gameState.ai.accessibility.getAccessValue(this.rallyPoint);
-	let endAccess = m.getLandAccess(gameState, this.target);
+	let endAccess = KIARA.getLandAccess(gameState, this.target);
 	if (startAccess != endAccess)
 		return false;
 
@@ -1304,7 +1297,7 @@ m.AttackPlan.prototype.getPathToTarget = function(gameState, fixedRallyPoint = f
 };
 
 /** Set rally point at the border of our territory */
-m.AttackPlan.prototype.setRallyPoint = function(gameState)
+KIARA.AttackPlan.prototype.setRallyPoint = function(gameState)
 {
 	for (let i = 0; i < this.path.length; ++i)
 	{
@@ -1331,31 +1324,32 @@ m.AttackPlan.prototype.setRallyPoint = function(gameState)
  * Executes the attack plan, after this is executed the update function will be run every turn
  * If we're here, it's because we have enough units.
  */
-m.AttackPlan.prototype.StartAttack = function(gameState)
+KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 {
-	if (this.Config.debug > 1)
-		API3.warn("start attack " + this.name + " with type " + this.type);
+	KIARA.Logger.debug("start attack " + this.name + " with type " + this.type);
 
 	// if our target was destroyed during preparation, choose a new one
-	if ((this.targetPlayer === undefined || !this.target || !gameState.getEntityById(this.target.id())) && this.type != "Raid" &&
+	if ((this.targetPlayer === undefined || !this.target ||
+		!gameState.getEntityById(this.target.id())) &&
+		this.type != KIARA.AttackTypes.RAID &&
 	    !this.chooseTarget(gameState))
 		return false;
 
 	// erase our queue. This will stop any leftover unit from being trained.
-	gameState.ai.queueManager.removeQueue("plan_" + this.name);
-	gameState.ai.queueManager.removeQueue("plan_" + this.name + "_champ");
-	gameState.ai.queueManager.removeQueue("plan_" + this.name + "_siege");
+	this.removeQueues(gameState);
 
 	for (let ent of this.unitCollection.values())
 	{
 		ent.setMetadata(PlayerID, "subrole", "walking");
-		let stance = m.isSiegeUnit(ent) ? "standground" : "defensive";
+		let stance = ent.isPackable() ? "standground" : KIARA.isSiegeUnit(ent) ? KIARA.Behaviour.AGGRESIVE : "defensive";
 		if (ent.getStance() != stance)
 			ent.setStance(stance);
+		if (KIARA.Logger.isTrace())
+			Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [2, 2, 0] });
 	}
 
 	let rallyAccess = gameState.ai.accessibility.getAccessValue(this.rallyPoint);
-	let targetAccess = m.getLandAccess(gameState, this.target);
+	let targetAccess = KIARA.getLandAccess(gameState, this.target);
 	if (rallyAccess == targetAccess)
 	{
 		if (!this.path)
@@ -1364,10 +1358,9 @@ m.AttackPlan.prototype.StartAttack = function(gameState)
 			return false;
 		this.overseas = 0;
 		this.state = "walking";
-		
 		// put units into formation and move them together
 		this.RecreateGroups(gameState, true);
-		//	this.unitCollection.moveToRange(this.path[0][0], this.path[0][1], 0, 15, true);
+//		this.unitCollection.moveToRange(this.path[0][0], this.path[0][1], 0, 15);
 	}
 	else
 	{
@@ -1385,10 +1378,13 @@ m.AttackPlan.prototype.StartAttack = function(gameState)
 };
 
 /** Runs every turn after the attack is executed */
-m.AttackPlan.prototype.update = function(gameState, events)
+KIARA.AttackPlan.prototype.update = function(gameState, events)
 {
-	if (!this.unitCollection.hasEntities())
+	KIARA.Logger.warn("attackplan update");
+	if (!this.unitCollection.hasEntities()) {
+		KIARA.Logger.warn("attackplan "+ this.type + " " + this.name + " update -> no entities -> abort");
 		return 0;
+	}
 
 	Engine.ProfileStart("Update Attack");
 
@@ -1396,11 +1392,12 @@ m.AttackPlan.prototype.update = function(gameState, events)
 
 	if (this.unitCollection.length < this.nUnits / 2) {
 		Engine.ProfileStop();
+		KIARA.Logger.warn("attackplan " + this.type + " " + this.name + " update -> half of units -> abort");
 		return 0;
+	} else {
+		KIARA.Logger.warn("Attack: " + this.type + "." + this.name + " units = " + this.unitCollection.length + " vs " + (this.nUnits / 2));
 	}
 
-
-//	API3.warn("#units : " + this.unitCollection.length + " >= " + this.nUnits / 2); 
 
 	// we are transporting our units, let's wait
 	// TODO instead of state "arrived", made a state "walking" with a new path
@@ -1409,6 +1406,7 @@ m.AttackPlan.prototype.update = function(gameState, events)
 
 	if (this.state == "walking" && !this.UpdateWalking(gameState, events))
 	{
+		KIARA.Logger.debug("attackplan update" +  " " + this.name + " -> walking && !UpdateWalking -> abort WHAT??");
 		Engine.ProfileStop();
 		return 0;
 	}
@@ -1422,7 +1420,7 @@ m.AttackPlan.prototype.update = function(gameState, events)
 			ent.stopMoving();
 			ent.setMetadata(PlayerID, "subrole", "attacking");
 		});
-		if (this.type == "Rush")   // try to find a better target for rush
+		if (this.type == KIARA.AttackTypes.RUSH)   // try to find a better target for rush
 		{
 			let newtarget = this.getNearestTarget(gameState, this.position);
 			if (newtarget)
@@ -1431,7 +1429,7 @@ m.AttackPlan.prototype.update = function(gameState, events)
 				this.targetPos = this.target.position();
 			}
 		}
-		if (this.type == "EarlyRaid") // try to find better target for early raid
+		if (this.type == KIARA.AttackTypes.EARLY_RAID) // try to find better target for early raid
 		{
 			let newtarget = this.getNearestTarget(gameState, this.position);
 			if (newtarget)
@@ -1448,9 +1446,13 @@ m.AttackPlan.prototype.update = function(gameState, events)
 		// First update the target and/or its position if needed
 		if (!this.UpdateTarget(gameState))
 		{
+			KIARA.Logger.warn("Attack " + this.type + " " + this.name + " target undefined -> abort");
 			Engine.ProfileStop();
 			return false;
 		}
+
+		if (this.target && KIARA.Logger.isTrace())
+			Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [this.target.id()], "rgb": [1, 0, 1] });
 
 		let time = gameState.ai.elapsedTime;
 		let attackedByStructure = {};
@@ -1460,31 +1462,35 @@ m.AttackPlan.prototype.update = function(gameState, events)
 				continue;
 			let attacker = gameState.getEntityById(evt.attacker);
 			let ourUnit = gameState.getEntityById(evt.target);
-			if (!ourUnit || !attacker || !attacker.position())
+			if (!ourUnit || !ourUnit.position() || !attacker || !attacker.position())
 				continue;
 			if (!attacker.hasClass("Unit"))
 			{
 				attackedByStructure[evt.target] = true;
 				continue;
 			}
-			if (m.isSiegeUnit(ourUnit))
+			if (KIARA.isSiegeUnit(ourUnit))
 			{	// if our siege units are attacked, we'll send some units to deal with enemies.
 				let collec = this.unitCollection.filter(API3.Filters.not(API3.Filters.byClass("Siege"))).filterNearest(ourUnit.position(), 5);
 				for (let ent of collec.values())
 				{
-					if (m.isSiegeUnit(ent))	// needed as mauryan elephants are not filtered out
+					if (KIARA.isSiegeUnit(ent))	// needed as mauryan elephants are not filtered out
 						continue;
-					ent.attack(attacker.id(), m.allowCapture(gameState, ent, attacker));
+
+					let allowCapture = KIARA.allowCapture(gameState, ent, attacker);
+					if (!ent.canAttackTarget(attacker, allowCapture))
+						continue;
+					ent.attack(attacker.id(), allowCapture);
 					ent.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 				}
 				// And if this attacker is a non-ranged siege unit and our unit also, attack it
-				if (m.isSiegeUnit(attacker) && attacker.hasClass("Melee") && ourUnit.hasClass("Melee"))
+				if (KIARA.isSiegeUnit(attacker) && attacker.hasClass("Melee") && ourUnit.hasClass("Melee") && ourUnit.canAttackTarget(attacker, KIARA.allowCapture(gameState, ourUnit, attacker)))
 				{
-					ourUnit.attack(attacker.id(), m.allowCapture(gameState, ourUnit, attacker));
+					ourUnit.attack(attacker.id(), KIARA.allowCapture(gameState, ourUnit, attacker));
 					ourUnit.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 				}
 			}
-			else
+			else // we are not siege unit
 			{
 				if (this.isBlocked && !ourUnit.hasClass("Ranged") && attacker.hasClass("Ranged"))
 				{
@@ -1492,22 +1498,26 @@ m.AttackPlan.prototype.update = function(gameState, events)
 					// TODO check that the attacker is from behind the wall
 					continue;
 				}
-				else if (m.isSiegeUnit(attacker))
+				else if (KIARA.isSiegeUnit(attacker))
 				{	// if our unit is attacked by a siege unit, we'll send some melee units to help it.
 					let collec = this.unitCollection.filter(API3.Filters.byClass("Melee")).filterNearest(ourUnit.position(), 5);
 					for (let ent of collec.values())
 					{
-						ent.attack(attacker.id(), m.allowCapture(gameState, ent, attacker));
+						let allowCapture = KIARA.allowCapture(gameState, ent, attacker);
+						if (!ent.canAttackTarget(attacker, allowCapture))
+							continue;
+						ent.attack(attacker.id(), allowCapture);
 						ent.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 					}
 				}
-				else
+				else // Attacker is unit
 				{
 					// Look first for nearby units to help us if possible
 					let collec = this.unitCollection.filterNearest(ourUnit.position(), 2);
 					for (let ent of collec.values())
 					{
-						if (m.isSiegeUnit(ent))
+						let allowCapture = KIARA.allowCapture(gameState, ent, attacker);
+						if (KIARA.isSiegeUnit(ent) || !ent.canAttackTarget(attacker, allowCapture))
 							continue;
 						let orderData = ent.unitAIOrderData();
 						if (orderData && orderData.length && orderData[0].target)
@@ -1518,7 +1528,7 @@ m.AttackPlan.prototype.update = function(gameState, events)
 							if (target && !target.hasClass("Structure") && !target.hasClass("Support"))
 								continue;
 						}
-						ent.attack(attacker.id(), m.allowCapture(gameState, ent, attacker));
+						ent.attack(attacker.id(), allowCapture);
 						ent.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 					}
 					// Then the unit under attack: abandon its target (if it was a structure or a support) and retaliate
@@ -1535,8 +1545,12 @@ m.AttackPlan.prototype.update = function(gameState, events)
 								continue;
 						}
 					}
-					ourUnit.attack(attacker.id(), m.allowCapture(gameState, ourUnit, attacker));
-					ourUnit.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
+					let allowCapture = KIARA.allowCapture(gameState, ourUnit, attacker);
+					if (ourUnit.canAttackTarget(attacker, allowCapture))
+					{
+						ourUnit.attack(attacker.id(), allowCapture);
+						ourUnit.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
+					}
 				}
 			}
 		}
@@ -1548,6 +1562,8 @@ m.AttackPlan.prototype.update = function(gameState, events)
 		let unitTargets = {};
 		for (let ent of this.unitCollection.values())
 		{
+			if (KIARA.Logger.isTrace())
+				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 0] });
 			if (ent.hasClass("Ship"))	// TODO What to do with ships
 				continue;
 			let orderData = ent.unitAIOrderData();
@@ -1559,7 +1575,7 @@ m.AttackPlan.prototype.update = function(gameState, events)
 				continue;
 			if (!(targetId in unitTargets))
 			{
-				if (m.isSiegeUnit(target) || target.hasClass("Hero"))
+				if (KIARA.isSiegeUnit(target) || target.hasClass("Hero"))
 					unitTargets[targetId] = -8;
 				else if (target.hasClass("Champion") || target.hasClass("Ship"))
 					unitTargets[targetId] = -5;
@@ -1575,9 +1591,9 @@ m.AttackPlan.prototype.update = function(gameState, events)
 
 		let targetClassesUnit;
 		let targetClassesSiege;
-		if (this.type == "EarlyRaid")
+		if (this.type == KIARA.AttackTypes.EARLY_RAID)
 			targetClassesUnit = { "attack": ["FemaleCitizen"], "avoid": ["Structure"], "vetoEntities": veto };
-		else if (this.type == "Rush")
+		else if (this.type == KIARA.AttackTypes.RUSH)
 			targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Storehouse", "Farmstead", "Field", "Blacksmith", "Palisade", "StoneWall", "Tower", "Fortress"], "vetoEntities": veto };
 		else
 		{
@@ -1596,8 +1612,8 @@ m.AttackPlan.prototype.update = function(gameState, events)
 		// do not loose time destroying buildings which do not help enemy's defense and can be easily captured later
 		if (this.target.hasDefensiveFire())
 		{
-			targetClassesUnit.avoid = targetClassesUnit.avoid.concat("House", "Storehouse", "Farmstead", "Field", "Blacksmith");
-			targetClassesSiege.avoid = targetClassesSiege.avoid.concat("House", "Storehouse", "Farmstead", "Field", "Blacksmith");
+			targetClassesUnit.avoid = targetClassesUnit.avoid.concat("House", "Storehouse", "Farmstead", "Field", "Forge");
+			targetClassesSiege.avoid = targetClassesSiege.avoid.concat("House", "Storehouse", "Farmstead", "Field", "Forge");
 		}
 
 		if (this.unitCollUpdateArray === undefined || !this.unitCollUpdateArray.length)
@@ -1622,7 +1638,7 @@ m.AttackPlan.prototype.update = function(gameState, events)
 			// update the order if needed
 			let needsUpdate = false;
 			let maybeUpdate = false;
-			let siegeUnit = m.isSiegeUnit(ent);
+			let siegeUnit = KIARA.isSiegeUnit(ent);
 			if (ent.isIdle())
 				needsUpdate = true;
 			else if (siegeUnit && targetId)
@@ -1652,7 +1668,7 @@ m.AttackPlan.prototype.update = function(gameState, events)
 					maybeUpdate = true;
 				else if (attackedByStructure[ent.id()] && target.hasClass("Field"))
 					maybeUpdate = true;
-				else if (!ent.hasClass("Cavalry") && !ent.hasClass("Ranged") &&
+				else if (!ent.hasClass("FastMoving") && !ent.hasClass("Ranged") &&
 					 target.hasClass("FemaleCitizen") && target.unitAIState().split(".")[1] == "FLEEING")
 					maybeUpdate = true;
 			}
@@ -1681,21 +1697,21 @@ m.AttackPlan.prototype.update = function(gameState, events)
 			}
 			else if (attackTypes && attackTypes.indexOf("Ranged") !== -1)
 				range = 30 + ent.attackRange("Ranged").max;
-			else if (ent.hasClass("Cavalry"))
+			else if (ent.hasClass("FastMoving"))
 				range += 30;
-			range = range * range;
-			let entAccess = m.getLandAccess(gameState, ent);
+			range *= range;
+			let entAccess = KIARA.getLandAccess(gameState, ent);
 			// Checking for gates if we're a siege unit.
 			if (siegeUnit)
 			{
 				let mStruct = enemyStructures.filter(enemy => {
-					if (!enemy.position() || enemy.hasClass("StoneWall") && !ent.canAttackClass("StoneWall"))
+					if (!enemy.position() || !ent.canAttackTarget(enemy, KIARA.allowCapture(gameState, ent, enemy)))
 						return false;
 					if (API3.SquareVectorDistance(enemy.position(), ent.position()) > range)
 						return false;
 					if (enemy.foundationProgress() == 0)
 						return false;
-					if (m.getLandAccess(gameState, enemy) != entAccess)
+					if (KIARA.getLandAccess(gameState, enemy) != entAccess)
 						return false;
 					return true;
 				}).toEntityArray();
@@ -1703,14 +1719,14 @@ m.AttackPlan.prototype.update = function(gameState, events)
 				{
 					mStruct.sort((structa, structb) => {
 						let vala = structa.costSum();
-						if (structa.hasClass("Gates") && ent.canAttackClass("StoneWall"))
+						if (structa.hasClass("Gate") && ent.canAttackClass("Wall"))
 							vala += 10000;
 						else if (structa.hasDefensiveFire())
 							vala += 1000;
 						else if (structa.hasClass("ConquestCritical"))
 							vala += 200;
 						let valb = structb.costSum();
-						if (structb.hasClass("Gates") && ent.canAttackClass("StoneWall"))
+						if (structb.hasClass("Gate") && ent.canAttackClass("Wall"))
 							valb += 10000;
 						else if (structb.hasDefensiveFire())
 							valb += 1000;
@@ -1718,12 +1734,12 @@ m.AttackPlan.prototype.update = function(gameState, events)
 							valb += 200;
 						return valb - vala;
 					});
-					if (mStruct[0].hasClass("Gates"))
-						ent.attack(mStruct[0].id(), m.allowCapture(gameState, ent, mStruct[0]));
+					if (mStruct[0].hasClass("Gate"))
+						ent.attack(mStruct[0].id(), KIARA.allowCapture(gameState, ent, mStruct[0]));
 					else
 					{
 						let rand = randIntExclusive(0, mStruct.length * 0.2);
-						ent.attack(mStruct[rand].id(), m.allowCapture(gameState, ent, mStruct[rand]));
+						ent.attack(mStruct[rand].id(), KIARA.allowCapture(gameState, ent, mStruct[rand]));
 					}
 				}
 				else
@@ -1739,20 +1755,18 @@ m.AttackPlan.prototype.update = function(gameState, events)
 			}
 			else
 			{
-				let nearby = !ent.hasClass("Cavalry") && !ent.hasClass("Ranged");
+				let nearby = !ent.hasClass("FastMoving") && !ent.hasClass("Ranged");
 				let mUnit = enemyUnits.filter(enemy => {
-					if (!enemy.position())
+					if (!enemy.position() || !ent.canAttackTarget(enemy, KIARA.allowCapture(gameState, ent, enemy)))
 						return false;
 					if (enemy.hasClass("Animal"))
-						return false;
-					if (enemy.unitAIState().split(".")[1] == "FLEEING")
 						return false;
 					if (nearby && enemy.hasClass("FemaleCitizen") && enemy.unitAIState().split(".")[1] == "FLEEING")
 						return false;
 					let dist = API3.SquareVectorDistance(enemy.position(), ent.position());
 					if (dist > range)
 						return false;
-					if (m.getLandAccess(gameState, enemy) != entAccess)
+					if (KIARA.getLandAccess(gameState, enemy) != entAccess)
 						return false;
 					// if already too much units targeting this enemy, let's continue towards our main target
 					if (veto[enemy.id()] && API3.SquareVectorDistance(this.targetPos, ent.position()) > 2500)
@@ -1783,9 +1797,11 @@ m.AttackPlan.prototype.update = function(gameState, events)
 						return valb - vala;
 					});
 					let rand = 0;
-					ent.attack(mUnit[rand].id(), m.allowCapture(gameState, ent, mUnit[rand]));
+					ent.attack(mUnit[rand].id(), KIARA.allowCapture(gameState, ent, mUnit[rand]));
 				}
-				else if (this.isBlocked)
+				// This may prove dangerous as we may be blocked by something we
+				// cannot attack. See similar behaviour at #5741.
+				else if (this.isBlocked && ent.canAttackTarget(this.target, false))
 					ent.attack(this.target.id(), false);
 				else if (API3.SquareVectorDistance(this.targetPos, ent.position()) > 2500)
 				{
@@ -1806,11 +1822,11 @@ m.AttackPlan.prototype.update = function(gameState, events)
 					let mStruct = enemyStructures.filter(enemy => {
 						if (this.isBlocked && enemy.id() != this.target.id())
 							return false;
-						if (!enemy.position() || enemy.hasClass("StoneWall") && !ent.canAttackClass("StoneWall"))
+						if (!enemy.position() || !ent.canAttackTarget(enemy, KIARA.allowCapture(gameState, ent, enemy)))
 							return false;
 						if (API3.SquareVectorDistance(enemy.position(), ent.position()) > range)
 							return false;
-						if (m.getLandAccess(gameState, enemy) != entAccess)
+						if (KIARA.getLandAccess(gameState, enemy) != entAccess)
 							return false;
 						return true;
 					}, this).toEntityArray();
@@ -1818,23 +1834,23 @@ m.AttackPlan.prototype.update = function(gameState, events)
 					{
 						mStruct.sort((structa, structb) => {
 							let vala = structa.costSum();
-							if (structa.hasClass("Gates") && ent.canAttackClass("StoneWall"))
+							if (structa.hasClass("Gate") && ent.canAttackClass("Wall"))
 								vala += 10000;
 							else if (structa.hasClass("ConquestCritical"))
 								vala += 100;
 							let valb = structb.costSum();
-							if (structb.hasClass("Gates") && ent.canAttackClass("StoneWall"))
+							if (structb.hasClass("Gate") && ent.canAttackClass("Wall"))
 								valb += 10000;
 							else if (structb.hasClass("ConquestCritical"))
 								valb += 100;
 							return valb - vala;
 						});
-						if (mStruct[0].hasClass("Gates"))
+						if (mStruct[0].hasClass("Gate"))
 							ent.attack(mStruct[0].id(), false);
 						else
 						{
 							let rand = randIntExclusive(0, mStruct.length * 0.2);
-							ent.attack(mStruct[rand].id(), m.allowCapture(gameState, ent, mStruct[rand]));
+							ent.attack(mStruct[rand].id(), KIARA.allowCapture(gameState, ent, mStruct[rand]));
 						}
 					}
 					else if (needsUpdate)  // really nothing   let's try to help our nearest unit
@@ -1847,16 +1863,19 @@ m.AttackPlan.prototype.update = function(gameState, events)
 							if (unit.unitAIState().split(".")[1] != "COMBAT" || !unit.unitAIOrderData().length ||
 								!unit.unitAIOrderData()[0].target)
 								return;
-							if (!gameState.getEntityById(unit.unitAIOrderData()[0].target))
+							let target = gameState.getEntityById(unit.unitAIOrderData()[0].target);
+							if (!target)
 								return;
 							let dist = API3.SquareVectorDistance(unit.position(), ent.position());
 							if (dist > distmin)
 								return;
 							distmin = dist;
-							attacker = gameState.getEntityById(unit.unitAIOrderData()[0].target);
+							if (!ent.canAttackTarget(target, KIARA.allowCapture(gameState, ent, target)))
+								return;
+							attacker = target;
 						});
 						if (attacker)
-							ent.attack(attacker.id(), m.allowCapture(gameState, ent, attacker));
+							ent.attack(attacker.id(), KIARA.allowCapture(gameState, ent, attacker));
 					}
 				}
 			}
@@ -1871,17 +1890,18 @@ m.AttackPlan.prototype.update = function(gameState, events)
 	this.lastPosition = this.position;
 	Engine.ProfileStop();
 
+	KIARA.Logger.warn("Attack: " + this.type + " " + this.name + ": status " + this.state + ", target = " + this.target);
 	return this.unitCollection.length;
 };
 
-m.AttackPlan.prototype.UpdateTransporting = function(gameState, events)
+KIARA.AttackPlan.prototype.UpdateTransporting = function(gameState, events)
 {
 	let done = true;
 	for (let ent of this.unitCollection.values())
 	{
-		if (this.Config.debug > 1 && ent.getMetadata(PlayerID, "transport") !== undefined)
+		if (KIARA.Logger.isTrace() && ent.getMetadata(PlayerID, "transport") !== undefined)
 			Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [2, 2, 0] });
-		else if (this.Config.debug > 1)
+		else if (KIARA.Logger.isTrace())
 			Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 1] });
 		if (!done)
 			continue;
@@ -1907,15 +1927,17 @@ m.AttackPlan.prototype.UpdateTransporting = function(gameState, events)
 		{
 			if (ent.getMetadata(PlayerID, "transport") !== undefined)
 				continue;
-			if (!ent.isIdle())
+
+			let allowCapture = KIARA.allowCapture(gameState, ent, attacker);
+			if (!ent.isIdle() || !ent.canAttackTarget(attacker, allowCapture))
 				continue;
-			ent.attack(attacker.id(), m.allowCapture(gameState, ent, attacker));
+			ent.attack(attacker.id(), allowCapture);
 		}
 		break;
 	}
 };
 
-m.AttackPlan.prototype.UpdateWalking = function(gameState, events)
+KIARA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 {
 	// we're marching towards the target
 	// Let's check if any of our unit has been attacked.
@@ -1932,9 +1954,8 @@ m.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 		if (attacker && (attacker.owner() !== 0 || this.targetPlayer === 0))
 		{
 			attackedNB++;
-			if (attacker.hasClass("Unit")) {
+			if (attacker.hasClass("Unit"))
 				attackedUnitNB++;
-			}
 		}
 	}
 	// Are we arrived at destination ?
@@ -1970,36 +1991,35 @@ m.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 	if (this.lastPosition && API3.SquareVectorDistance(this.position, this.lastPosition) < 16 && this.path.length > 0)
 	{
 		if (!this.path[0][0] || !this.path[0][1])
-			API3.warn("Start: Problem with path " + uneval(this.path));
+			KIARA.Logger.error("Start: Problem with path " + uneval(this.path));
 		// We're stuck, presumably. Check if there are no walls just close to us.
-		for (let ent of gameState.getEnemyStructures().filter(API3.Filters.byClass(["Palisade", "StoneWall"])).values())
+		for (let ent of gameState.getEnemyStructures().filter(API3.Filters.byClass(["Palisade", "Wall"])).values())
 		{
 			if (API3.SquareVectorDistance(this.position, ent.position()) > 800)
 				continue;
-			let enemyClass = ent.hasClass("StoneWall") ? "StoneWall" : "Palisade";
+			let enemyClass = ent.hasClass("Wall") ? "Wall" : "Palisade";
 			// there are walls, so check if we can attack
 			if (this.unitCollection.filter(API3.Filters.byCanAttackClass(enemyClass)).hasEntities())
 			{
-				if (this.Config.debug > 1)
-					API3.warn("Attack Plan " + this.type + " " + this.name + " has met walls and is not happy.");
+				KIARA.Logger.debug("Attack Plan " + this.type + " " + this.name + " has met walls and is not happy.");
 				this.state = "arrived";
 				return true;
 			}
 			// abort plan
-			if (this.Config.debug > 1)
-				API3.warn("Attack Plan " + this.type + " " + this.name + " has met walls and gives up.");
+			KIARA.Logger.debug("Attack Plan " + this.type + " " + this.name + " has met walls and gives up.");
 			return false;
 		}
 		for (let group of this.formationList) {
 			group.move(this.path[0][0], this.path[0][1]);
 		}
+		// this.unitCollection.move(this.path[0][0], this.path[0][1]);
+		//this.unitCollection.moveIndiv(this.path[0][0], this.path[0][1]);
 	}
 
 	// check if our units are close enough from the next waypoint.
 	if (API3.SquareVectorDistance(this.position, this.targetPos) < 10000)
 	{
-		if (this.Config.debug > 1)
-			API3.warn("Attack Plan " + this.type + " " + this.name + " has arrived to destination.");
+		KIARA.Logger.debug("Attack Plan " + this.type + " " + this.name + " has arrived to destination.");
 		this.state = "arrived";
 		return true;
 	}
@@ -2012,8 +2032,7 @@ m.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 		}
 		else
 		{
-			if (this.Config.debug > 1)
-				API3.warn("Attack Plan " + this.type + " " + this.name + " has arrived to destination.");
+			KIARA.Logger.debug("Attack Plan " + this.type + " " + this.name + " has arrived to destination.");
 			if (this.target) {
 				for (let group of this.formationList)
 					group.attack(this.target);
@@ -2022,10 +2041,11 @@ m.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 			return true;
 		}
 	}
+
 	return true;
 };
 
-m.AttackPlan.prototype.UpdateTarget = function(gameState)
+KIARA.AttackPlan.prototype.UpdateTarget = function(gameState)
 {
 	// First update the target position in case it's a unit (and check if it has garrisoned)
 	if (this.target && this.target.hasClass("Unit"))
@@ -2033,7 +2053,7 @@ m.AttackPlan.prototype.UpdateTarget = function(gameState)
 		this.targetPos = this.target.position();
 		if (!this.targetPos)
 		{
-			let holder = m.getHolder(gameState, this.target);
+			let holder = KIARA.getHolder(gameState, this.target);
 			if (holder && gameState.isPlayerEnemy(holder.owner()))
 			{
 				this.target = holder;
@@ -2058,8 +2078,7 @@ m.AttackPlan.prototype.UpdateTarget = function(gameState)
 
 	if (!this.target || !gameState.getEntityById(this.target.id()))
 	{
-		if (this.Config.debug > 1)
-			API3.warn("Kiara: Seems like our target for plan " + this.name + " has been destroyed or captured. Switching.");
+		KIARA.Logger.debug("Seems like our target for plan " + this.name + " has been destroyed or captured. Switching.");
 		let accessIndex = this.getAttackAccess(gameState);
 		this.target = this.getNearestTarget(gameState, this.position, accessIndex);
 		if (!this.target)
@@ -2078,7 +2097,7 @@ m.AttackPlan.prototype.UpdateTarget = function(gameState)
 					if (!attack.target || !gameState.getEntityById(attack.target.id()) ||
 					    !gameState.isPlayerEnemy(attack.target.owner()))
 						continue;
-					if (accessIndex != m.getLandAccess(gameState, attack.target))
+					if (accessIndex != KIARA.getLandAccess(gameState, attack.target))
 						continue;
 					if (attack.target.owner() == 0 && attack.targetPlayer != 0)	// looks like it has resigned
 						continue;
@@ -2099,13 +2118,11 @@ m.AttackPlan.prototype.UpdateTarget = function(gameState)
 					this.target = this.getNearestTarget(gameState, this.position, accessIndex);
 				if (!this.target)
 				{
-					if (this.Config.debug > 1)
-						API3.warn("No new target found. Remaining units " + this.unitCollection.length);
+					KIARA.Logger.debug("No new target found. Remaining units " + this.unitCollection.length);
 					return false;
 				}
 			}
-			if (this.Config.debug > 1)
-				API3.warn("We will help one of our other attacks");
+			KIARA.Logger.debug("We will help one of our other attacks");
 		}
 		this.targetPos = this.target.position();
 		if (this.target) {
@@ -2116,7 +2133,7 @@ m.AttackPlan.prototype.UpdateTarget = function(gameState)
 	return true;
 };
 
-m.AttackPlan.prototype.RecreateGroups = function(gameState, moveThem = false)
+KIARA.AttackPlan.prototype.RecreateGroups = function(gameState, moveThem = false)
 {
 	if (this.formationList.length)
 		return;
@@ -2140,27 +2157,27 @@ m.AttackPlan.prototype.RecreateGroups = function(gameState, moveThem = false)
 		else
 			group.form("special/formations/line_closed");
 		if (moveThem)
-			group.moveToRange(this.path[0][0], this.path[0][1], 0, 15, true);
+			group.moveToRange(this.path[0][0], this.path[0][1], 0, 20, true);
 	}
-}
+};
 
-m.AttackPlan.prototype.Regroup = function(gameState)
+KIARA.AttackPlan.prototype.Regroup = function(gameState)
 {
 	for (let group of this.formationList)
 		group.regroup();
-}
+};
 
-m.AttackPlan.prototype.RegroupAndAttack = function(gameState)
+KIARA.AttackPlan.prototype.RegroupAndAttack = function(gameState)
 {
 	for (let group of this.formationList) {
 		group.regroup();
 		group.attack(this.target, true);
 	}
-}
+};
 /** reset any units */
-m.AttackPlan.prototype.Abort = function(gameState)
+KIARA.AttackPlan.prototype.Abort = function(gameState)
 {
-	API3.warn("Kiara AttackPlan.Abort " + this.getType());
+	KIARA.Logger.warn("aborting " + this.type);
 	this.unitCollection.unregister();
 	if (this.unitCollection.hasEntities())
 	{
@@ -2180,7 +2197,7 @@ m.AttackPlan.prototype.Abort = function(gameState)
 			{
 				if (!base.anchor || !base.anchor.position())
 					continue;
-				if (m.getLandAccess(gameState, base.anchor) != access)
+				if (KIARA.getLandAccess(gameState, base.anchor) != access)
 					continue;
 				let newdist = API3.SquareVectorDistance(this.position, base.anchor.position());
 				if (newdist > dist)
@@ -2196,6 +2213,8 @@ m.AttackPlan.prototype.Abort = function(gameState)
 				ent.stopMoving();
 			if (rallyPoint)
 				ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 15);
+			if (KIARA.Logger.isTrace())
+				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 1] });
 			this.removeUnit(ent);
 		}
 	}
@@ -2203,12 +2222,10 @@ m.AttackPlan.prototype.Abort = function(gameState)
 	for (let unitCat in this.unitStat)
 		this.unit[unitCat].unregister();
 
-	gameState.ai.queueManager.removeQueue("plan_" + this.name);
-	gameState.ai.queueManager.removeQueue("plan_" + this.name + "_champ");
-	gameState.ai.queueManager.removeQueue("plan_" + this.name + "_siege");
+	this.removeQueues(gameState);
 };
 
-m.AttackPlan.prototype.removeUnit = function(ent, update)
+KIARA.AttackPlan.prototype.removeUnit = function(ent, update)
 {
 	if (ent.getMetadata(PlayerID, "role") == "attack")
 	{
@@ -2223,15 +2240,15 @@ m.AttackPlan.prototype.removeUnit = function(ent, update)
 		this.unitCollection.updateEnt(ent);
 };
 
-m.AttackPlan.prototype.checkEvents = function(gameState, events)
+KIARA.AttackPlan.prototype.checkEvents = function(gameState, events)
 {
 	for (let evt of events.EntityRenamed)
 	{
 		if (!this.target || this.target.id() != evt.entity)
 			continue;
-		if (this.type == "Raid" && !this.isStarted())
+		if (this.type == KIARA.AttackTypes.RAID && !this.isStarted())
 			this.target = undefined;
-		else if (this.type == "EarlyRaid" && !this.isStarted())
+		else if (this.type == KIARA.AttackTypes.EARLY_RAID && !this.isStarted())
 			this.target = undefined;
 		else
 			this.target = gameState.getEntityById(evt.newentity);
@@ -2261,7 +2278,7 @@ m.AttackPlan.prototype.checkEvents = function(gameState, events)
 			continue;
 		if (!gameState.isPlayerEnemy(ent.owner()))
 			continue;
-		let access = m.getLandAccess(gameState, ent);
+		let access = KIARA.getLandAccess(gameState, ent);
 		for (let base of gameState.ai.HQ.baseManagers)
 		{
 			if (!base.anchor || !base.anchor.position())
@@ -2274,7 +2291,7 @@ m.AttackPlan.prototype.checkEvents = function(gameState, events)
 	}
 };
 
-m.AttackPlan.prototype.waitingForTransport = function()
+KIARA.AttackPlan.prototype.waitingForTransport = function()
 {
 	for (let ent of this.unitCollection.values())
 		if (ent.getMetadata(PlayerID, "transport") !== undefined)
@@ -2282,15 +2299,15 @@ m.AttackPlan.prototype.waitingForTransport = function()
 	return false;
 };
 
-m.AttackPlan.prototype.hasSiegeUnits = function()
+KIARA.AttackPlan.prototype.hasSiegeUnits = function()
 {
 	for (let ent of this.unitCollection.values())
-		if (m.isSiegeUnit(ent))
+		if (KIARA.isSiegeUnit(ent))
 			return true;
 	return false;
 };
 
-m.AttackPlan.prototype.hasForceOrder = function(data, value)
+KIARA.AttackPlan.prototype.hasForceOrder = function(data, value)
 {
 	for (let ent of this.unitCollection.values())
 	{
@@ -2308,26 +2325,26 @@ m.AttackPlan.prototype.hasForceOrder = function(data, value)
  * The center position of this attack may be in an inaccessible area. So we use the access
  * of the unit nearest to this center position.
  */
-m.AttackPlan.prototype.getAttackAccess = function(gameState)
+KIARA.AttackPlan.prototype.getAttackAccess = function(gameState)
 {
 	for (let ent of this.unitCollection.filterNearest(this.position, 1).values())
-		return m.getLandAccess(gameState, ent);
+		return KIARA.getLandAccess(gameState, ent);
 
 	return 0;
 };
 
-m.AttackPlan.prototype.debugAttack = function()
+KIARA.AttackPlan.prototype.debugAttack = function()
 {
-	API3.warn("---------- attack " + this.name);
+	KIARA.Logger.trace("---------- attack " + this.name);
 	for (let unitCat in this.unitStat)
 	{
 		let Unit = this.unitStat[unitCat];
-		API3.warn(unitCat + " num=" + this.unit[unitCat].length + " min=" + Unit.minSize + " need=" + Unit.targetSize);
+		KIARA.Logger.trace(unitCat + " num=" + this.unit[unitCat].length + " min=" + Unit.minSize + " need=" + Unit.targetSize);
 	}
-	API3.warn("------------------------------");
+	KIARA.Logger.trace("------------------------------");
 };
 
-m.AttackPlan.prototype.Serialize = function()
+KIARA.AttackPlan.prototype.Serialize = function()
 {
 	let properties = {
 		"name": this.name,
@@ -2356,7 +2373,7 @@ m.AttackPlan.prototype.Serialize = function()
 	return { "properties": properties };
 };
 
-m.AttackPlan.prototype.Deserialize = function(gameState, data)
+KIARA.AttackPlan.prototype.Deserialize = function(gameState, data)
 {
 	for (let key in data.properties)
 		this[key] = data.properties[key];
@@ -2366,6 +2383,3 @@ m.AttackPlan.prototype.Deserialize = function(gameState, data)
 
 	this.failed = undefined;
 };
-
-return m;
-}(KIARA);

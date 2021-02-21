@@ -1,13 +1,10 @@
-var KIARA = function(m)
-{
-
 /**
  * One task of this manager is to cache the list of structures we have builders for,
  * to avoid having to loop on all entities each time.
  * It also takes care of the structures we can't currently build and should not try to build endlessly.
  */
 
-m.BuildManager = function()
+KIARA.BuildManager = function()
 {
 	// List of buildings we have builders for, with number of possible builders.
 	this.builderCounters = new Map();
@@ -17,14 +14,14 @@ m.BuildManager = function()
 };
 
 /** Initialization at start of game */
-m.BuildManager.prototype.init = function(gameState)
+KIARA.BuildManager.prototype.init = function(gameState)
 {
 	let civ = gameState.getPlayerCiv();
 	for (let ent of gameState.getOwnUnits().values())
 		this.incrementBuilderCounters(civ, ent, 1);
 };
 
-m.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment)
+KIARA.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment)
 {
 	for (let buildable of ent.buildableEntities(civ))
 	{
@@ -33,7 +30,7 @@ m.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment
 			let count = this.builderCounters.get(buildable) + increment;
 			if (count < 0)
 			{
-				API3.warn(" Kiara error in incrementBuilderCounters for " + buildable + " with count < 0");
+				KIARA.Logger.error(" Kiara error in incrementBuilderCounters for " + buildable + " with count < 0");
 				continue;
 			}
 			this.builderCounters.set(buildable, count);
@@ -41,12 +38,12 @@ m.BuildManager.prototype.incrementBuilderCounters = function(civ, ent, increment
 		else if (increment > 0)
 			this.builderCounters.set(buildable, increment);
 		else
-			API3.warn(" Kiara error in incrementBuilderCounters for " + buildable + " not yet set");
+			KIARA.Logger.error(" Kiara error in incrementBuilderCounters for " + buildable + " not yet set");
 	}
 };
 
 /** Update the builders counters */
-m.BuildManager.prototype.checkEvents = function(gameState, events)
+KIARA.BuildManager.prototype.checkEvents = function(gameState, events)
 {
 	this.elapsedTime = gameState.ai.elapsedTime;
 	let civ = gameState.getPlayerCiv();
@@ -82,6 +79,21 @@ m.BuildManager.prototype.checkEvents = function(gameState, events)
 		if (ent && ent.hasClass("Unit"))
 			this.incrementBuilderCounters(civ, ent, increment);
 	}
+
+	for (let evt of events.ValueModification)
+	{
+		if (evt.component != "Builder" ||
+		        !evt.valueNames.some(val => val.startsWith("Builder/Entities/")))
+			continue;
+
+		// Unfortunately there really is not an easy way to determine the changes
+		// at this stage, so we simply have to dump the cache.
+		this.builderCounters = new Map();
+
+		let civ = gameState.getPlayerCiv();
+		for (let ent of gameState.getOwnUnits().values())
+			this.incrementBuilderCounters(civ, ent, 1);
+	}
 };
 
 
@@ -89,7 +101,7 @@ m.BuildManager.prototype.checkEvents = function(gameState, events)
  * Get the first buildable structure with a given class
  * TODO when several available, choose the best one
  */
-m.BuildManager.prototype.findStructureWithClass = function(gameState, classes)
+KIARA.BuildManager.prototype.findStructureWithClass = function(gameState, classes)
 {
 	for (let [templateName, count] of this.builderCounters)
 	{
@@ -104,25 +116,25 @@ m.BuildManager.prototype.findStructureWithClass = function(gameState, classes)
 	return undefined;
 };
 
-m.BuildManager.prototype.hasBuilder = function(template)
+KIARA.BuildManager.prototype.hasBuilder = function(template)
 {
 	let numBuilders = this.builderCounters.get(template);
 	return numBuilders && numBuilders > 0;
 };
 
-m.BuildManager.prototype.isUnbuildable = function(gameState, template)
+KIARA.BuildManager.prototype.isUnbuildable = function(gameState, template)
 {
 	return this.unbuildables.has(template) && this.unbuildables.get(template).time > gameState.ai.elapsedTime;
 };
 
-m.BuildManager.prototype.setBuildable = function(template)
+KIARA.BuildManager.prototype.setBuildable = function(template)
 {
 	if (this.unbuildables.has(template))
 		this.unbuildables.delete(template);
 };
 
 /** Time is the duration in second that we will wait before checking again if it is buildable */
-m.BuildManager.prototype.setUnbuildable = function(gameState, template, time = 90, reason = "room")
+KIARA.BuildManager.prototype.setUnbuildable = function(gameState, template, time = 90, reason = "room")
 {
 	if (!this.unbuildables.has(template))
 		this.unbuildables.set(template, { "reason": reason, "time": gameState.ai.elapsedTime + time });
@@ -138,7 +150,7 @@ m.BuildManager.prototype.setUnbuildable = function(gameState, template, time = 9
 };
 
 /** Return the number of unbuildables due to missing room */
-m.BuildManager.prototype.numberMissingRoom = function(gameState)
+KIARA.BuildManager.prototype.numberMissingRoom = function(gameState)
 {
 	let num = 0;
 	for (let unbuildable of this.unbuildables.values())
@@ -148,14 +160,14 @@ m.BuildManager.prototype.numberMissingRoom = function(gameState)
 };
 
 /** Reset the unbuildables due to missing room */
-m.BuildManager.prototype.resetMissingRoom = function(gameState)
+KIARA.BuildManager.prototype.resetMissingRoom = function(gameState)
 {
 	for (let [key, unbuildable] of this.unbuildables)
 		if (unbuildable.reason == "room")
 			this.unbuildables.delete(key);
 };
 
-m.BuildManager.prototype.Serialize = function()
+KIARA.BuildManager.prototype.Serialize = function()
 {
 	return {
 		"builderCounters": this.builderCounters,
@@ -163,11 +175,8 @@ m.BuildManager.prototype.Serialize = function()
 	};
 };
 
-m.BuildManager.prototype.Deserialize = function(data)
+KIARA.BuildManager.prototype.Deserialize = function(data)
 {
 	for (let key in data)
 		this[key] = data[key];
 };
-
-return m;
-}(KIARA);

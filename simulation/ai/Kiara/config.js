@@ -1,21 +1,13 @@
-var KIARA = function(m)
+KIARA.Config = function(difficulty, behavior)
 {
+	this.difficulty = difficulty !== undefined ? difficulty : KIARA.Difficulty.DEFAULT;
 
-m.Config = function(difficulty, behavior)
-{
-	// 0 is sandbox, 1 is very easy, 2 is easy, 3 is medium, 4 is hard and 5 is very hard.
-	this.difficulty = difficulty !== undefined ? difficulty : 3;
-
-	// for instance "balanced", "aggressive" or "defensive"
-	this.behavior = behavior || "random";
-
-	// debug level: 0=none, 1=sanity checks, 2=debug, 3=detailed debug, -100=serializatio debug
-	this.debug = 0;
+	this.behavior = behavior || KIARA.Behaviour.DEFAULT;
 
 	this.chat = true;	// false to prevent AI's chats
 
 	this.popScaling = 1;	// scale factor depending on the max population
-	
+
 	this.Military = {
 		"towerLapseTime": 5,	// Time to wait between building 2 towers
 		"fortressLapseTime": 100,	// Time to wait between building 2 fortresses
@@ -25,6 +17,14 @@ m.Config = function(difficulty, behavior)
 		"numSentryTowers": 3,
 		"numFortresses": 2,
 	};
+
+	this.DamageTypeImportance = {
+		"Hack": 0.075,
+		"Pierce": 0.065,
+		"Crush": 0.085,
+		"Fire": 0.095
+	};
+
 	this.Economy = {
 		"popPhase2": 80,	// How many units we want before aging to phase2.
 		"workPhase3": 150,	// How many workers we want before aging to phase3.
@@ -34,8 +34,8 @@ m.Config = function(difficulty, behavior)
 		"targetNumTraders": 5,	// Target number of traders
 		"targetNumFishers": 2,	// Target number of fishers per sea
 		"supportRatio": 0.35,	// fraction of support workers among the workforce
-		"provisionFields": 8	
-		};
+		"provisionFields": 8
+	};
 
 	// Note: attack settings are set directly in attack_plan.js
 	// defense
@@ -47,32 +47,65 @@ m.Config = function(difficulty, behavior)
 		"armyMergeSize": 1400	// squared.
 	};
 
-	// Additional buildings that the AI does not yet know when to build 
+	// Additional buildings that the AI does not yet know when to build
 	// and that it will try to build on phase 3 when enough resources.
 	this.buildings =
 	{
 		"default": [],
-		"athen": ["structures/{civ}_gymnasion", "structures/{civ}_prytaneion", "structures/{civ}_royal_stoa"],
-		"brit": ["structures/{civ}_rotarymill"],
-		"cart": ["structures/{civ}_embassy_celtic", "structures/{civ}_embassy_iberian",
-			 "structures/{civ}_embassy_italiote"],
-		"gaul": ["structures/{civ}_rotarymill", "structures/{civ}_tavern"],
-		"iber": ["structures/{civ}_monument"],
-		"kush": ["structures/{civ}_nuba_village"],
-		"mace": ["structures/{civ}_library"],
-		"maur": ["structures/{civ}_pillar_ashoka"],
-		"pers": [],
-		"ptol": ["structures/{civ}_library"],
-		"rome": ["structures/{civ}_army_camp"],
-		"sele": ["structures/{civ}_library"],
-		"spart": ["structures/{civ}_royal_stoa"]
+		"athen": [
+			"structures/{civ}/gymnasium",
+			"structures/{civ}/prytaneion",
+			"structures/{civ}/theater"
+		],
+		"brit": [],
+		"cart": [
+			"structures/{civ}/embassy_celtic",
+			"structures/{civ}/embassy_iberian",
+			"structures/{civ}/embassy_italic"
+		],
+		"gaul": [
+			"structures/{civ}/assembly"
+		],
+		"iber": [
+			"structures/{civ}/monument"
+		],
+		"kush": [
+			"structures/{civ}/camp_blemmye",
+			"structures/{civ}/camp_noba",
+			"structures/{civ}/pyramid_large",
+			"structures/{civ}/pyramid_small",
+			"structures/{civ}/temple_amun"
+		],
+		"mace": [
+			"structures/{civ}/theater"
+		],
+		"maur": [
+			"structures/{civ}/palace",
+			"structures/{civ}/pillar_ashoka"
+		],
+		"pers": [
+			"structures/{civ}/apadana"
+		],
+		"ptol": [
+			"structures/{civ}/library",
+			"structures/{civ}/theater"
+		],
+		"rome": [
+			"structures/{civ}/army_camp",
+			"structures/{civ}/temple_vesta"
+		],
+		"sele": [
+			"structures/{civ}/theater"
+		],
+		"spart": [
+			"structures/{civ}/syssiton",
+			"structures/{civ}/theater"
+		]
 	};
 
 	this.priorities =
 	{
-	//	"villager": 30,      // should be slightly lower than the citizen soldier one to not get all the food
 		"villager": 250,      // should be slightly lower than the citizen soldier one to not get all the food
-	//	"citizenSoldier": 60,
 		"citizenSoldier": 300,
 		"trader": 50,
 		"healer": 20,
@@ -100,7 +133,7 @@ m.Config = function(difficulty, behavior)
 		"defensive": 0.5
 	};
 
-	// See m.QueueManager.prototype.wantedGatherRates()
+	// See KIARA.QueueManager.prototype.wantedGatherRates()
 	this.queues =
 	{
 		"firstTurn": {
@@ -126,9 +159,9 @@ m.Config = function(difficulty, behavior)
 	this.garrisonHealthLevel = { "low": 0.4, "medium": 0.55, "high": 0.7 };
 };
 
-m.Config.prototype.setConfig = function(gameState)
+KIARA.Config.prototype.setConfig = function(gameState)
 {
-	if (this.difficulty > 0)
+	if (this.difficulty > KIARA.Difficulty.SANDBOX)
 	{
 		// Setup personality traits according to the user choice:
 		// The parameter used to define the personality is basically the aggressivity or (1-defensiveness)
@@ -149,7 +182,7 @@ m.Config.prototype.setConfig = function(gameState)
 			this.priorities.villager = 30;
 			this.priorities.citizenSoldier = 60;
 		}
-		API3.warn(uneval(this.priorities));
+	//	KIARA.Logger.debug(uneval(this.priorities));
 		let min = personalityList[this.behavior].min;
 		let max = personalityList[this.behavior].max;
 		this.personality = {
@@ -186,22 +219,22 @@ m.Config.prototype.setConfig = function(gameState)
 		this.popScaling = Math.sqrt(maxPop / 300);
 		this.Military.popForBarracks1 = Math.min(Math.max(Math.floor(this.Military.popForBarracks1 * this.popScaling), 15), Math.floor(maxPop*2/3));
 		this.Military.popForBarracks2 = Math.min(Math.max(Math.floor(this.Military.popForBarracks2 * this.popScaling), 45), Math.floor(maxPop*2/3));
-		this.Military.popForBlacksmith = Math.min(Math.max(Math.floor(this.Military.popForBlacksmith * this.popScaling), 30), Math.floor(maxPop/2));
-	//	this.Economy.popPhase2 = Math.min(Math.max(Math.floor(this.Economy.popPhase2 * this.popScaling), 25), Math.floor(maxPop/2));
-	//	this.Economy.workPhase3 = Math.min(Math.max(Math.floor(this.Economy.workPhase3 * this.popScaling), 40), Math.floor(maxPop*2/3));
+		this.Military.popForForge = Math.min(Math.max(Math.floor(this.Military.popForForge * this.popScaling), 30), Math.floor(maxPop/2));
+//		this.Economy.popPhase2 = Math.min(Math.max(Math.floor(this.Economy.popPhase2 * this.popScaling), 20), Math.floor(maxPop/2));
+//		this.Economy.workPhase3 = Math.min(Math.max(Math.floor(this.Economy.workPhase3 * this.popScaling), 40), Math.floor(maxPop*2/3));
 		this.Economy.workPhase4 = Math.min(Math.max(Math.floor(this.Economy.workPhase4 * this.popScaling), 45), Math.floor(maxPop*2/3));
 		this.Economy.targetNumTraders = Math.round(this.Economy.targetNumTraders * this.popScaling);
 	}
-//	this.Economy.targetNumWorkers = Math.max(this.Economy.targetNumWorkers, Math.floor(maxPop/2));
+//	this.Economy.targetNumWorkers = Math.max(this.Economy.targetNumWorkers, this.Economy.popPhase2);
 	this.Economy.workPhase3 = Math.min(this.Economy.workPhase3, this.Economy.targetNumWorkers);
 	this.Economy.workPhase4 = Math.min(this.Economy.workPhase4, this.Economy.targetNumWorkers);
+	if (this.difficulty < KIARA.Difficulty.EASY)
+		this.Economy.workPhase3 = Infinity;	// prevent the phasing to city phase
 
-	if (this.debug < 2)
-		return;
-	API3.warn(" >>>  Kiara bot: personality = " + uneval(this.personality));
+//	KIARA.Logger.trace(" >>>  Kiara bot: personality = " + uneval(this.personality));
 };
 
-m.Config.prototype.Serialize = function()
+KIARA.Config.prototype.Serialize = function()
 {
 	var data = {};
 	for (let key in this)
@@ -210,11 +243,8 @@ m.Config.prototype.Serialize = function()
 	return data;
 };
 
-m.Config.prototype.Deserialize = function(data)
+KIARA.Config.prototype.Deserialize = function(data)
 {
 	for (let key in data)
 		this[key] = data[key];
 };
-
-return m;
-}(KIARA);

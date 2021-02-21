@@ -1,9 +1,6 @@
-var KIARA = function(m)
+KIARA.ResearchPlan = function(gameState, type, rush = false)
 {
-
-m.ResearchPlan = function(gameState, type, rush = false)
-{
-	if (!m.QueuePlan.call(this, gameState, type, {}))
+	if (!KIARA.QueuePlan.call(this, gameState, type, {}))
 		return false;
 
 	if (this.template.researchTime === undefined)
@@ -20,12 +17,10 @@ m.ResearchPlan = function(gameState, type, rush = false)
 	return true;
 };
 
-m.ResearchPlan.prototype = Object.create(m.QueuePlan.prototype);
+KIARA.ResearchPlan.prototype = Object.create(KIARA.QueuePlan.prototype);
 
-m.ResearchPlan.prototype.canStart = function(gameState)
+KIARA.ResearchPlan.prototype.canStart = function(gameState)
 {
-	if (this.allreadyStarted())
-		return false;
 	this.researchers = this.getBestResearchers(gameState);
 	if (!this.researchers)
 		return false;
@@ -33,7 +28,7 @@ m.ResearchPlan.prototype.canStart = function(gameState)
 	return true;
 };
 
-m.ResearchPlan.prototype.getBestResearchers = function(gameState, noRequirementCheck = false)
+KIARA.ResearchPlan.prototype.getBestResearchers = function(gameState, noRequirementCheck = false)
 {
 	let allResearchers = gameState.findResearchers(this.type, noRequirementCheck);
 	if (!allResearchers || !allResearchers.hasEntities())
@@ -56,15 +51,13 @@ m.ResearchPlan.prototype.getBestResearchers = function(gameState, noRequirementC
 	return researchers;
 };
 
-m.ResearchPlan.prototype.isInvalid = function(gameState)
+KIARA.ResearchPlan.prototype.isInvalid = function(gameState)
 {
 	return gameState.isResearched(this.type) || gameState.isResearching(this.type);
 };
 
-m.ResearchPlan.prototype.start = function(gameState)
+KIARA.ResearchPlan.prototype.start = function(gameState)
 {
-	if (this.allreadyStarted())
-		return;
 	// Prefer researcher with shortest queues (no need to serialize this.researchers
 	// as the functions canStart and start are always called on the same turn)
 	this.researchers.sort((a, b) => a.trainingQueueTime() - b.trainingQueueTime());
@@ -75,9 +68,8 @@ m.ResearchPlan.prototype.start = function(gameState)
 	this.onStart(gameState);
 };
 
-m.ResearchPlan.prototype.onStart = function(gameState)
+KIARA.ResearchPlan.prototype.onStart = function(gameState)
 {
-	this.started = true;
 	if (this.queueToReset)
 		gameState.ai.queueManager.changePriority(this.queueToReset, gameState.ai.Config.priorities[this.queueToReset]);
 
@@ -91,7 +83,7 @@ m.ResearchPlan.prototype.onStart = function(gameState)
 	}
 };
 
-m.ResearchPlan.prototype.Serialize = function()
+KIARA.ResearchPlan.prototype.Serialize = function()
 {
 	return {
 		"category": this.category,
@@ -105,7 +97,7 @@ m.ResearchPlan.prototype.Serialize = function()
 	};
 };
 
-m.ResearchPlan.prototype.Deserialize = function(gameState, data)
+KIARA.ResearchPlan.prototype.Deserialize = function(gameState, data)
 {
 	for (let key in data)
 		this[key] = data[key];
@@ -113,6 +105,3 @@ m.ResearchPlan.prototype.Deserialize = function(gameState, data)
 	this.cost = new API3.Resources();
 	this.cost.Deserialize(data.cost);
 };
-
-return m;
-}(KIARA);

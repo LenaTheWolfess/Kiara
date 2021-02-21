@@ -159,13 +159,13 @@ m.EntityCollection.prototype.regroup = function(queued = false)
 {
 	Engine.PostCommand(PlayerID, {"type": "regroup", "entities": this.toIdArray(), "queued": queued});
 	return this;
-}
+};
 
 m.EntityCollection.prototype.form = function(name , queued = false)
 {
-	Engine.PostCommand(PlayerID, {"type": "formation", "entities": this.toIdArray(), "name": name, "queued": queued});
+	Engine.PostCommand(PlayerID, {"type": "formation", "entities": this.toIdArray(), "formation": name, "queued": queued});
 	return this;
-}
+};
 
 m.EntityCollection.prototype.attackMove = function(x, z, targetClasses, allowCapture = true, queued = false)
 {
@@ -181,9 +181,9 @@ m.EntityCollection.prototype.moveIndiv = function(x, z, queued = false)
 	return this;
 };
 
-m.EntityCollection.prototype.garrison = function(target)
+m.EntityCollection.prototype.garrison = function(target, queued = false)
 {
-	Engine.PostCommand(PlayerID, { "type": "garrison", "entities": this.toIdArray(), "target": target.id() });
+	Engine.PostCommand(PlayerID, { "type": "garrison", "entities": this.toIdArray(), "target": target.id(), "queued": queued });
 	return this;
 };
 
@@ -195,7 +195,7 @@ m.EntityCollection.prototype.destroy = function()
 
 m.EntityCollection.prototype.attack = function(unitId, queued = false)
 {
-	Engine.PostCommand(PlayerID, { "type": "attack", "entities": this.toIdArray(), "target": unitId, "queued": queued});
+	Engine.PostCommand(PlayerID, { "type": "attack", "entities": this.toIdArray(), "target": unitId, "queued": queued });
 	return this;
 };
 
@@ -209,7 +209,7 @@ m.EntityCollection.prototype.setStance = function(stance)
 m.EntityCollection.prototype.stopMoving = function()
 {
 	Engine.PostCommand(PlayerID, { "type": "stop", "entities": this.toIdArray(), "queued": false });
-}
+};
 
 /** Returns the average position of all units */
 m.EntityCollection.prototype.getCentrePosition = function()

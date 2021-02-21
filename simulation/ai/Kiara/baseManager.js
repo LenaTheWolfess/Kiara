@@ -1,6 +1,3 @@
-var KIARA = function(m)
-{
-
 /**
  * Base Manager
  * Handles lower level economic stuffs.
@@ -13,7 +10,7 @@ var KIARA = function(m)
  *  -updating whatever needs updating, keeping track of stuffs (rebuilding needs…)
  */
 
-m.BaseManager = function(gameState, Config)
+KIARA.BaseManager = function(gameState, Config)
 {
 	this.Config = Config;
 	this.ID = gameState.ai.uniqueIDs.bases++;
@@ -23,13 +20,11 @@ m.BaseManager = function(gameState, Config)
 	this.anchorId = undefined;
 	this.accessIndex = undefined;
 
-	// Maximum distance (from any dropsite) to look for resources
-	// 3 areas are used: from 0 to max/4, from max/4 to max/2 and from max/2 to max
 	this.maxDistResourceSquare = 20*20;
 
 	this.constructing = false;
 	// Defenders to train in this cc when its construction is finished
-	this.neededDefenders = this.Config.difficulty > 2 ? 3 + 2*(this.Config.difficulty - 3) : 0;
+	this.neededDefenders = this.Config.difficulty > KIARA.Difficulty.EASY ? 3 + 2*(this.Config.difficulty - 3) : 0;
 
 	// vector for iterating, to check one use the HQ map.
 	this.territoryIndices = [];
@@ -41,13 +36,13 @@ m.BaseManager = function(gameState, Config)
 		this.needDropsite[res] = false;
 };
 
-m.BaseManager.prototype.init = function(gameState, state)
+KIARA.BaseManager.prototype.init = function(gameState, state)
 {
 	if (state == "unconstructed")
 		this.constructing = true;
 	else if (state != "captured")
 		this.neededDefenders = 0;
-	this.workerObject = new m.Worker(this);
+	this.workerObject = new KIARA.Worker(this);
 	// entitycollections
 	this.units = gameState.getOwnUnits().filter(API3.Filters.byMetadata(PlayerID, "base", this.ID));
 	this.workers = this.units.filter(API3.Filters.byMetadata(PlayerID, "role", "worker"));
@@ -71,33 +66,33 @@ m.BaseManager.prototype.init = function(gameState, state)
 	this.dropsiteSupplies["hunt"] = { "nearby": [], "medium": [], "faraway": [] };
 };
 
-m.BaseManager.prototype.reset = function(gameState, state)
+KIARA.BaseManager.prototype.reset = function(gameState, state)
 {
 	if (state == "unconstructed")
 		this.constructing = true;
 	else
 		this.constructing = false;
 
-	if (state != "captured" || this.Config.difficulty < 3)
+	if (state != "captured" || this.Config.difficulty < KIARA.Difficulty.MEDIUM)
 		this.neededDefenders = 0;
 	else
 		this.neededDefenders = 3 + 2 * (this.Config.difficulty - 3);
 };
 
-m.BaseManager.prototype.assignEntity = function(gameState, ent)
+KIARA.BaseManager.prototype.assignEntity = function(gameState, ent)
 {
 	ent.setMetadata(PlayerID, "base", this.ID);
 	this.units.updateEnt(ent);
 	this.workers.updateEnt(ent);
 	this.buildings.updateEnt(ent);
-	if (ent.resourceDropsiteTypes() && !ent.hasClass("Elephant"))
+	if (ent.resourceDropsiteTypes() && !ent.hasClass("Unit"))
 		this.assignResourceToDropsite(gameState, ent);
 };
 
-m.BaseManager.prototype.setAnchor = function(gameState, anchorEntity)
+KIARA.BaseManager.prototype.setAnchor = function(gameState, anchorEntity)
 {
 	if (!anchorEntity.hasClass("CivCentre"))
-		API3.warn("Error: Kiara base " + this.ID + " has been assigned " + ent.templateName() + " as anchor.");
+		KIARA.Logger.error("Error: Kiara base " + this.ID + " has been assigned " + ent.templateName() + " as anchor.");
 	else
 	{
 		this.anchor = anchorEntity;
@@ -107,12 +102,12 @@ m.BaseManager.prototype.setAnchor = function(gameState, anchorEntity)
 	}
 	anchorEntity.setMetadata(PlayerID, "base", this.ID);
 	this.buildings.updateEnt(anchorEntity);
-	this.accessIndex = m.getLandAccess(gameState, anchorEntity);
+	this.accessIndex = KIARA.getLandAccess(gameState, anchorEntity);
 	return true;
 };
 
 /* we lost our anchor. Let's reassign our units and buildings */
-m.BaseManager.prototype.anchorLost = function(gameState, ent)
+KIARA.BaseManager.prototype.anchorLost = function(gameState, ent)
 {
 	this.anchor = undefined;
 	this.anchorId = undefined;
@@ -121,38 +116,38 @@ m.BaseManager.prototype.anchorLost = function(gameState, ent)
 };
 
 /** Set a building of an anchorless base */
-m.BaseManager.prototype.setAnchorlessEntity = function(gameState, ent)
+KIARA.BaseManager.prototype.setAnchorlessEntity = function(gameState, ent)
 {
 	if (!this.buildings.hasEntities())
 	{
-		if (!m.getBuiltEntity(gameState, ent).resourceDropsiteTypes())
-			API3.warn("Error: Kiara base " + this.ID + " has been assigned " + ent.templateName() + " as origin.");
-		this.accessIndex = m.getLandAccess(gameState, ent);
+		if (!KIARA.getBuiltEntity(gameState, ent).resourceDropsiteTypes())
+			KIARA.Logger.error("Error: Kiara base " + this.ID + " has been assigned " + ent.templateName() + " as origin.");
+		this.accessIndex = KIARA.getLandAccess(gameState, ent);
 	}
-	else if (this.accessIndex != m.getLandAccess(gameState, ent))
-		API3.warn(" Error: Kiara base " + this.ID + " with access " + this.accessIndex +
-		          " has been assigned " + ent.templateName() + " with access" + m.getLandAccess(gameState, ent));
+	else if (this.accessIndex != KIARA.getLandAccess(gameState, ent))
+		KIARA.Logger.error(" Error: Kiara base " + this.ID + " with access " + this.accessIndex +
+		          " has been assigned " + ent.templateName() + " with access" + KIARA.getLandAccess(gameState, ent));
 
 	ent.setMetadata(PlayerID, "base", this.ID);
 	this.buildings.updateEnt(ent);
 	return true;
 };
 
-m.BaseManager.prototype.checkGatherers = function(gameState)
+KIARA.BaseManager.prototype.checkGatherers = function(gameState)
 {
 	for (let ent of this.workers.values())
 		this.workerObject.checkNearerResources(gameState, ent);
 }
+
 /**
  * Assign the resources around the dropsites of this basis in three areas according to distance, and sort them in each area.
  * Moving resources (animals) and buildable resources (fields) are treated elsewhere.
  */
-m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
+KIARA.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 {
 	if (this.dropsites[dropsite.id()])
 	{
-		if (this.Config.debug > 0)
-			warn("assignResourceToDropsite: dropsite already in the list. Should never happen");
+		KIARA.Logger.error("assignResourceToDropsite: dropsite already in the list. Should never happen");
 		return;
 	}
 
@@ -163,11 +158,11 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 	this.dropsites[dropsiteId] = true;
 
 	if (this.ID == gameState.ai.HQ.baseManagers[0].ID)
-		accessIndex = m.getLandAccess(gameState, dropsite);
+		accessIndex = KIARA.getLandAccess(gameState, dropsite);
 
 	let maxDistResourceSquare = this.maxDistResourceSquare;
 	let mdrs = maxDistResourceSquare;
-	
+
 	let dc = {
 		"food": 1,
 		"wood": 2,
@@ -184,6 +179,7 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 		"hunt": 3
 	}
 
+	let debug = false;
 	for (let type of dropsite.resourceDropsiteTypes())
 	{
 		let resources = gameState.getResourceSupplies(type);
@@ -211,11 +207,10 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 			if (res == "treasure")  // treasures are treated separately
 				return;
 			// quick accessibility check
-			if (m.getLandAccess(gameState, supply) != accessIndex)
+			if (KIARA.getLandAccess(gameState, supply) != accessIndex)
 				return;
-			
-			let dist = API3.SquareVectorDistance(supply.position(), dropsitePos) - (radius*radius/4);
 
+			let dist = API3.SquareVectorDistance(supply.position(), dropsitePos) - (radius*radius/4);
 			if (dist < maxDistResourceSquare * 81 * ddc[ss])
 			{
 				let sd = supply.getMetadata(PlayerID, "dist");
@@ -237,7 +232,7 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 				else if (dist < maxDistResourceSquare * 6 * dc[ss]) {
 					if (sd != "nearby")
 						supply.setMetadata(PlayerID, "dist", "medium");
-						
+
 					if (ss == "hunt")
 						mediumHunt.push({"ent": supply, "id": supply.id()});
 					else
@@ -246,7 +241,7 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 				else {
 					if (!sd)
 						supply.setMetadata(PlayerID, "dist", "faraway");
-						
+
 					if (ss == "hunt")
 						farawayHunt.push({"ent": supply, "id": supply.id()});
 					else
@@ -254,39 +249,41 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 				}
 			}
 		});
+
 		nearby.sort((r1, r2) => r1.dist - r2.dist);
 		medium.sort((r1, r2) => r1.dist - r2.dist);
 		faraway.sort((r1, r2) => r1.dist - r2.dist);
 
-		let debug = true;
 		if (debug)
 		{
 			faraway.forEach(function(res){
 				Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [2,0,0]});
 			});
 			medium.forEach(function(res){
-				Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,0,2]});
-			});
-			nearby.forEach(function(res){
 				Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,2,0]});
 			});
-		} 
-		
+			nearby.forEach(function(res){
+				Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,0,2]});
+			});
+		}
+
 		if (nearby.length)
 			this.signalNoNeedSupply(gameState, type);
 		else if (dropsite.getMetadata(PlayerID, "type") == type)
 			this.signalNoSupply(gameState, type, 10, true);
 	}
 
-	this.dropsiteSupplies["hunt"].faraway.forEach(function(res){
-		Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,2,2]});
-	});
-	this.dropsiteSupplies["hunt"].medium.forEach(function(res){
-		Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,2,2]});
-	});
-	this.dropsiteSupplies["hunt"].nearby.forEach(function(res){
-		Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,2,2]});
-	});
+	if (debug) {
+		this.dropsiteSupplies["hunt"].faraway.forEach(function(res){
+			Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,2,2]});
+		});
+		this.dropsiteSupplies["hunt"].medium.forEach(function(res){
+			Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,2,2]});
+		});
+		this.dropsiteSupplies["hunt"].nearby.forEach(function(res){
+			Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [res.ent.id()], "rgb": [0,2,2]});
+		});
+	}
 
 	this.checkGatherers(gameState);
 
@@ -300,7 +297,7 @@ m.BaseManager.prototype.assignResourceToDropsite = function(gameState, dropsite)
 };
 
 // completely remove the dropsite resources from our list.
-m.BaseManager.prototype.removeDropsite = function(gameState, ent)
+KIARA.BaseManager.prototype.removeDropsite = function(gameState, ent)
 {
 	if (!ent.id())
 		return;
@@ -325,34 +322,33 @@ m.BaseManager.prototype.removeDropsite = function(gameState, ent)
 	}
 
 	this.dropsites[ent.id()] = undefined;
-	warn("dopsite " + ent.id() + "removed");
 };
 
-m.BaseManager.prototype.findBestFarmsteadLocation = function(gameState, resource)
+KIARA.BaseManager.prototype.findBestFarmsteadLocation = function(gameState, resource)
 {
-	let template = gameState.getTemplate(gameState.applyCiv("structures/{civ}_farmstead"));
+	let template = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Farmstead]));
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
 	else if (template.get("Footprint/Circle"))
 		halfSize = +template.get("Footprint/Circle/@radius");
-	
+
 //	let ccEnts = gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).toEntityArray();
 	let dpEnts = gameState.getOwnStructures().filter(API3.Filters.byClassesOr(["Farmstead", "Dock"])).toEntityArray();
-	
-	let obstructions = m.createObstructionMap(gameState, this.accessIndex, template);
-	
+
+	let obstructions = KIARA.createObstructionMap(gameState, this.accessIndex, template);
+
 	let bestIdx;
 	let bestVal = 0;
 	let radius = Math.ceil(template.obstructionRadius().max / obstructions.cellSize);
-	
+
 	let territoryMap = gameState.ai.HQ.territoryMap;
 	let width = territoryMap.width;
 	let cellSize = territoryMap.cellSize;
 
 	let resMap = gameState.sharedScript.resourceMaps[resource];
 	if (!resMap) {
-		API3.warn("resource map is undefined for " + resource);
+		KIARA.Logger.error("resource map is undefined for " + resource);
 		resource = "wood";
 		resMap = gameState.sharedScript.resourceMaps[resource];
 	}
@@ -396,8 +392,7 @@ m.BaseManager.prototype.findBestFarmsteadLocation = function(gameState, resource
 		bestIdx = i;
 	}
 
-	if (this.Config.debug > 2)
-		warn(" for farmstead best is " + bestVal);
+	KIARA.Logger.trace(" for farmstead best is " + bestVal);
 
 	if (bestVal <= 0)
 		return { "quality": bestVal, "pos": [0, 0] };
@@ -407,7 +402,7 @@ m.BaseManager.prototype.findBestFarmsteadLocation = function(gameState, resource
 	return { "quality": bestVal, "pos": [x, z] };
 }
 
-m.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut = 20, reset = false)
+KIARA.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut = 20, reset = false)
 {
 	if (resource == "food" || resource == "farm") {
 		gameState.ai.HQ.signalNoSupply(gameState, resource);
@@ -415,9 +410,9 @@ m.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut = 20,
 	}
 	if (this.needDropsite[resource] && !reset)
 		return;
-	
+
 	this.needDropsite[resource] = true;
-//	API3.warn("base need supply " + resource);
+	KIARA.Logger.trace("base need supply " + resource);
 	let res = resource;
 	// Try to build one
 	if (res == "food" || res == "farm") {
@@ -426,54 +421,55 @@ m.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut = 20,
 		return;
 	}
 
-	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}_storehouse"))) {
-		API3.warn("signalNoSupply: cannot build storehouse");
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Dropsite]))) {
+		KIARA.Logger.trace("signalNoSupply: cannot build storehouse");
 		return;
 	}
 
 	let newDP = this.findBestDropsiteLocation(gameState, res);
 	if (newDP.quality > cut)
-		gameState.ai.queues["dropsites"].addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_storehouse", {"base": this.ID, "type": res}, newDP.pos));
+		gameState.ai.queues["dropsites"].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Dropsite], {"base": this.ID, "type": res}, newDP.pos));
 	else
 		gameState.ai.HQ.signalNoSupply(gameState, resource);
 }
 
-m.BaseManager.prototype.buildFoodSupply = function(gameState, queues, type, res)
+KIARA.BaseManager.prototype.buildFoodSupply = function(gameState, queues, type, res)
 {
-	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}_farmstead")))
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Farmstead])))
 		return false;
 
 	let newSF = this.findBestFarmsteadLocation(gameState, res);
 	if (newSF.quality > 10) {
-		queues[type].addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_farmstead", {"base": this.ID, "type": "food"}, newSF.pos));
+		queues[type].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Farmstead], {"base": this.ID, "type": "food"}, newSF.pos));
 		return true;
 	}
 
 	return this.buildField(gameState, queues);
 }
 
-m.BaseManager.prototype.buildField = function(gameState, queues)
+KIARA.BaseManager.prototype.buildField = function(gameState, queues)
 {
-	if (!gameState.isTemplateAvailable(gameState.applyCiv("structures/{civ}_field")))
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Field])))
 		return false;
-	queues.economicBuilding.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_field"));
+	queues.economicBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Field]));
 	return true;
 }
 
-m.BaseManager.prototype.signalNoNeedSupply = function(gameState, resource)
+KIARA.BaseManager.prototype.signalNoNeedSupply = function(gameState, resource)
 {
-//	API3.warn("base no need supply " + resource);
+	KIARA.Logger.trace("base no need supply " + resource);
 	this.needDropsite[resource] = false;
 	gameState.ai.HQ.signalNoNeedSupply(gameState, resource);
 }
 
+
 /**
  * Returns the position of the best place to build a new dropsite for the specified resource
  */
-m.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resource)
+KIARA.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resource)
 {
 
-	let template = gameState.getTemplate(gameState.applyCiv("structures/{civ}_storehouse"));
+	let template = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Dropsite]));
 	let halfSize = 0;
 	if (template.get("Footprint/Square"))
 		halfSize = Math.max(+template.get("Footprint/Square/@depth"), +template.get("Footprint/Square/@width")) / 2;
@@ -485,7 +481,7 @@ m.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resource)
 	// Then checks for a good spot in the territory. If none, and town/city phase, checks outside
 	// The AI will currently not build a CC if it wouldn't connect with an existing CC.
 
-	let obstructions = m.createObstructionMap(gameState, this.accessIndex, template);
+	let obstructions = KIARA.createObstructionMap(gameState, this.accessIndex, template);
 
 	let ccEnts = gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).toEntityArray();
 	let dpEnts = gameState.getOwnStructures().filter(API3.Filters.byClassesOr(["Storehouse", "Dock"])).toEntityArray();
@@ -519,15 +515,14 @@ m.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resource)
 		if (i < 0)  // no room around
 			continue;
 
-		// we add 3 times the needed resource and once the others (except food)
 		let total = gameState.sharedScript.resourceMaps[resource].map[j];
 		if (useAny) {
 			for (let res in gameState.sharedScript.resourceMaps)
 				if (res != "food")
 					total += gameState.sharedScript.resourceMaps[res].map[j];
 		}
-	//	if (isWood)
-	//		total *= 0.7;   // Just a normalisation factor as the locateMap is limited to 255
+		//	if (isWood)
+		//		total *= 0.7;   // Just a normalisation factor as the locateMap is limited to 255
 		if (total <= bestVal)
 			continue;
 
@@ -567,17 +562,16 @@ m.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resource)
 			else if (dist < 6400)
 				total *= (Math.sqrt(dist)-60)/20;
 		}
+*/
 		if (total <= bestVal)
 			continue;
-		*/
 		if (gameState.ai.HQ.isDangerousLocation(gameState, pos, halfSize))
 			continue;
 		bestVal = total;
 		bestIdx = i;
 	}
 
-	if (this.Config.debug > 2)
-		warn(" for dropsite best is " + bestVal);
+	KIARA.Logger.trace(" for dropsite best is " + bestVal);
 
 	if (bestVal <= 0)
 		return { "quality": bestVal, "pos": [0, 0] };
@@ -587,7 +581,7 @@ m.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resource)
 	return { "quality": bestVal, "pos": [x, z] };
 };
 
-m.BaseManager.prototype.getResourceLevel = function(gameState, type, nearbyOnly = false)
+KIARA.BaseManager.prototype.getResourceLevel = function(gameState, type, nearbyOnly = false)
 {
 	let count = 0;
 	let check = {};
@@ -612,114 +606,12 @@ m.BaseManager.prototype.getResourceLevel = function(gameState, type, nearbyOnly 
 };
 
 /** check our resource levels and react accordingly */
-m.BaseManager.prototype.checkResourceLevels = function(gameState, queues)
+KIARA.BaseManager.prototype.checkResourceLevels = function(gameState, queues)
 {
-	/*
-	for (let type of Resources.GetCodes())
-	{
-		if (type == "food")
-		{
-			if (gameState.ai.HQ.canBuild(gameState, "structures/{civ}_field"))	// let's see if we need to add new farms.
-			{
-				let count = this.getResourceLevel(gameState, type, gameState.currentPhase() > 1);  // animals are not accounted
-				let numFarms = gameState.getOwnStructures().filter(API3.Filters.byClass("Field")).length;  // including foundations
-				let numFarmSteads = gameState.getOwnStructures().filter(API3.Filters.byClass("Farmstead")).length;
-				let numFound = gameState.getOwnFoundations().filter(API3.Filters.byClass("Field")).length;
-				let numQueue = queues.field.countQueuedUnits();
-
-				// TODO  if not yet farms, add a check on time used/lost and build farmstead if needed
-				if (numFarms + numQueue == 0)	// starting game, rely on fruits as long as we have enough of them
-				{
-					if (count < 600)
-					{
-						queues.field.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_field", { "favoredBase": this.ID }));
-						gameState.ai.HQ.needFarm = true;
-						continue;
-					}
-				}
-				else if  (numFarms + numQueue < this.Config.Economy.provisionFields && numFound < 2)
-				{
-					queues.field.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_field", { "favoredBase": this.ID }));
-					continue;
-				}
-				else if (gameState.ai.HQ.needCorral && !gameState.getOwnEntitiesByClass("Corral", true).hasEntities() &&
-				         !queues.corral.hasQueuedUnits() && gameState.ai.HQ.canBuild(gameState, "structures/{civ}_corral")) {
-					queues.corral.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_corral", { "favoredBase": this.ID }));
-					continue;
-				}
-			}
-			if (!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() &&
-			    !queues.corral.hasQueuedUnits() && gameState.ai.HQ.canBuild(gameState, "structures/{civ}_corral"))
-			{
-				let count = this.getResourceLevel(gameState, type, gameState.currentPhase() > 1);  // animals are not accounted
-				if (count < 900)
-				{
-					queues.corral.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_corral", { "favoredBase": this.ID }));
-					gameState.ai.HQ.needCorral = true;
-					continue;
-				}
-			}
-		}
-		// Non food stuff
-		if (!gameState.sharedScript.resourceMaps[type] || queues.dropsites.hasQueuedUnits() ||
-		    gameState.getOwnFoundations().filter(API3.Filters.byClass("Storehouse")).hasEntities())
-		{
-			this.gatherers[type].nextCheck = gameState.ai.playedTurn;
-			this.gatherers[type].used = 0;
-			this.gatherers[type].lost = 0;
-			continue;
-		}
-		if (gameState.ai.playedTurn < this.gatherers[type].nextCheck)
-			continue;
-		for (let ent of this.gatherersByType(gameState, type).values())
-		{
-			if (ent.unitAIState() == "INDIVIDUAL.GATHER.GATHERING")
-				++this.gatherers[type].used;
-			else if (ent.unitAIState() == "INDIVIDUAL.RETURNRESOURCE.APPROACHING")
-				++this.gatherers[type].lost;
-		}
-		// TODO  add also a test on remaining resources.
-		let total = this.gatherers[type].lost + this.gatherers[type].used;
-		if (this.gatherers[type].lost > 3)
-		{
-			if (type == "food" && !gameState.getOwnFoundations().filter(API3.Filters.byClass("Farmstead")).length && !queues.dropsites.countQueuedUnits())
-			{
-				let newFS = this.findBestFarmsteadLocation(gameState, type);
-				if (newFS.quality > 10 && gameState.ai.HQ.canBuild(gameState, "structures/{civ}_farmstead")) {
-					queues.dropsites.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_farmstead", { "base": this.ID, "type": type }, newFS.pos));
-				}
-			} else
-			{
-				let newDP = this.findBestDropsiteLocation(gameState, type);
-				if (gameState.ai.HQ.canBuild(gameState, "structures/{civ}_storehouse")) {
-					if (newDP.quality > 25)
-						queues.dropsites.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_storehouse", { "base": this.ID, "type": type }, newDP.pos));
-					/*else if (!gameState.getOwnFoundations().filter(API3.Filters.byClass("CivCentre")).hasEntities() && !queues.civilCentre.hasQueuedUnits())
-					{
-						// No good dropsite, try to build a new base if no base already planned,
-						// and if not possible, be less strict on dropsite quality.
-						if ((!gameState.ai.HQ.canExpand || !gameState.ai.HQ.buildNewBase(gameState, queues, type)) &&
-							newDP.quality > Math.min(25, 50*0.15/ratio) &&
-							gameState.ai.HQ.canBuild(gameState, "structures/{civ}_storehouse"))
-							queues.dropsites.addPlan(new m.ConstructionPlan(gameState, "structures/{civ}_storehouse", { "base": this.ID, "type": type }, newDP.pos));
-					}
-					*//*
-					else if (newDP.quality == 0 && !gameState.getOwnFoundations().filter(API3.Filters.byClass("CivCentre")).hasEntities() && !queues.civilCentre.hasQueuedUnits())
-						gameState.ai.HQ.buildNewBase(gameState, queues, type);
-				}
-			}
-			this.gatherers[type].nextCheck = gameState.ai.playedTurn + 10;
-			this.gatherers[type].used = 0;
-			this.gatherers[type].lost = 0;
-		}
-		else if (total == 0)
-			this.gatherers[type].nextCheck = gameState.ai.playedTurn + 10;
-	}
-*/
 };
 
 /** Adds the estimated gather rates from this base to the currentRates */
-m.BaseManager.prototype.addGatherRates = function(gameState, currentRates)
+KIARA.BaseManager.prototype.addGatherRates = function(gameState, currentRates)
 {
 	for (let res in currentRates)
 	{
@@ -756,7 +648,7 @@ m.BaseManager.prototype.addGatherRates = function(gameState, currentRates)
 	}
 };
 
-m.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
+KIARA.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
 {
 	if (!roleless)
 		roleless = this.units.filter(API3.Filters.not(API3.Filters.byHasMetadata(PlayerID, "role"))).values();
@@ -765,7 +657,7 @@ m.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
 	{
 		if (ent.hasClass("Worker") || ent.hasClass("CitizenSoldier") || ent.hasClass("FishingBoat"))
 			ent.setMetadata(PlayerID, "role", "worker");
-		else if (ent.hasClass("Cavalry"))
+		else if (ent.hasClass("FastMoving"))
 			ent.setMetadata(PlayerID, "role", "hunter");
 		else if (ent.hasClass("Support") && ent.hasClass("Elephant"))
 			ent.setMetadata(PlayerID, "role", "worker");
@@ -777,7 +669,7 @@ m.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
  * they can be reassigned by reassignIdleWorkers.
  * TODO: actually this probably should be in the HQ.
  */
-m.BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
+KIARA.BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
 {
 	this.timeNextIdleCheck = gameState.ai.elapsedTime + 8;
 	// change resource only towards one which is more needed, and if changing will not change this order
@@ -814,7 +706,6 @@ m.BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
 				if (nb == 0)
 					return;
 			}
-
 			if (lessNeed.type == "food")
 				continue;
 			// If we assume a mean rate of 0.5 per gatherer, this diff should be > 1
@@ -828,7 +719,6 @@ m.BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
 			}
 		}
 	}
-
 
 	//Check how many farms we have, and move women to them
 	let nFields = gameState.getOwnEntitiesByClass("Field", true).length  + gameState.getOwnFoundationsByClass("Field").length;
@@ -851,7 +741,7 @@ m.BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
  * and return remaining number of possible switches.
  * Prefer FemaleCitizen for food and CitizenSoldier for other resources.
  */
-m.BaseManager.prototype.switchGatherer = function(gameState, from, to, number)
+KIARA.BaseManager.prototype.switchGatherer = function(gameState, from, to, number)
 {
 	let num = number;
 	let gatherers = this.gatherersByType(gameState, from);
@@ -874,7 +764,7 @@ m.BaseManager.prototype.switchGatherer = function(gameState, from, to, number)
 	return num;
 };
 
-m.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorkers)
+KIARA.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorkers)
 {
 	// Search for idle workers, and tell them to gather resources based on demand
 	if (!idleWorkers)
@@ -885,19 +775,13 @@ m.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorkers)
 			if (a.hasClass("FemaleCitizen") && !b.hasClass("FemaleCitizen"))
 				return -1;
 			return 1;
-		});
-	}
+		});	}
+
 	for (let ent of idleWorkers)
 	{
 		// Check that the worker isn't garrisoned
 		if (!ent.position())
 			continue;
-		// Support elephant can only be builders
-		if (ent.hasClass("Support") && ent.hasClass("Elephant"))
-		{
-			ent.setMetadata(PlayerID, "subrole", "idle");
-			continue;
-		}
 
 		if (ent.hasClass("Worker"))
 		{
@@ -954,19 +838,19 @@ m.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorkers)
 				}
 			}
 		}
-		else if (ent.hasClass("Cavalry"))
+		else if (KIARA.isFastMoving(ent) && ent.canGather("food") && ent.canAttackClass("Animal"))
 			ent.setMetadata(PlayerID, "subrole", "hunter");
 		else if (ent.hasClass("FishingBoat"))
 			ent.setMetadata(PlayerID, "subrole", "fisher");
 	}
 };
 
-m.BaseManager.prototype.workersBySubrole = function(gameState, subrole)
+KIARA.BaseManager.prototype.workersBySubrole = function(gameState, subrole)
 {
 	return gameState.updatingCollection("subrole-" + subrole +"-base-" + this.ID, API3.Filters.byMetadata(PlayerID, "subrole", subrole), this.workers);
 };
 
-m.BaseManager.prototype.gatherersByType = function(gameState, type)
+KIARA.BaseManager.prototype.gatherersByType = function(gameState, type)
 {
 	return gameState.updatingCollection("workers-gathering-" + type +"-base-" + this.ID, API3.Filters.byMetadata(PlayerID, "gather-type", type), this.workersBySubrole(gameState, "gatherer"));
 };
@@ -974,7 +858,8 @@ m.BaseManager.prototype.gatherersByType = function(gameState, type)
 /**
  * returns an entity collection of workers.
  * They are idled immediatly and their subrole set to idle.
- */m.BaseManager.prototype.pickBuilders = function(gameState, workers, number)
+ */
+KIARA.BaseManager.prototype.pickBuilders = function(gameState, workers, number)
 {
 	let availableWorkers = this.workers.filter(ent => {
 		if (!ent.position() || !ent.isBuilder())
@@ -988,12 +873,12 @@ m.BaseManager.prototype.gatherersByType = function(gameState, type)
 	availableWorkers.sort((a, b) => {
 		let vala = 0;
 		let valb = 0;
-		/*
+/*
 		if (a.getMetadata(PlayerID, "subrole") == "builder")
 			vala = 100;
 		if (b.getMetadata(PlayerID, "subrole") == "builder")
 			valb = 100;
-		*/
+*/
 		if (a.getMetadata(PlayerID, "subrole") == "idle")
 			vala = -50;
 		if (b.getMetadata(PlayerID, "subrole") == "idle")
@@ -1017,12 +902,13 @@ m.BaseManager.prototype.gatherersByType = function(gameState, type)
 	}
 	return;
 };
+
 /**
  * If we have some foundations, and we don't have enough builder-workers,
  * try reassigning some other workers who are nearby
  * AI tries to use builders sensibly, not completely stopping its econ.
  */
-m.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
+KIARA.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 {
 	let foundations = this.buildings.filter(API3.Filters.and(API3.Filters.isFoundation(), API3.Filters.not(API3.Filters.byClass("Field"))));
 
@@ -1035,12 +921,7 @@ m.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 	let workers = this.workers.filter(ent => ent.isBuilder());
 	let builderWorkers = this.workersBySubrole(gameState, "builder");
 	let idleBuilderWorkers = builderWorkers.filter(API3.Filters.isIdle());
-/*
-	let workers = this.workersBySubrole(gameState, "builder");
-	let idleBuilderWorkers = workers.filter(API3.Filters.isIdle());
-	let nonIdleWorkers = this.workers.filter(ent => ent.isBuilder());
-	let idleWorkers = nonIdleWorkers.filter(API3.Filters.isIdle());
-*/
+
 	// if we're constructing and we have the foundations to our base anchor, only try building that.
 	if (this.constructing && foundations.filter(API3.Filters.byMetadata(PlayerID, "baseAnchor", true)).hasEntities())
 	{
@@ -1074,12 +955,11 @@ m.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 
 	let builderTot = builderWorkers.length - idleBuilderWorkers.length;
 
-//	let builderTot = 0;
-	
 	// Make the limit on number of builders depends on the available resources
 	let availableResources = gameState.ai.queueManager.getAvailableResources(gameState);
 	let builderRatio = 1;
-	/*for (let res of Resources.GetCodes())
+/*
+	for (let res of Resources.GetCodes())
 	{
 		if (availableResources[res] < 200)
 		{
@@ -1088,17 +968,18 @@ m.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 		}
 		else if (availableResources[res] < 1000)
 			builderRatio = Math.min(builderRatio, availableResources[res] / 1000);
-	}*/
-
+	}
+*/
 	for (let target of foundations.values())
 	{
+
 		if (gameState.ai.HQ.isNearInvadingArmy(target.position()))
-			if (!target.hasClass("CivCentre") && !target.hasClass("StoneWall") &&
+			if (!target.hasClass("CivCentre") && !target.hasClass("Wall") &&
 			    (!target.hasClass("Wonder") || !gameState.getVictoryConditions().has("wonder")))
 				continue;
 
 		// if our territory has shrinked since this foundation was positioned, do not build it
-		if (m.isNotWorthBuilding(gameState, target))
+		if (KIARA.isNotWorthBuilding(gameState, target))
 			continue;
 
 		let assigned = gameState.getOwnEntitiesByMetadata("target-foundation", target.id()).length;
@@ -1113,8 +994,8 @@ m.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 		let targetNB = 2;
 		if (target.hasClass("Fortress") || target.hasClass("Wonder") || target.hasClass("CivCentre"))
 			targetNB = 20;
-		else if (target.hasClass("Barracks") || target.hasClass("DefenseTower") ||
-		         target.hasClass("Market"))
+		else if (target.hasClass("Barracks") || target.hasClass("Range") || target.hasClass("Stable") ||
+			target.hasClass("Tower") || target.hasClass("Market"))
 			targetNB = 4;
 		else if (target.hasClass("House") || target.hasClass("DropsiteWood"))
 			targetNB = 3;
@@ -1161,15 +1042,10 @@ m.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 		let time = target.buildTime();
 		nonBuilderWorkers.sort((workerA, workerB) => {
 			let coeffA = API3.SquareVectorDistance(target.position(), workerA.position());
-			// elephant moves slowly, so when far away they are only useful if build time is long
-			if (workerA.hasClass("Elephant"))
-				coeffA *= 0.5 * (1 + Math.sqrt(coeffA)/5/time);
-			else if (workerA.getMetadata(PlayerID, "gather-type") == "food")
+			if (workerA.getMetadata(PlayerID, "gather-type") == "food")
 				coeffA *= 3;
 			let coeffB = API3.SquareVectorDistance(target.position(), workerB.position());
-			if (workerB.hasClass("Elephant"))
-				coeffB *= 0.5 * (1 + Math.sqrt(coeffB)/5/time);
-			else if (workerB.getMetadata(PlayerID, "gather-type") == "food")
+			if (workerB.getMetadata(PlayerID, "gather-type") == "food")
 				coeffB *= 3;
 			return coeffA - coeffB;
 		});
@@ -1193,7 +1069,7 @@ m.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 		if (gameState.ai.HQ.isNearInvadingArmy(target.position()))
 		{
 			if (target.healthLevel() > 0.5 ||
-			    !target.hasClass("CivCentre") && !target.hasClass("StoneWall") &&
+			    !target.hasClass("CivCentre") && !target.hasClass("Wall") &&
 			    (!target.hasClass("Wonder") || !gameState.getVictoryConditions().has("wonder")))
 				continue;
 		}
@@ -1260,7 +1136,7 @@ m.BaseManager.prototype.assignToFoundations = function(gameState, noRepair)
 };
 
 /** Return false when the base is not active (no workers on it) */
-m.BaseManager.prototype.update = function(gameState, queues, events)
+KIARA.BaseManager.prototype.update = function(gameState, queues, events)
 {
 	if (this.ID == gameState.ai.HQ.baseManagers[0].ID)	// base for unaffected units
 	{
@@ -1270,17 +1146,17 @@ m.BaseManager.prototype.update = function(gameState, queues, events)
 		{
 			for (let ent of this.units.values())
 			{
-				let bestBase = m.getBestBase(gameState, ent);
+				let bestBase = KIARA.getBestBase(gameState, ent);
 				if (bestBase.ID != this.ID)
 					bestBase.assignEntity(gameState, ent);
 			}
 			for (let ent of this.buildings.values())
 			{
-				let bestBase = m.getBestBase(gameState, ent);
+				let bestBase = KIARA.getBestBase(gameState, ent);
 				if (!bestBase)
 				{
 					if (ent.hasClass("Dock"))
-						API3.warn("Kiara: dock in baseManager[0]. It may be useful to do an anchorless base for " + ent.templateName());
+						KIARA.Logger.error("Kiara: dock in baseManager[0]. It may be useful to do an anchorless base for " + ent.templateName());
 					continue;
 				}
 				if (ent.resourceDropsiteTypes())
@@ -1310,7 +1186,7 @@ m.BaseManager.prototype.update = function(gameState, queues, events)
 			// Reassign all remaining entities to its nearest base
 			for (let ent of this.units.values())
 			{
-				let base = m.getBestBase(gameState, ent, false, this.ID);
+				let base = KIARA.getBestBase(gameState, ent, false, this.ID);
 				base.assignEntity(gameState, ent);
 			}
 			return false;
@@ -1321,7 +1197,7 @@ m.BaseManager.prototype.update = function(gameState, queues, events)
 		{
 			if (!ent.position())
 				continue;
-			let base = m.getBestBase(gameState, ent);
+			let base = KIARA.getBestBase(gameState, ent);
 			if (base.anchor)
 				reassignedBase = base;
 			break;
@@ -1395,7 +1271,7 @@ m.BaseManager.prototype.update = function(gameState, queues, events)
 	return true;
 };
 
-m.BaseManager.prototype.Serialize = function()
+KIARA.BaseManager.prototype.Serialize = function()
 {
 	return {
 		"ID": this.ID,
@@ -1410,14 +1286,10 @@ m.BaseManager.prototype.Serialize = function()
 	};
 };
 
-m.BaseManager.prototype.Deserialize = function(gameState, data)
+KIARA.BaseManager.prototype.Deserialize = function(gameState, data)
 {
 	for (let key in data)
 		this[key] = data[key];
 
 	this.anchor = this.anchorId !== undefined ? gameState.getEntityById(this.anchorId) : undefined;
 };
-
-return m;
-
-}(KIARA);

@@ -17,6 +17,7 @@ m.error = function(output)
 		error("PlayerID " + PlayerID + " |   " + uneval(output));
 }
 
+
 /**
  * Useful for simulating consecutive AI matches.
  */

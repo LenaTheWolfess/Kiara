@@ -1,17 +1,22 @@
-var KIARA = function(m)
-{
-
 /** returns true if this unit should be considered as a siege unit */
-m.isSiegeUnit = function(ent)
+KIARA.isSiegeUnit = function(ent)
 {
-	return ent.hasClass("Siege") || ent.hasClass("Elephant") && ent.hasClass("Melee") && ent.hasClass("Champion");
+	return ent.hasClass("Siege") || ent.hasClass("Elephant") && ent.hasClass("Melee");
+};
+
+/** returns true if this unit should be considered as "fast". */
+KIARA.isFastMoving = function(ent)
+{
+	// TODO: use clever logic based on walkspeed comparisons.
+	return ent.hasClass("FastMoving");
 };
 
 /** returns some sort of DPS * health factor. If you specify a class, it'll use the modifiers against that class too. */
-m.getMaxStrength = function(ent, againstClass)
+KIARA.getMaxStrength = function(ent, DamageTypeImportance, againstClass)
 {
 	let strength = 0;
 	let attackTypes = ent.attackTypes();
+	let damageTypes = Object.keys(DamageTypeImportance);
 	if (!attackTypes)
 		return strength;
 
@@ -26,69 +31,48 @@ m.getMaxStrength = function(ent, againstClass)
 			let val = parseFloat(attackStrength[str]);
 			if (againstClass)
 				val *= ent.getMultiplierAgainst(type, againstClass);
-			switch (str)
-			{
-			case "Crush":
-				strength += val * 0.085 / 3;
-				break;
-			case "Hack":
-				strength += val * 0.075 / 3;
-				break;
-			case "Pierce":
-				strength += val * 0.065 / 3;
-				break;
-			default:
-				API3.warn("Kiara: " + str + " unknown attackStrength in getMaxStrength");
-			}
+			if (DamageTypeImportance[str])
+				strength += DamageTypeImportance[str] * val / damageTypes.length;
+			else
+				KIARA.Logger.error("Kiara: " + str + " unknown attackStrength in getMaxStrength (please add " + str + "  to config.js).");
 		}
-/*
-		let attackTimes = ent.attackTimes(type);
-		for (let str in attackTimes)
-		{
-			let val = parseFloat(attackTimes[str]);
-			switch (str)
-			{
-			case "repeat":
-				strength += val / 100000;
-				break;
-			case "prepare":
-				strength -= val / 100000;
-				break;
-			default:
-				API3.warn("Kiara: " + str + " unknown attackTimes in getMaxStrength");
-			}
-		}
-*/
 	}
 
-	let armourStrength = ent.armourStrengths();
-	for (let str in armourStrength)
-	{
-		let val = parseFloat(armourStrength[str]);
-		switch (str)
+	let resistanceStrength = ent.resistanceStrengths();
+
+	if (resistanceStrength.Damage)
+		for (let str in resistanceStrength.Damage)
 		{
-		case "Crush":
-			strength += val * 0.085 / 3;
-			break;
-		case "Hack":
-			strength += val * 0.075 / 3;
-			break;
-		case "Pierce":
-			strength += val * 0.065 / 3;
-			break;
-		default:
-			API3.warn("Kiara: " + str + " unknown armourStrength in getMaxStrength");
+			let val = +resistanceStrength.Damage[str];
+			if (DamageTypeImportance[str])
+				strength += DamageTypeImportance[str] * val / damageTypes.length;
+			else
+				KIARA.Logger.error("Kiara: " + str + " unknown resistanceStrength in getMaxStrength (please add " + str + "  to config.js).");
 		}
-	}
+
+	// ToDo: Add support for StatusEffects and Capture.
 
 	return strength * ent.maxHitpoints() / 100.0;
 };
 
 /** Get access and cache it (except for units as it can change) in metadata if not already done */
-m.getLandAccess = function(gameState, ent)
+KIARA.getLandAccess = function(gameState, ent)
 {
 	if (ent.hasClass("Unit"))
-		return gameState.ai.accessibility.getAccessValue(ent.position());
+	{
+		let pos = ent.position();
+		if (!pos)
+		{
+			let holder = KIARA.getHolder(gameState, ent);
+			if (holder)
+				return KIARA.getLandAccess(gameState, holder);
+
+			KIARA.Logger.error("Kiara error: entity without position, but not garrisoned");
+			KIARA.dumpEntity(ent);
+			return undefined;
+		}
+		return gameState.ai.accessibility.getAccessValue(pos);
+	}
 
 	let access = ent.getMetadata(PlayerID, "access");
 	if (!access)
@@ -120,7 +104,7 @@ m.getLandAccess = function(gameState, ent)
 };
 
 /** Sea access always cached as it never changes */
-m.getSeaAccess = function(gameState, ent)
+KIARA.getSeaAccess = function(gameState, ent)
 {
 	let sea = ent.getMetadata(PlayerID, "sea");
 	if (!sea)
@@ -146,32 +130,33 @@ m.getSeaAccess = function(gameState, ent)
 	return sea;
 };
 
-m.setSeaAccess = function(gameState, ent)
+KIARA.setSeaAccess = function(gameState, ent)
 {
-	m.getSeaAccess(gameState, ent);
+	KIARA.getSeaAccess(gameState, ent);
 };
 
 /** Decide if we should try to capture (returns true) or destroy (return false) */
-m.allowCapture = function(gameState, ent, target)
+KIARA.allowCapture = function(gameState, ent, target)
 {
 	if (!target.isCapturable() || !ent.canCapture(target))
 		return false;
 	if (target.isInvulnerable())
 		return true;
-	// always try to recapture cp from an allied, except if it's decaying
+	// always try to recapture capture points from an allied, except if it's decaying
 	if (gameState.isPlayerAlly(target.owner()))
 		return !target.decaying();
 
 	let antiCapture = target.defaultRegenRate();
 	if (target.isGarrisonHolder() && target.garrisoned())
 		antiCapture += target.garrisonRegenRate() * target.garrisoned().length;
-	antiCapture += target.territoryDecayRate();
+	if (target.decaying())
+		antiCapture -= target.territoryDecayRate();
 
 	let capture;
 	let capturableTargets = gameState.ai.HQ.capturableTargets;
 	if (!capturableTargets.has(target.id()))
 	{
-		capture = ent.captureStrength() * m.getAttackBonus(ent, target, "Capture");
+		capture = ent.captureStrength() * KIARA.getAttackBonus(ent, target, "Capture");
 		capturableTargets.set(target.id(), { "strength": capture, "ents": new Set([ent.id()]) });
 	}
 	else
@@ -179,7 +164,7 @@ m.allowCapture = function(gameState, ent, target)
 		let capturable = capturableTargets.get(target.id());
 		if (!capturable.ents.has(ent.id()))
 		{
-			capturable.strength += ent.captureStrength() * m.getAttackBonus(ent, target, "Capture");
+			capturable.strength += ent.captureStrength() * KIARA.getAttackBonus(ent, target, "Capture");
 			capturable.ents.add(ent.id());
 		}
 		capture = capturable.strength;
@@ -191,7 +176,7 @@ m.allowCapture = function(gameState, ent, target)
 	return capture > antiCapture + sumCapturePoints/80;
 };
 
-m.getAttackBonus = function(ent, target, type)
+KIARA.getAttackBonus = function(ent, target, type)
 {
 	let attackBonus = 1;
 	if (!ent.get("Attack/" + type) || !ent.get("Attack/" + type + "/Bonuses"))
@@ -210,7 +195,7 @@ m.getAttackBonus = function(ent, target, type)
 };
 
 /** Makes the worker deposit the currently carried resources at the closest accessible dropsite */
-m.returnResources = function(gameState, ent)
+KIARA.returnResources = function(gameState, ent)
 {
 	if (!ent.resourceCarrying() || !ent.resourceCarrying().length || !ent.position())
 		return false;
@@ -219,7 +204,7 @@ m.returnResources = function(gameState, ent)
 
 	let closestDropsite;
 	let distmin = Math.min();
-	let access = m.getLandAccess(gameState, ent);
+	let access = KIARA.getLandAccess(gameState, ent);
 	let dropsiteCollection = gameState.playerData.hasSharedDropsites ?
 	                         gameState.getAnyDropsites(resource) : gameState.getOwnDropsites(resource);
 	for (let dropsite of dropsiteCollection.values())
@@ -230,7 +215,7 @@ m.returnResources = function(gameState, ent)
 		// owner !== PlayerID can only happen when hasSharedDropsites === true, so no need to test it again
 		if (owner !== PlayerID && (!dropsite.isSharedDropsite() || !gameState.isPlayerMutualAlly(owner)))
 			continue;
-		if (m.getLandAccess(gameState, dropsite) != access)
+		if (KIARA.getLandAccess(gameState, dropsite) != access)
 			continue;
 		let dist = API3.SquareVectorDistance(ent.position(), dropsite.position());
 		if (dist > distmin)
@@ -246,7 +231,7 @@ m.returnResources = function(gameState, ent)
 };
 
 /** is supply full taking into account gatherers affected during this turn */
-m.IsSupplyFull = function(gameState, ent)
+KIARA.IsSupplyFull = function(gameState, ent)
 {
 	return ent.isFull() === true ||
 		ent.resourceSupplyNumGatherers() + gameState.ai.HQ.GetTCGatherer(ent.id()) >= ent.maxGatherers();
@@ -258,24 +243,24 @@ m.IsSupplyFull = function(gameState, ent)
  * If nothing found, return the base[0] for units and undefined for structures.
  * If exclude is given, we exclude the base with ID = exclude.
  */
-m.getBestBase = function(gameState, ent, onlyConstructedBase = false, exclude = false)
+KIARA.getBestBase = function(gameState, ent, onlyConstructedBase = false, exclude = false)
 {
 	let pos = ent.position();
 	let accessIndex;
 	if (!pos)
 	{
-		let holder = m.getHolder(gameState, ent);
+		let holder = KIARA.getHolder(gameState, ent);
 		if (!holder || !holder.position())
 		{
-			API3.warn("Kiara error: entity without position, but not garrisoned");
-			m.dumpEntity(ent);
+			KIARA.Logger.debug("Kiara error: entity without position, but not garrisoned");
+			KIARA.dumpEntity(ent);
 			return gameState.ai.HQ.baseManagers[0];
 		}
 		pos = holder.position();
-		accessIndex = m.getLandAccess(gameState, holder);
+		accessIndex = KIARA.getLandAccess(gameState, holder);
 	}
 	else
-		accessIndex = m.getLandAccess(gameState, ent);
+		accessIndex = KIARA.getLandAccess(gameState, ent);
 
 	let distmin = Math.min();
 	let dist;
@@ -318,7 +303,7 @@ m.getBestBase = function(gameState, ent, onlyConstructedBase = false, exclude = 
 	return bestbase;
 };
 
-m.getHolder = function(gameState, ent)
+KIARA.getHolder = function(gameState, ent)
 {
 	for (let holder of gameState.getEntities().values())
 	{
@@ -329,7 +314,7 @@ m.getHolder = function(gameState, ent)
 };
 
 /** return the template of the built foundation if a foundation, otherwise return the entity itself */
-m.getBuiltEntity = function(gameState, ent)
+KIARA.getBuiltEntity = function(gameState, ent)
 {
 	if (ent.foundationProgress() !== undefined)
 		return gameState.getBuiltTemplate(ent.templateName());
@@ -341,7 +326,7 @@ m.getBuiltEntity = function(gameState, ent)
  * return true if it is not worth finishing this building (it would surely decay)
  * TODO implement the other conditions
  */
-m.isNotWorthBuilding = function(gameState, ent)
+KIARA.isNotWorthBuilding = function(gameState, ent)
 {
 	if (gameState.ai.HQ.territoryMap.getOwner(ent.position()) !== PlayerID)
 	{
@@ -355,7 +340,7 @@ m.isNotWorthBuilding = function(gameState, ent)
 /**
  * Check if the straight line between the two positions crosses an enemy territory
  */
-m.isLineInsideEnemyTerritory = function(gameState, pos1, pos2, step=70)
+KIARA.isLineInsideEnemyTerritory = function(gameState, pos1, pos2, step=70)
 {
 	let n = Math.floor(Math.sqrt(API3.SquareVectorDistance(pos1, pos2))/step) + 1;
 	let stepx = (pos2[0] - pos1[0]) / n;
@@ -370,7 +355,7 @@ m.isLineInsideEnemyTerritory = function(gameState, pos1, pos2, step=70)
 	return false;
 };
 
-m.gatherTreasure = function(gameState, ent, water = false)
+KIARA.gatherTreasure = function(gameState, ent, water = false)
 {
 	if (!gameState.ai.HQ.treasures.hasEntities())
 		return false;
@@ -381,18 +366,18 @@ m.gatherTreasure = function(gameState, ent, water = false)
 		return false;
 	let treasureFound;
 	let distmin = Math.min();
-	let access = water ? m.getSeaAccess(gameState, ent) : m.getLandAccess(gameState, ent);
+	let access = water ? KIARA.getSeaAccess(gameState, ent) : KIARA.getLandAccess(gameState, ent);
 	for (let treasure of gameState.ai.HQ.treasures.values())
 	{
-		if (m.IsSupplyFull(gameState, treasure))
+		if (KIARA.IsSupplyFull(gameState, treasure))
 			continue;
 		// let some time for the previous gatherer to reach the treasure before trying again
 		let lastGathered = treasure.getMetadata(PlayerID, "lastGathered");
 		if (lastGathered && gameState.ai.elapsedTime - lastGathered < 20)
 			continue;
-		if (!water && access != m.getLandAccess(gameState, treasure))
+		if (!water && access != KIARA.getLandAccess(gameState, treasure))
 			continue;
-		if (water && access != m.getSeaAccess(gameState, treasure))
+		if (water && access != KIARA.getSeaAccess(gameState, treasure))
 			continue;
 		let territoryOwner = gameState.ai.HQ.territoryMap.getOwner(treasure.position());
 		if (territoryOwner != 0 && !gameState.isPlayerAlly(territoryOwner))
@@ -414,24 +399,21 @@ m.gatherTreasure = function(gameState, ent, water = false)
 	return true;
 };
 
-m.dumpEntity = function(ent)
+KIARA.dumpEntity = function(ent)
 {
 	if (!ent)
 		return;
-	API3.warn(" >>> id " + ent.id() + " name " + ent.genericName() + " pos " + ent.position() +
+	KIARA.Logger.warn(" >>> id " + ent.id() + " name " + ent.genericName() + " pos " + ent.position() +
 		  " state " + ent.unitAIState());
-	API3.warn(" base " + ent.getMetadata(PlayerID, "base") + " >>> role " + ent.getMetadata(PlayerID, "role") +
+	KIARA.Logger.warn(" base " + ent.getMetadata(PlayerID, "base") + " >>> role " + ent.getMetadata(PlayerID, "role") +
 		  " subrole " + ent.getMetadata(PlayerID, "subrole"));
-	API3.warn("owner " + ent.owner() + " health " + ent.hitpoints() + " healthMax " + ent.maxHitpoints() +
+	KIARA.Logger.warn("owner " + ent.owner() + " health " + ent.hitpoints() + " healthMax " + ent.maxHitpoints() +
 	          " foundationProgress " + ent.foundationProgress());
-	API3.warn(" garrisoning " + ent.getMetadata(PlayerID, "garrisoning") +
+	KIARA.Logger.warn(" garrisoning " + ent.getMetadata(PlayerID, "garrisoning") +
 		  " garrisonHolder " + ent.getMetadata(PlayerID, "garrisonHolder") +
 		  " plan " + ent.getMetadata(PlayerID, "plan")	+ " transport " + ent.getMetadata(PlayerID, "transport"));
-	API3.warn(" stance " + ent.getStance() + " transporter " + ent.getMetadata(PlayerID, "transporter") +
+	KIARA.Logger.warn(" stance " + ent.getStance() + " transporter " + ent.getMetadata(PlayerID, "transporter") +
 		  " gather-type " + ent.getMetadata(PlayerID, "gather-type") +
 		  " target-foundation " + ent.getMetadata(PlayerID, "target-foundation") +
 		  " PartOfArmy " + ent.getMetadata(PlayerID, "PartOfArmy"));
 };
-
-return m;
-}(KIARA);

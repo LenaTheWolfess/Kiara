@@ -75,7 +75,7 @@ m.Map.prototype.setInfluence = function(cx, cy, min, max, strength)
 			this.set(w, strength);
 		}
 	}
-}
+};
 
 m.Map.prototype.addInfluence = function(cx, cy, maxDist, strength, type = "linear")
 {

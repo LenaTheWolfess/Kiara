@@ -1,6 +1,3 @@
-var KIARA = function(m)
-{
-
 /**
  * Describes a transport plan
  * Constructor assign units (units is an ID array), a destination (position).
@@ -23,10 +20,10 @@ var KIARA = function(m)
  *   transporter = this.ID
  */
 
-m.TransportPlan = function(gameState, units, startIndex, endIndex, endPos, ship)
+KIARA.TransportPlan = function(gameState, units, startIndex, endIndex, endPos, ship)
 {
 	this.ID = gameState.ai.uniqueIDs.transports++;
-	this.debug = gameState.ai.Config.debug;
+	this.debug = KIARA.Logger.isDebug();
 	this.flotilla = false;   // when false, only one ship per transport ... not yet tested when true
 
 	this.endPos = endPos;
@@ -54,8 +51,7 @@ m.TransportPlan = function(gameState, units, startIndex, endIndex, endPos, ship)
 		if (!this.sea)
 		{
 			this.failed = true;
-			if (this.debug > 1)
-				API3.warn("transport plan with bad path: startIndex " + startIndex + " endIndex " + endIndex);
+			KIARA.Logger.warn("transport plan with bad path: startIndex " + startIndex + " endIndex " + endIndex);
 			return false;
 		}
 	}
@@ -66,9 +62,8 @@ m.TransportPlan = function(gameState, units, startIndex, endIndex, endPos, ship)
 		ent.setMetadata(PlayerID, "endPos", endPos);
 	}
 
-	if (this.debug > 1)
-		API3.warn("Starting a new transport plan with ID " + this.ID +
-			" to index " + endIndex + " with units length " + units.length);
+	KIARA.Logger.debug("Starting a new transport plan with ID " + this.ID +
+		" to index " + endIndex + " with units length " + units.length);
 
 	this.state = "boarding";
 	this.boardingPos = {};
@@ -77,7 +72,7 @@ m.TransportPlan = function(gameState, units, startIndex, endIndex, endPos, ship)
 	return true;
 };
 
-m.TransportPlan.prototype.init = function(gameState)
+KIARA.TransportPlan.prototype.init = function(gameState)
 {
 	this.units = gameState.getOwnUnits().filter(API3.Filters.byMetadata(PlayerID, "transport", this.ID));
 	this.ships = gameState.ai.HQ.navalManager.ships.filter(API3.Filters.byMetadata(PlayerID, "transporter", this.ID));
@@ -91,7 +86,7 @@ m.TransportPlan.prototype.init = function(gameState)
 };
 
 /** count available slots */
-m.TransportPlan.prototype.countFreeSlots = function()
+KIARA.TransportPlan.prototype.countFreeSlots = function()
 {
 	let slots = 0;
 	for (let ship of this.transportShips.values())
@@ -99,7 +94,7 @@ m.TransportPlan.prototype.countFreeSlots = function()
 	return slots;
 };
 
-m.TransportPlan.prototype.countFreeSlotsOnShip = function(ship)
+KIARA.TransportPlan.prototype.countFreeSlotsOnShip = function(ship)
 {
 	if (ship.hitpoints() < ship.garrisonEjectHealth() * ship.maxHitpoints())
 		return 0;
@@ -108,7 +103,7 @@ m.TransportPlan.prototype.countFreeSlotsOnShip = function(ship)
 	return Math.max(ship.garrisonMax() - occupied, 0);
 };
 
-m.TransportPlan.prototype.assignUnitToShip = function(gameState, ent)
+KIARA.TransportPlan.prototype.assignUnitToShip = function(gameState, ent)
 {
 	if (this.needTransportShips)
 		return;
@@ -118,7 +113,7 @@ m.TransportPlan.prototype.assignUnitToShip = function(gameState, ent)
 		if (this.countFreeSlotsOnShip(ship) == 0)
 			continue;
 		ent.setMetadata(PlayerID, "onBoard", ship.id());
-		if (this.debug > 1)
+		if (KIARA.Logger.isTrace())
 		{
 			if (ent.getMetadata(PlayerID, "role") == "attack")
 				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [2, 0, 0] });
@@ -140,7 +135,7 @@ m.TransportPlan.prototype.assignUnitToShip = function(gameState, ent)
 		this.needSplit.push(ent);
 };
 
-m.TransportPlan.prototype.assignShip = function(gameState)
+KIARA.TransportPlan.prototype.assignShip = function(gameState)
 {
 	let pos;
 	// choose a unit of this plan not yet assigned to a ship
@@ -180,7 +175,7 @@ m.TransportPlan.prototype.assignShip = function(gameState)
 };
 
 /** add a unit to this plan */
-m.TransportPlan.prototype.addUnit = function(unit, endPos)
+KIARA.TransportPlan.prototype.addUnit = function(unit, endPos)
 {
 	unit.setMetadata(PlayerID, "transport", this.ID);
 	unit.setMetadata(PlayerID, "endPos", endPos);
@@ -188,7 +183,7 @@ m.TransportPlan.prototype.addUnit = function(unit, endPos)
 };
 
 /** remove a unit from this plan, if not yet on board */
-m.TransportPlan.prototype.removeUnit = function(gameState, unit)
+KIARA.TransportPlan.prototype.removeUnit = function(gameState, unit)
 {
 	let shipId = unit.getMetadata(PlayerID, "onBoard");
 	if (shipId == "onBoard")
@@ -212,11 +207,11 @@ m.TransportPlan.prototype.removeUnit = function(gameState, unit)
 	}
 };
 
-m.TransportPlan.prototype.releaseShip = function(ship)
+KIARA.TransportPlan.prototype.releaseShip = function(ship)
 {
 	if (ship.getMetadata(PlayerID, "transporter") != this.ID)
 	{
-		API3.warn(" Kiara: try removing a transporter ship with " + ship.getMetadata(PlayerID, "transporter") +
+		KIARA.Logger.debug(" Kiara: try removing a transporter ship with " + ship.getMetadata(PlayerID, "transporter") +
 		          " from " + this.ID + " and stance " + ship.getStance());
 		return;
 	}
@@ -230,7 +225,7 @@ m.TransportPlan.prototype.releaseShip = function(ship)
 		ship.setMetadata(PlayerID, "role", "trader");
 };
 
-m.TransportPlan.prototype.releaseAll = function()
+KIARA.TransportPlan.prototype.releaseAll = function()
 {
 	for (let ship of this.ships.values())
 		this.releaseShip(ship);
@@ -240,7 +235,7 @@ m.TransportPlan.prototype.releaseAll = function()
 		ent.setMetadata(PlayerID, "endPos", undefined);
 		ent.setMetadata(PlayerID, "onBoard", undefined);
 		ent.setMetadata(PlayerID, "transport", undefined);
-		// TODO if the index of the endPos of the entity is !=, 
+		// TODO if the index of the endPos of the entity is !=,
 		// require again another transport (we could need land-sea-land-sea-land)
 	}
 
@@ -250,7 +245,7 @@ m.TransportPlan.prototype.releaseAll = function()
 };
 
 /** TODO not currently used ... to be fixed */
-m.TransportPlan.prototype.cancelTransport = function(gameState)
+KIARA.TransportPlan.prototype.cancelTransport = function(gameState)
 {
 	let ent = this.units.toEntityArray()[0];
 	let base = gameState.ai.HQ.getBaseByID(ent.getMetadata(PlayerID, "base"));
@@ -282,7 +277,7 @@ m.TransportPlan.prototype.cancelTransport = function(gameState)
  * - then the plan is cleared
  */
 
-m.TransportPlan.prototype.update = function(gameState)
+KIARA.TransportPlan.prototype.update = function(gameState)
 {
 	if (this.state == "boarding")
 		this.onBoarding(gameState);
@@ -292,7 +287,7 @@ m.TransportPlan.prototype.update = function(gameState)
 	return this.units.length;
 };
 
-m.TransportPlan.prototype.onBoarding = function(gameState)
+KIARA.TransportPlan.prototype.onBoarding = function(gameState)
 {
 	let ready = true;
 	let time = gameState.ai.elapsedTime;
@@ -367,7 +362,7 @@ m.TransportPlan.prototype.onBoarding = function(gameState)
 					{
 						this.nTry[shipId] = 0;
 						if (this.debug > 1)
-							API3.warn("ship " + shipId + " new attempt for a landing point ");
+							KIARA.Logger.debug("ship " + shipId + " new attempt for a landing point ");
 						this.boardingPos[shipId] = this.getBoardingPos(gameState, ship, this.startIndex, this.sea, undefined, false);
 					}
 					ship.move(this.boardingPos[shipId][0], this.boardingPos[shipId][1]);
@@ -389,14 +384,13 @@ m.TransportPlan.prototype.onBoarding = function(gameState)
 							++this.nTry[ent.id()];
 						if (this.nTry[ent.id()] > 5)
 						{
-							if (this.debug > 1)
-								API3.warn("unit blocked, but no ways out of the trap ... destroy it");
+							KIARA.Logger.debug("unit blocked, but no ways out of the trap ... destroy it");
 							this.resetUnit(gameState, ent);
 							ent.destroy();
 							continue;
 						}
 						if (this.nTry[ent.id()] > 1)
-							ent.moveToRange(newPos[0], newPos[1], 30, 30);
+							ent.moveToRange(newPos[0], newPos[1], 30, 35);
 						ent.garrison(ship, true);
 					}
 					else if (API3.SquareVectorDistance(this.boardingPos[shipId], newPos) > 225)
@@ -432,7 +426,7 @@ m.TransportPlan.prototype.onBoarding = function(gameState)
 };
 
 /** tell if a unit is garrisoned in one of the ships of this plan, and update its metadata if yes */
-m.TransportPlan.prototype.isOnBoard = function(ent)
+KIARA.TransportPlan.prototype.isOnBoard = function(ent)
 {
 	for (let ship of this.transportShips.values())
 	{
@@ -445,16 +439,16 @@ m.TransportPlan.prototype.isOnBoard = function(ent)
 };
 
 /** when avoidEnnemy is true, we try to not board/unboard in ennemy territory */
-m.TransportPlan.prototype.getBoardingPos = function(gameState, ship, landIndex, seaIndex, destination, avoidEnnemy)
+KIARA.TransportPlan.prototype.getBoardingPos = function(gameState, ship, landIndex, seaIndex, destination, avoidEnnemy)
 {
 	if (!gameState.ai.HQ.navalManager.landingZones[landIndex])
 	{
-		API3.warn(" >>> no landing zone for land " + landIndex);
+		KIARA.Logger.debug(" >>> no landing zone for land " + landIndex);
 		return destination;
 	}
 	else if (!gameState.ai.HQ.navalManager.landingZones[landIndex][seaIndex])
 	{
-		API3.warn(" >>> no landing zone for land " + landIndex + " and sea " + seaIndex);
+		KIARA.Logger.debug(" >>> no landing zone for land " + landIndex + " and sea " + seaIndex);
 		return destination;
 	}
 
@@ -508,7 +502,7 @@ m.TransportPlan.prototype.getBoardingPos = function(gameState, ship, landIndex, 
 	return posmin;
 };
 
-m.TransportPlan.prototype.onSailing = function(gameState)
+KIARA.TransportPlan.prototype.onSailing = function(gameState)
 {
 	// Check that the units recovered on the previous turn have been reloaded
 	for (let recov of this.recovered)
@@ -523,14 +517,12 @@ m.TransportPlan.prototype.onSailing = function(gameState)
 				ship.moveApart(recov.entPos, 15);
 			continue;
 		}
-		if (this.debug > 1)
-			API3.warn(">>> transport " + this.ID + " reloading failed ... <<<");
+		KIARA.Logger.debug(">>> transport " + this.ID + " reloading failed ... <<<");
 		// destroy the unit if inaccessible otherwise leave it there
-		let index = m.getLandAccess(gameState, ent);
+		let index = KIARA.getLandAccess(gameState, ent);
 		if (gameState.ai.HQ.landRegions[index])
 		{
-			if (this.debug > 1)
-				API3.warn(" recovered entity kept " + ent.id());
+			KIARA.Logger.debug(" recovered entity kept " + ent.id());
 			this.resetUnit(gameState, ent);
 			// TODO we should not destroy it, but now the unit could still be reloaded on the next turn
 			// and mess everything
@@ -538,8 +530,7 @@ m.TransportPlan.prototype.onSailing = function(gameState)
 		}
 		else
 		{
-			if (this.debug > 1)
-				API3.warn("recovered entity destroyed " + ent.id());
+			KIARA.Logger.debug("recovered entity destroyed " + ent.id());
 			this.resetUnit(gameState, ent);
 			ent.destroy();
 		}
@@ -562,23 +553,22 @@ m.TransportPlan.prototype.onSailing = function(gameState)
 					ent.setMetadata(PlayerID, "onBoard", "onBoard");
 				else
 				{
-					API3.warn("Kiara transportPlan problem: unit not on ship without position ???");
+					KIARA.Logger.error("unit not on ship without position ???");
 					this.resetUnit(gameState, ent);
 					ent.destroy();
 				}
 			}
 			else
 			{
-				API3.warn("Kiara transportPlan problem: unit on ship, but no ship ???");
+				KIARA.Logger.debug("Kiara transportPlan problem: unit on ship, but no ship ???");
 				this.resetUnit(gameState, ent);
 				ent.destroy();
 			}
 		}
-		else if (m.getLandAccess(gameState, ent) != this.endIndex)
+		else if (KIARA.getLandAccess(gameState, ent) != this.endIndex)
 		{
 			// unit unloaded on a wrong region - try to regarrison it and move a bit the ship
-			if (this.debug > 1)
-				API3.warn(">>> unit unloaded on a wrong region ! try to garrison it again <<<");
+			KIARA.Logger.debug(">>> unit unloaded on a wrong region ! try to garrison it again <<<");
 			let ship = gameState.getEntityById(ent.getMetadata(PlayerID, "onBoard"));
 			if (ship && !this.canceled)
 			{
@@ -589,8 +579,7 @@ m.TransportPlan.prototype.onSailing = function(gameState)
 			}
 			else
 			{
-				if (this.debug > 1)
-					API3.warn("no way ... we destroy it");
+				KIARA.Logger.debug("no way ... we destroy it");
 				this.resetUnit(gameState, ent);
 				ent.destroy();
 			}
@@ -602,9 +591,9 @@ m.TransportPlan.prototype.onSailing = function(gameState)
 			let goal = ent.getMetadata(PlayerID, "endPos");
 			let dist = goal ? API3.VectorDistance(pos, goal) : 0;
 			if (dist > 30)
-				ent.moveToRange(goal[0], goal[1], dist-20, dist-20);
+				ent.moveToRange(goal[0], goal[1], dist-25, dist-20);
 			else
-				ent.moveToRange(pos[0], pos[1], 20, 20);
+				ent.moveToRange(pos[0], pos[1], 20, 25);
 			ent.setMetadata(PlayerID, "transport", undefined);
 			ent.setMetadata(PlayerID, "onBoard", undefined);
 			ent.setMetadata(PlayerID, "endPos", undefined);
@@ -669,8 +658,7 @@ m.TransportPlan.prototype.onSailing = function(gameState)
 			if (this.nTry[shipId] > 2)	// we must have been blocked by something ... try with another boarding point
 			{
 				this.nTry[shipId] = 0;
-				if (this.debug > 1)
-					API3.warn(shipId + " new attempt for a landing point ");
+				KIARA.Logger.debug(shipId + " new attempt for a landing point ");
 				this.boardingPos[shipId] = this.getBoardingPos(gameState, ship, this.endIndex, this.sea, undefined, true);
 			}
 			ship.move(this.boardingPos[shipId][0], this.boardingPos[shipId][1]);
@@ -678,7 +666,7 @@ m.TransportPlan.prototype.onSailing = function(gameState)
 	}
 };
 
-m.TransportPlan.prototype.resetUnit = function(gameState, ent)
+KIARA.TransportPlan.prototype.resetUnit = function(gameState, ent)
 {
 	ent.setMetadata(PlayerID, "transport", undefined);
 	ent.setMetadata(PlayerID, "onBoard", undefined);
@@ -698,7 +686,7 @@ m.TransportPlan.prototype.resetUnit = function(gameState, ent)
 	}
 };
 
-m.TransportPlan.prototype.Serialize = function()
+KIARA.TransportPlan.prototype.Serialize = function()
 {
 	return {
 		"ID": this.ID,
@@ -717,13 +705,10 @@ m.TransportPlan.prototype.Serialize = function()
 	};
 };
 
-m.TransportPlan.prototype.Deserialize = function(data)
+KIARA.TransportPlan.prototype.Deserialize = function(data)
 {
 	for (let key in data)
 		this[key] = data[key];
 
 	this.failed = false;
 };
-
-return m;
-}(KIARA);
