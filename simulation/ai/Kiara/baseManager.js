@@ -179,7 +179,7 @@ KIARA.BaseManager.prototype.assignResourceToDropsite = function(gameState, drops
 		"hunt": 3
 	}
 
-	let debug = true;
+	let debug = KIARA.Logger.isDebug();
 	for (let type of dropsite.resourceDropsiteTypes())
 	{
 		let resources = gameState.getResourceSupplies(type);
