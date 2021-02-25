@@ -667,7 +667,8 @@ KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 			)
 		) {
 			this.targetList.push(attacker.id());
-			Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [attacker.id()], "rgb": [2,0,0]});
+			if (KIARA.Logger.isTrace())
+				Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [attacker.id()], "rgb": [2,0,0]});
 		}
 
 		if (target.getMetadata(PlayerID, "PartOfArmy") !== undefined)
