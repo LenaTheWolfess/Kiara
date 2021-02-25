@@ -1883,12 +1883,15 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 		this.unitCollUpdateArray.splice(0, lgth);
 		this.startingAttack = false;
 
-		// check if this enemy has resigned
-		if (this.target && this.target.owner() === 0 && this.targetPlayer !== 0)
-			this.target = undefined;
 	}
 	this.lastPosition = this.position;
 	Engine.ProfileStop();
+	// check if this enemy has resigned, if so abort
+	if (this.target && this.target.owner() === 0 && this.targetPlayer !== 0) {
+		this.target = undefined;
+		KIARA.Logger.warn("Enemy " + this.targetPlayer + " resigned -> Abort");
+		return 0;
+	}
 
 	KIARA.Logger.warn("Attack: " + this.type + " " + this.name + ": status " + this.state + ", target = " + this.target);
 	return this.unitCollection.length;

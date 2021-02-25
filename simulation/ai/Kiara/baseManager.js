@@ -179,7 +179,7 @@ KIARA.BaseManager.prototype.assignResourceToDropsite = function(gameState, drops
 		"hunt": 3
 	}
 
-	let debug = false;
+	let debug = true;
 	for (let type of dropsite.resourceDropsiteTypes())
 	{
 		let resources = gameState.getResourceSupplies(type);
@@ -402,7 +402,7 @@ KIARA.BaseManager.prototype.findBestFarmsteadLocation = function(gameState, reso
 	return { "quality": bestVal, "pos": [x, z] };
 }
 
-KIARA.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut = 20, reset = false)
+KIARA.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut = 10, reset = false)
 {
 	if (resource == "food" || resource == "farm") {
 		gameState.ai.HQ.signalNoSupply(gameState, resource);
@@ -423,6 +423,7 @@ KIARA.BaseManager.prototype.signalNoSupply = function(gameState, resource, cut =
 
 	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Dropsite]))) {
 		KIARA.Logger.trace("signalNoSupply: cannot build storehouse");
+		gameState.ai.HQ.signalNoSupply(gameState, resource);
 		return;
 	}
 

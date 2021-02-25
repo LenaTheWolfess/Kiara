@@ -526,8 +526,8 @@ KIARA.AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 					++suports;
 			}
 			if (suports / enemyUnitSize < 0.3) {
-				continue;
 				veto[i] = true;
+				continue;
 			}
 			for (let ent of gameState.getEnemyStructures(i).values())
 				if (ent.hasClass("Tower") || ent.hasClass("WallTower") || ent.hasClass("Fortress"))
