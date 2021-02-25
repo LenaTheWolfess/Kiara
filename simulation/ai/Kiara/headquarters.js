@@ -3488,7 +3488,7 @@ KIARA.HQ.prototype.Serialize = function()
 	for (let base of this.baseManagers)
 		baseManagers.push(base.Serialize());
 
-	if (KIARA.Logger.isSerialisation())
+	if (KIARA.Logger.isSerialization())
 	{
 		KIARA.Logger.debug(" HQ serialization ---------------------");
 		KIARA.Logger.debug(" properties " + uneval(properties));
