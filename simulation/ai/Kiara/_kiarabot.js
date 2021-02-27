@@ -8,6 +8,7 @@ KIARA.Logger.DEBUG = 1;
 KIARA.Logger.WARN = 2;
 KIARA.Logger.ERROR = 3;
 KIARA.Logger.RELEASE = 4;
+//KIARA.Logger.level = KIARA.Logger.DEBUG;
 KIARA.Logger.level = KIARA.Logger.RELEASE;
 
 KIARA.Strategy = function() {};
@@ -16,6 +17,7 @@ KIARA.Strategy.BOOM = "boom";
 KIARA.Strategy.EARLY_RAID = "earlyRaid";
 KIARA.Strategy.ATTACK = "attack";
 KIARA.Strategy.RECOVER = "recover";
+KIARA.Strategy.DOG_RAID = "dogRaid";
 KIARA.Strategy.DEFAULT = KIARA.Strategy.NONE;
 
 KIARA.AttackTypes = function() {};
@@ -29,6 +31,7 @@ KIARA.AttackTypes.MELLE_RANGE_INF_CAV = "MeleeRangeInfCav";
 KIARA.AttackTypes.MELLE_RANGE_CAV = "MeleeRangeCav";
 KIARA.AttackTypes.MELLE_CAV = "MeleeCav";
 KIARA.AttackTypes.RANGE_CAV = "RangeCav";
+KIARA.AttackTypes.DOG_RAID = "DogRaid";
 
 // for instance "balanced", "aggressive" or "defensive"
 KIARA.Behaviour = function() {};

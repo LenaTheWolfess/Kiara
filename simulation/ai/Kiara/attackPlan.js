@@ -126,6 +126,13 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 			this.unitStat.Infantry.targetSize = data.targetSize;
 		this.neededShips = 1;
 	}
+	else if (type == KIARA.AttackTypes.DOG_RAID)
+	{
+		priority = 330;
+		this.unitStat.Dogs = { "priority": 1, "minSize": 10, "targetSize": 15, "batchSize": 5, "classes": ["Dog"],
+			"interests": [ ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
+		this.neededShips = 1;
+	}
 	else if (type == KIARA.AttackTypes.EARLY_RAID)
 	{
 		priority = 310;
@@ -580,14 +587,14 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 			queued = KIARA.returnResources(gameState, ent);
 		let index = KIARA.getLandAccess(gameState, ent);
 		if (index == rallyIndex)
-			ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 15, queued);
+			ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 20, queued);
 		else
 			gameState.ai.HQ.navalManager.requireTransport(gameState, ent, index, rallyIndex, rallyPoint);
 	}
 
 	// reset all queued units
 	this.removeQueues(gameState);
-	return	1;
+	return 1;
 };
 
 KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
@@ -736,6 +743,20 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 {
 	let plan = this.name;
 	let added = false;
+
+	if (this.type == KIARA.AttackTypes.DOG_RAID)
+	{
+		for (let ent of gameState.getOwnUnits().values())
+		{
+			if (!ent.hasClass("Dog") || !this.isAvailableUnit(gameState, ent))
+				continue;
+			ent.setMetadata(PlayerID, "plan", plan);
+			this.unitCollection.updateEnt(ent);
+			added = true;
+		}
+		return added;
+	}
+
 	// If we can not build units, assign all available except those affected to allied defense to the current attack.
 	if (!this.canBuildUnits && !this.noAll)
 	{
@@ -752,13 +773,10 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 
 	if (this.type == KIARA.AttackTypes.EARLY_RAID)
 	{
-		// Raid are fast FastMoving attack: assign all cav except some for hunting
 		let num = 0;
 		for (let ent of gameState.getOwnUnits().values())
 		{
 			if (!ent.hasClass("FastMoving") || !this.isAvailableUnit(gameState, ent))
-				continue;
-			if (num++ < 2)
 				continue;
 			ent.setMetadata(PlayerID, "plan", plan);
 			this.unitCollection.updateEnt(ent);
@@ -970,9 +988,8 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 	{
 		if (this.type == KIARA.AttackTypes.RAID)
 			targets = this.raidTargetFinder(gameState);
-		else if (this.type == KIARA.AttackTypes.EARLY_RAID) {
+		else if (this.type == KIARA.AttackTypes.EARLY_RAID || this.type == KIARA.AttackTypes.DOG_RAID)
 			targets = this.earlyRaidTargetFinder(gameState);
-		}
 		else if (this.type == KIARA.AttackTypes.RUSH || this.type == KIARA.AttackTypes.ATTACK)
 		{
 			targets = this.rushTargetFinder(gameState, this.targetPlayer);
@@ -1042,8 +1059,10 @@ KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 	if (targets.hasEntities())
 		return targets;
 
+	let hasSiege = this.hasSiegeUnits();
 	let validTargets = gameState.getEnemyStructures(playerEnemy).filter(this.isValidTarget, this);
-	targets = validTargets.filter(API3.Filters.byClass("Fortress"));
+	if (hasSiege)
+		targets = validTargets.filter(API3.Filters.byClass("Fortress"));
 	let towers = validTargets.filter(API3.Filters.byClass("Tower"));
 	if (!targets.hasEntities())
 		targets = towers;
@@ -1156,7 +1175,7 @@ KIARA.AttackPlan.prototype.earlyRaidTargetFinder = function(gameState)
 {
 	let targets = new API3.EntityCollection(gameState.sharedScript);
 	for (let ent of gameState.getEnemyUnits().filter(API3.Filters.byClass("FemaleCitizen")).values())
-			targets.addEnt(ent);
+		targets.addEnt(ent);
 	return targets;
 };
 
@@ -1429,7 +1448,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 				this.targetPos = this.target.position();
 			}
 		}
-		if (this.type == KIARA.AttackTypes.EARLY_RAID) // try to find better target for early raid
+		if (this.type == KIARA.AttackTypes.EARLY_RAID || this.type == KIARA.AttackTypes.DOG_RAID) // try to find better target for early raid
 		{
 			let newtarget = this.getNearestTarget(gameState, this.position);
 			if (newtarget)
@@ -1591,7 +1610,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 
 		let targetClassesUnit;
 		let targetClassesSiege;
-		if (this.type == KIARA.AttackTypes.EARLY_RAID)
+		if (this.type == KIARA.AttackTypes.EARLY_RAID || this.type == KIARA.AttackTypes.DOG_RAID)
 			targetClassesUnit = { "attack": ["FemaleCitizen"], "avoid": ["Structure"], "vetoEntities": veto };
 		else if (this.type == KIARA.AttackTypes.RUSH)
 			targetClassesUnit = { "attack": ["Unit", "Structure"], "avoid": ["Storehouse", "Farmstead", "Field", "Blacksmith", "Palisade", "StoneWall", "Tower", "Fortress"], "vetoEntities": veto };
@@ -2031,7 +2050,7 @@ KIARA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 		this.path.shift();
 		if (this.path.length) {
 			for (let group of this.formationList)
-				group.moveToRange(this.path[0][0], this.path[0][1], 0, 15);
+				group.moveToRange(this.path[0][0], this.path[0][1], 0, 20);
 		}
 		else
 		{
@@ -2128,7 +2147,8 @@ KIARA.AttackPlan.prototype.UpdateTarget = function(gameState)
 			KIARA.Logger.debug("We will help one of our other attacks");
 		}
 		this.targetPos = this.target.position();
-		if (this.target) {
+		if (this.target)
+		{
 			// regroup army
 			this.Regroup(gameState);
 		}
@@ -2196,7 +2216,7 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 				dist = API3.SquareVectorDistance(this.position, rallyPoint);
 			}
 			// Then check if we have a nearer base (in case this attack has captured one)
-			for (let base of gameState.ai.HQ.baseManagers)
+			/*for (let base of gameState.ai.HQ.baseManagers)
 			{
 				if (!base.anchor || !base.anchor.position())
 					continue;
@@ -2207,7 +2227,7 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 					continue;
 				dist = newdist;
 				rallyPoint = base.anchor.position();
-			}
+			}*/
 		}
 
 		for (let ent of this.unitCollection.values())
@@ -2215,7 +2235,7 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 			if (ent.getMetadata(PlayerID, "role") == "attack")
 				ent.stopMoving();
 			if (rallyPoint)
-				ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 15);
+				ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 40);
 			if (KIARA.Logger.isTrace())
 				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 1] });
 			this.removeUnit(ent);
@@ -2252,6 +2272,8 @@ KIARA.AttackPlan.prototype.checkEvents = function(gameState, events)
 		if (this.type == KIARA.AttackTypes.RAID && !this.isStarted())
 			this.target = undefined;
 		else if (this.type == KIARA.AttackTypes.EARLY_RAID && !this.isStarted())
+			this.target = undefined;
+		else if (this.type == KIARA.AttackTypes.DOG_RAID && !this.isStarted())
 			this.target = undefined;
 		else
 			this.target = gameState.getEntityById(evt.newentity);

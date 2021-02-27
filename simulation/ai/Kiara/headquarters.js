@@ -2511,8 +2511,8 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		let civ = gameState.getPlayerCiv();
 		if (numStables == 0 && stableTemplate && civ == "brit")
 		{
-			this.strategy = KIARA.Strategy.EARLY_RAID;
-			this.attackManager.maxRaids = 1;
+			this.strategy = KIARA.Strategy.DOG_RAID;
+			this.attackManager.maxDogRaids = 1;
 			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
 		}
 		// first barracks/range and stables.
@@ -3302,6 +3302,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 			this.phasingQued = true;
 
 	// Handle strategy switching
+	KIARA.Logger.debug(this.strategy);
 	if (this.strategy == KIARA.Strategy.RECOVER) {
 		if (pop > 200)
 			this.strategy = KIARA.Strategy.ATTACK;
@@ -3316,6 +3317,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		this.attackManager.maxRaids = 2;
 		this.cavalryRush = false;
 	}
+	KIARA.Logger.debug("new strategy = " + this.strategy);
 
 	if (
 			!gameState.getOwnEntitiesByClass("Farmstead", true).length && 

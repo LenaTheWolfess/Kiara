@@ -8,9 +8,10 @@ KIARA.AttackManager = function(Config)
 	this.totalNumber = 0;
 	this.attackNumber = 0;
 	this.rushNumber = 0;
+	this.dogRaidNumber = 0;
 	this.raidNumber = 0;
-	this.upcomingAttacks = {"Anihilation": [], "Rush": [], "EarlyRaid": [], "Raid": [], "Attack": [], "HugeAttack": [], "MeleeRangeInfCav": [], "MeleeRangeCav": [], "MeleeCav": [], "RangeCav": [] };
-	this.startedAttacks = {"Anihilation": [], "Rush": [], "EarlyRaid": [], "Raid": [], "Attack": [], "HugeAttack": [], "MeleeRangeInfCav": [], "MeleeRangeCav": [], "MeleeCav": [], "RangeCav": [] };	
+	this.upcomingAttacks = {"DogRaid": [], "Anihilation": [], "Rush": [], "EarlyRaid": [], "Raid": [], "Attack": [], "HugeAttack": [], "MeleeRangeInfCav": [], "MeleeRangeCav": [], "MeleeCav": [], "RangeCav": [] };
+	this.startedAttacks = {"DogRaid": [], "Anihilation": [], "Rush": [], "EarlyRaid": [], "Raid": [], "Attack": [], "HugeAttack": [], "MeleeRangeInfCav": [], "MeleeRangeCav": [], "MeleeCav": [], "RangeCav": [] };
 	this.bombingAttacks = new Map();// Temporary attacks for siege units while waiting their current attack to start
 	this.debugTime = 0;
 	this.maxRushes = 0;
@@ -38,6 +39,7 @@ KIARA.AttackManager.prototype.setRushes = function(allowed)
 
 	this.maxRushes = 0;
 	this.maxRaids = 0;
+	this.maxDogRaids = 0;
 };
 
 KIARA.AttackManager.prototype.checkEvents = function(gameState, events)
@@ -249,7 +251,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 	this.checkEvents(gameState, events);
 
 	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
-	let unexecutedAttacks = { "Anihilation": 0, "Rush": 0, "EarlyRaid": 0 ,"Raid": 0, "Attack": 0, "HugeAttack": 0, "MeleeRangeInfCav": 0, "MeleeRangeCav": 0, "MeleeCav": 0, "RangeCav": 0};
+	let unexecutedAttacks = {"DogRaid": 0, "Anihilation": 0, "Rush": 0, "EarlyRaid": 0 ,"Raid": 0, "Attack": 0, "HugeAttack": 0, "MeleeRangeInfCav": 0, "MeleeRangeCav": 0, "MeleeCav": 0, "RangeCav": 0};
 	let stopAllAttacks = gameState.ai.HQ.strategy == KIARA.Strategy.RECOVER;
 
 	for (let attackType in this.upcomingAttacks)
@@ -328,8 +330,13 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 
 	let doSmallAttacks = this.Config.behavior == "aggressive" && gameState.ai.HQ.strategy == KIARA.Strategy.ATTACK;
 	let doEarlyRaid = gameState.ai.HQ.strategy == KIARA.Strategy.EARLY_RAID;
+	let doDogRaid = gameState.ai.HQ.strategy == KIARA.Strategy.DOG_RAID;
 
 	let barracksNb = gameState.getOwnEntitiesByClass("Barracks", true).filter(API3.Filters.isBuilt()).length;
+
+	let stablesNb = gameState.getOwnEntitiesByClass("Stable", true).filter(API3.Filters.isBuilt()).length;
+
+	KIARA.Logger.debug("dogRaids ? " + doDogRaid + " stables ? " + stablesNb + " dogRaidNumber " + this.dogRaidNumber + " / " + this.maxDogRaids);
 	if (doSmallAttacks && this.rushNumber < this.maxRushes && barracksNb >= 1)
 	{
 		if (unexecutedAttacks.Rush === 0)
@@ -351,21 +358,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 	{
 		if (unexecutedAttacks.EarlyRaid === 0)
 		{
-			let target;
-			for (let targetId of gameState.ai.HQ.defenseManager.targetList)
-			{
-				target = gameState.getEntityById(targetId);
-				if (!target)
-					continue;
-				if (gameState.isPlayerEnemy(target.owner()))
-					break;
-				target = undefined;
-			}
-			let data;
-			if (target) // prepare a raid against this target
-				data = { "targetSize": this.raidSize[this.raidNumber], "target": ent };
-			else
-				data = { "targetSize": this.raidSize[this.raidNumber] };
+			let data = { "targetSize": this.raidSize[this.raidNumber] };
 			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, KIARA.AttackTypes.EARLY_RAID, data);
 			if (!attackPlan.failed)
 			{
@@ -375,6 +368,21 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 				this.upcomingAttacks.EarlyRaid.push(attackPlan);
 			}
 			this.raidNumber++;
+		}
+	}
+	else if (doDogRaid && this.dogRaidNumber < this.maxDogRaids && stablesNb)
+	{
+		if (unexecutedAttacks.DogRaid === 0)
+		{
+			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, KIARA.AttackTypes.DOG_RAID, {});
+			if (!attackPlan.failed)
+			{
+				KIARA.Logger.debug("Military Manager: "+KIARA.AttackTypes.DOG_RAID+" plan " + this.totalNumber + " with maxDogRaids " + this.maxDogRaids);
+				this.totalNumber++;
+				attackPlan.init(gameState);
+				this.upcomingAttacks.DogRaid.push(attackPlan);
+			}
+			this.dogRaidNumber++;
 		}
 	}
 	else if (unexecutedAttacks.Attack == 0 && unexecutedAttacks.HugeAttack == 0 &&
