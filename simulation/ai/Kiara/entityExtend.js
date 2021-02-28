@@ -313,6 +313,13 @@ KIARA.getHolder = function(gameState, ent)
 	return undefined;
 };
 
+KIARA.getArrows = function(gameState, ent)
+{
+	if (!ent.isGarrisonHolder())
+		return 0;
+	return ent.getDefaultArrow() + (ent.getArrowMultiplier() * ent.garrisoned());
+}
+
 /** return the template of the built foundation if a foundation, otherwise return the entity itself */
 KIARA.getBuiltEntity = function(gameState, ent)
 {

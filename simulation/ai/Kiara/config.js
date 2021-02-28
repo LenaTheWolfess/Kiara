@@ -114,7 +114,7 @@ KIARA.Config = function(difficulty, behavior)
 		"dropsites": 200,
 		"field": 400,
 		"dock": 90,
-		"corral": 100,
+		"corral": 350,
 		"economicBuilding": 90,
 		"militaryBuilding": 130,
 		"defenseBuilding": 70,
@@ -231,7 +231,7 @@ KIARA.Config.prototype.setConfig = function(gameState)
 	if (this.difficulty < KIARA.Difficulty.EASY)
 		this.Economy.workPhase3 = Infinity;	// prevent the phasing to city phase
 
-//	KIARA.Logger.trace(" >>>  Kiara bot: personality = " + uneval(this.personality));
+	KIARA.Logger.trace(" >>>  Kiara bot: personality = " + uneval(this.personality));
 };
 
 KIARA.Config.prototype.Serialize = function()

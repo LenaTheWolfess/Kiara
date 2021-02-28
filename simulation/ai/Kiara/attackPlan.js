@@ -136,8 +136,8 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	else if (type == KIARA.AttackTypes.EARLY_RAID)
 	{
 		priority = 310;
-		this.unitStat.FastMoving = { "priority": 1, "minSize": 10, "targetSize": 15, "batchSize": 5, "classes": ["FastMoving"],
-			"interests": [ ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 10, "targetSize": 15, "batchSize": 2, "classes": ["FastMoving"],
+			"interests": [ ["canGather", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
 		this.neededShips = 1;
 	}
 	else if (type == KIARA.AttackTypes.RAID)
@@ -426,6 +426,7 @@ KIARA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 /** Three returns possible: 1 is "keep going", 0 is "failed plan", 2 is "start". */
 KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 {
+	KIARA.Logger.debug(this.type + ": update preparation");
 	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
 	// the completing step is used to return resources and regroup the units
 	// so we check that we have no more forced order before starting the attack
@@ -486,6 +487,7 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 	// special case: if we've reached max pop, and we can start the plan, start it.
 	if (popCaped)
 	{
+		KIARA.Logger.debug("pop capped with length " + this.unitCollection.length);
 		let lengthMin = 16;
 		if (this.unitCollection.length > lengthMin) {
 			this.emptyQueues();
@@ -493,6 +495,7 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 		else	// Abort the plan so that its units will be reassigned to other plans.
 		{
 			if (this.getType() == KIARA.AttackTypes.HUGE_ATTACK) {
+				KIARA.Logger.debug("Force start");
 				this.forceStart();
 				return 1;
 			}
@@ -508,6 +511,7 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 					  " attack " + am.startedAttacks.Attack.length +
 					  " huge " + am.startedAttacks.HugeAttack.length);
 			}
+			KIARA.Logger.debug("no " + KIARA.AttackTypes.HUGE_ATTACK + " -> abort");
 			return 0;
 		}
 	}
@@ -860,6 +864,8 @@ KIARA.AttackPlan.prototype.isAvailableUnit = function(gameState, ent)
 	if (ent.getMetadata(PlayerID, "plan") !== undefined && ent.getMetadata(PlayerID, "plan") !== -1 ||
 	    ent.getMetadata(PlayerID, "transport") !== undefined || ent.getMetadata(PlayerID, "transporter") !== undefined)
 		return false;
+	if (ent.healthLevel() < 0.6)
+		return false;
 	if (gameState.ai.HQ.victoryManager.criticalEnts.has(ent.id()) && (this.overseas || ent.healthLevel() < 0.8))
 		return false;
 	return true;
@@ -873,6 +879,8 @@ KIARA.AttackPlan.prototype.reassignCavUnit = function(gameState, type)
 		if (!ent.position() || ent.getMetadata(PlayerID, "transport") !== undefined)
 			continue;
 		if (!ent.hasClass("FastMoving") || !ent.hasClass("CitizenSoldier"))
+			continue;
+		if (ent.healthLevel() < 0.6)
 			continue;
 		let raid = gameState.ai.HQ.attackManager.getAttackInPreparation(type);
 		ent.setMetadata(PlayerID, "plan", raid.name);
@@ -1039,18 +1047,25 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 	return target;
 };
 
+KIARA.AttackPlan.prototype.defensiveFire = function(ent)
+{
+	
+}
+
 /**
  * Default target finder aims for conquest critical targets
  * We must apply the *same* selection (isValidTarget) as done in getNearestTarget
  */
 KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy)
 {
+	let eUnits = gameState.getEnemyUnits(playerEnemy);
+	let eStructures = gameState.getEnemyStructures(playerEnemy);
 	let targets = new API3.EntityCollection(gameState.sharedScript);
 	if (gameState.getVictoryConditions().has("wonder"))
-		for (let ent of gameState.getEnemyStructures(playerEnemy).filter(API3.Filters.byClass("Wonder")).values())
+		for (let ent of eStructures.filter(API3.Filters.byClass("Wonder")).values())
 			targets.addEnt(ent);
 	if (gameState.getVictoryConditions().has("regicide"))
-		for (let ent of gameState.getEnemyUnits(playerEnemy).filter(API3.Filters.byClass("Hero")).values())
+		for (let ent of eUnits.filter(API3.Filters.byClass("Hero")).values())
 			targets.addEnt(ent);
 	if (gameState.getVictoryConditions().has("capture_the_relic"))
 		for (let ent of gameState.updatingGlobalCollection("allRelics", API3.Filters.byClass("Relic")).filter(relic => relic.owner() == playerEnemy).values())
@@ -1060,7 +1075,7 @@ KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 		return targets;
 
 	let hasSiege = this.hasSiegeUnits();
-	let validTargets = gameState.getEnemyStructures(playerEnemy).filter(this.isValidTarget, this);
+	let validTargets = eStructures.filter(this.isValidTarget, this);
 	if (hasSiege)
 		targets = validTargets.filter(API3.Filters.byClass("Fortress"));
 	let towers = validTargets.filter(API3.Filters.byClass("Tower"));
@@ -1099,7 +1114,11 @@ KIARA.AttackPlan.prototype.isValidTarget = function(ent)
 		return false;
 	if (this.sameLand && KIARA.getLandAccess(this.gameState, ent) != this.sameLand)
 		return false;
-	return !ent.decaying() || ent.getDefaultArrow() || ent.isGarrisonHolder() && ent.garrisoned().length;
+	if (ent.decaying())
+		return false;
+	if (this.hasSiegeUnits())
+		return ent.getDefaultArrow() || ent.isGarrisonHolder() && ent.garrisoned().length;
+	return KIARA.getArrows(this.gameState, ent) < 1;
 };
 
 /** Rush target finder aims at isolated non-defended buildings */
@@ -1411,7 +1430,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 
 	if (this.unitCollection.length < this.nUnits / 2) {
 		Engine.ProfileStop();
-		KIARA.Logger.warn("attackplan " + this.type + " " + this.name + " update -> half of units -> abort");
+		KIARA.Logger.warn("attackplan " + this.type + " " + this.name + " update -> half of units " + this.unitCollection.length + " -> abort");
 		return 0;
 	} else {
 		KIARA.Logger.warn("Attack: " + this.type + "." + this.name + " units = " + this.unitCollection.length + " vs " + (this.nUnits / 2));
@@ -1459,6 +1478,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 		}
 	}
 
+	let getOutOfStructureFire = this.type != KIARA.AttackTypes.HUGE_ATTACK;
 	// basic state of attacking.
 	if (this.state == "")
 	{
@@ -1486,6 +1506,12 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 			if (!attacker.hasClass("Unit"))
 			{
 				attackedByStructure[evt.target] = true;
+				if (this.type == KIARA.AttackTypes.EARLY_RAID) {
+					if (KIARA.getArrows(gameState, attacker) > 3) {
+						KIARA.Logger.warn("Attack " + this.type + " " + this.name + " under fire -> Abort");
+						return false;
+					}
+				}
 				continue;
 			}
 			if (KIARA.isSiegeUnit(ourUnit))
@@ -1553,14 +1579,28 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 					// Then the unit under attack: abandon its target (if it was a structure or a support) and retaliate
 					// also if our unit is attacking a range unit and the attacker is a melee unit, retaliate
 					let orderData = ourUnit.unitAIOrderData();
+					let amRanged = ourUnit.hasClass("Ranged");
+					let attackerMelee = attacker.hasClass("Melee");
 					if (orderData && orderData.length && orderData[0].target)
 					{
+						// Kite melee attacks
+						if (attackerMelee && amRanged) {
+							let canAttack = ourUnit.canAttackTarget(attacker, false);
+							let myRange = ourUnit.attackRange("Ranged");
+							let pos = attacker.position();
+							//ourUnit.moveToRange(pos[0], pos[1], myRange.min + myRange.max*0.5, myRange.max);
+							ourUnit.moveApart(pos, Math.max(myRange.min, myRange.max*0.8));
+							if (canAttack)
+								ourUnit.attack(attacker.id(), false, true);
+							ourUnit.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
+							continue;
+						}
 						if (orderData[0].target === attacker.id())
 							continue;
 						let target = gameState.getEntityById(orderData[0].target);
 						if (target && !target.hasClass("Structure") && !target.hasClass("Support"))
 						{
-							if (!target.hasClass("Ranged") || !attacker.hasClass("Melee"))
+							if (!target.hasClass("Ranged") || !attackerMelee)
 								continue;
 						}
 					}
@@ -1570,6 +1610,44 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 						ourUnit.attack(attacker.id(), allowCapture);
 						ourUnit.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
 					}
+				}
+			}
+		}
+
+		if (this.type == KIARA.AttackTypes.EARLY_RAID) {
+			let toRemove = [];
+			let rallyPoint = undefined;
+			if (this.isStarted())
+			{
+				let access = this.getAttackAccess(gameState);
+				let dist = Math.min();
+				for (let base of gameState.ai.HQ.baseManagers)
+				{
+					if (!base.anchor || !base.anchor.position())
+						continue;
+					if (KIARA.getLandAccess(gameState, base.anchor) != access)
+						continue;
+					let newdist = API3.SquareVectorDistance(this.position, base.anchor.position());
+					if (newdist > dist)
+						continue;
+					dist = newdist;
+					rallyPoint = base.anchor.position();
+				}
+			}
+			for (let ent of this.unitCollection.values()) {
+				if (ent.position() && ent.healthLevel() < 0.6)
+					toRemove.push(ent);
+			}
+
+			let access = this.getAttackAccess(gameState);
+			if (rallyPoint && gameState.ai.accessibility.getAccessValue(this.rallyPoint) == access) {
+				for (let ent of toRemove) {
+					KIARA.Logger.debug("Attack " + this.type + " " + this.name + ": Return hurt unit to base");
+					if (ent.getMetadata(PlayerID, "role") == "attack") {
+						ent.setMetadata(PlayerID, "role", "retreat");
+					}
+					ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 40);
+					this.removeUnit(ent);
 				}
 			}
 		}
@@ -1639,15 +1717,19 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 			this.unitCollUpdateArray = this.unitCollection.toIdArray();
 
 		// Let's check a few units each time we update (currently 10) except when attack starts
-		let lgth = this.unitCollUpdateArray.length < 15 || this.startingAttack ? this.unitCollUpdateArray.length : 10;
+		let lgth = this.unitCollUpdateArray.length < 15 || this.startingAttack ? this.unitCollUpdateArray.length : 15;
 		for (let check = 0; check < lgth; check++)
 		{
 			let ent = gameState.getEntityById(this.unitCollUpdateArray[check]);
-			if (!ent || !ent.position())
+			if (!ent || !ent.position()) {
+				lgth = lgth < this.unitCollUpdateArray.length ? lgth + 1 : lgth;
 				continue;
+			}
 			// Do not reassign units which have reacted to an attack in that same turn
-			if (ent.getMetadata(PlayerID, "lastAttackPlanUpdateTime") == time)
+			if (ent.getMetadata(PlayerID, "lastAttackPlanUpdateTime") == time) {
+				lgth = lgth < this.unitCollUpdateArray.length ? lgth + 1 : lgth;
 				continue;
+			}
 
 			let targetId;
 			let orderData = ent.unitAIOrderData();
@@ -1688,7 +1770,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 				else if (attackedByStructure[ent.id()] && target.hasClass("Field"))
 					maybeUpdate = true;
 				else if (!ent.hasClass("FastMoving") && !ent.hasClass("Ranged") &&
-					 target.hasClass("FemaleCitizen") && target.unitAIState().split(".")[1] == "FLEEING")
+					target.unitAIState() && target.unitAIState().split(".")[1] == "FLEEING")
 					maybeUpdate = true;
 			}
 
@@ -1780,7 +1862,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 						return false;
 					if (enemy.hasClass("Animal"))
 						return false;
-					if (nearby && enemy.hasClass("FemaleCitizen") && enemy.unitAIState().split(".")[1] == "FLEEING")
+					if (nearby && enemy.unitAIState().split(".")[1] == "FLEEING")
 						return false;
 					let dist = API3.SquareVectorDistance(enemy.position(), ent.position());
 					if (dist > range)
@@ -2150,26 +2232,32 @@ KIARA.AttackPlan.prototype.UpdateTarget = function(gameState)
 		if (this.target)
 		{
 			// regroup army
-			this.Regroup(gameState);
+		//	this.Regroup(gameState);
+			if (this.target.hasClass("CivCentre") || this.target.hasClass("Fortress")) {
+				this.RecreateGroups(gameState);
+				this.RegroupAndAttack(gameState);
+			}
 		}
+		
 	}
 	return true;
 };
 
 KIARA.AttackPlan.prototype.RecreateGroups = function(gameState, moveThem = false)
 {
-	if (this.formationList.length)
-		return;
+	this.formationList = [];
 	// group units up to 20
 	this.formationList.push(new API3.EntityCollection(gameState.sharedScript));
 	let formationId = 0;
 	let count = 0;
+	this.formationList[formationId].registerUpdates();
 	for (let ent of this.unitCollection.values())
 	{
 		if (count == 20) {
 			this.formationList.push(new API3.EntityCollection(gameState.sharedScript));
 			count = 0;
 			formationId++;
+			this.formationList[formationId].registerUpdates();
 		}
 		this.formationList[formationId].addEnt(ent);
 		count++;
@@ -2193,8 +2281,11 @@ KIARA.AttackPlan.prototype.Regroup = function(gameState)
 KIARA.AttackPlan.prototype.RegroupAndAttack = function(gameState)
 {
 	for (let group of this.formationList) {
-		group.regroup();
-		group.attack(this.target, true);
+		if (group.toEntityArray().length > 8)
+			group.form("special/formations/box");
+		else
+			group.form("special/formations/line_closed");
+		group.attack(this.target.id(), true);
 	}
 };
 /** reset any units */
@@ -2202,6 +2293,9 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 {
 	KIARA.Logger.warn("aborting " + this.type);
 	this.unitCollection.unregister();
+	for (let group of this.formationList) {
+		group.unregister();
+	}
 	if (this.unitCollection.hasEntities())
 	{
 		// If the attack was started, look for a good rallyPoint to withdraw
@@ -2210,13 +2304,7 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 		{
 			let access = this.getAttackAccess(gameState);
 			let dist = Math.min();
-			if (this.rallyPoint && gameState.ai.accessibility.getAccessValue(this.rallyPoint) == access)
-			{
-				rallyPoint = this.rallyPoint;
-				dist = API3.SquareVectorDistance(this.position, rallyPoint);
-			}
-			// Then check if we have a nearer base (in case this attack has captured one)
-			/*for (let base of gameState.ai.HQ.baseManagers)
+			for (let base of gameState.ai.HQ.baseManagers)
 			{
 				if (!base.anchor || !base.anchor.position())
 					continue;
@@ -2227,15 +2315,19 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 					continue;
 				dist = newdist;
 				rallyPoint = base.anchor.position();
-			}*/
+			}
 		}
 
 		for (let ent of this.unitCollection.values())
 		{
-			if (ent.getMetadata(PlayerID, "role") == "attack")
+			if (!rallyPoint && ent.getMetadata(PlayerID, "role") == "attack") {
 				ent.stopMoving();
-			if (rallyPoint)
+				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 0, 0] });
+			}
+			if (rallyPoint) {
 				ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 40);
+				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [0, 0, 1] });
+			}
 			if (KIARA.Logger.isTrace())
 				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 1] });
 			this.removeUnit(ent);
@@ -2252,10 +2344,7 @@ KIARA.AttackPlan.prototype.removeUnit = function(ent, update)
 {
 	if (ent.getMetadata(PlayerID, "role") == "attack")
 	{
-		if (ent.hasClass("CitizenSoldier"))
-			ent.setMetadata(PlayerID, "role", "worker");
-		else
-			ent.setMetadata(PlayerID, "role", undefined);
+		ent.setMetadata(PlayerID, "role", "retreat");
 		ent.setMetadata(PlayerID, "subrole", undefined);
 	}
 	ent.setMetadata(PlayerID, "plan", -1);

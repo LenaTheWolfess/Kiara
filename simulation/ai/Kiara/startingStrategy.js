@@ -499,7 +499,13 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 	}
 
 	this.cavalryRush = hunt > 2000;
+	if (this.cavalryRush)
+		this.huntCav = Math.min(Math.floor(hunt / 200), 15);
+	else
+		this.huntCav = 0;
+
 	KIARA.Logger.debug("cavalryRush = " + this.cavalryRush);
+	KIARA.Logger.debug("huntCav = " + this.huntCav);
 
 	if (startingFood < 800)
 	{

@@ -56,6 +56,7 @@ KIARA.HQ = function(Config)
 
 	this.wantPop  = false;
 	this.rangedSwitcher = true;
+	this.cavSwitcher = true;
 
 	this.needDropsite = {};
 	for (let res of Resources.GetCodes())
@@ -727,6 +728,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let farmers = gameState.getOwnEntitiesByClass("FemaleCitizen", true).length;
 	let sieges = gameState.getOwnEntitiesByClass("Siege", true).length;
 	let workers = gameState.getOwnEntitiesByClass("Worker", true).length;
+	let cavs = gameState.getOwnEntitiesByClass("FastMoving", true).length;
 
 //	KIARA.Logger.debug("farmers = " + farmers + ", workers = " + workers + ", sieges = " + sieges);
 	let supportNum = 40;
@@ -738,16 +740,15 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let size = 10;
 	let mSize = 10;
 
-	if (pop > 5)
-		min = 2;
-	if (pop > 10)
-		min = 5;
-	if (pop > 100)
-		min = pHouse;
+	if (workers > 5)
+		size = 2;
+	if (workers > 10)
+		size = 5;
+	if (workers > 40)
+		size = pHouse;
 
 	let classes = anyClasses;
 	let requirements = anyRequirements;
-	let cavSwitcher = false;
 
 	if (wantDefenders)
 	{
@@ -764,6 +765,10 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 		}
 	}
 
+	let wantCav = workers > 20 && this.strategy != KIARA.Strategy.EARLY_RAID && cavs < this.huntCav;
+	let cavClasses = ["FastMoving"];
+	let cavRequirements = [ ["canGather", 1] ];
+
 	let wantSiege = workers > 150 && gameState.currentPhase(gameState) > 2 && sieges < siegeNum;
 	let siegeClass = ["Siege"];
 	let siegeRequirements = [["strength", 3]];
@@ -775,6 +780,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 
 	let ww = "worker";
 	let fac = gameState.getOwnTrainingFacilities().values();
+	let ssize = size;
 	for (let ent of fac) {
 		if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 			KIARA.Logger.debug(gameState.getPopulationLimit() + " < " + this.wantPop);
@@ -794,10 +800,10 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 		}
 		if (ent.trainingQueue().length == 0 && q.length() < 1)
 		{
-			size = min;
 			let mmin = min;
 			let wwx = ww;
 			let template;
+			size = ssize;
 
 			if (wantSiege)
 			{
@@ -808,6 +814,13 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 					wwx = undefined;
 					size = 2;
 					mmin = 2;
+				}
+			}
+			if (!template && wantCav && this.cavSwitcher) {
+				template = this.findBestTrainableUnitSpecial(gameState, cavClasses, cavRequirements, t);
+				if (template) {
+					size = 2;
+					mmin = 1;
 				}
 			}
 			if (!template && wantChampions) {
@@ -883,6 +896,8 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 				else
 					classes = classesMeleeInf;
 			}
+			if (wantCav)
+				this.cavSwitcher = !this.cavSwitcher;
 			if (missing > 0)
 				return;
 		}
@@ -2209,9 +2224,9 @@ KIARA.HQ.prototype.manageCorral = function(gameState, queues)
 			let count = gameState.countEntitiesByType(trainable, true);
 			for (let item of corral.trainingQueue())
 				count += item.count;
-			if (count > nCorral)
+			if (count > nCorral * this.huntCav)
 				continue;
-			queues.corral.addPlan(new KIARA.TrainingPlan(gameState, trainable, { "trainer": corral.id() }));
+			queues.corral.addPlan(new KIARA.TrainingPlan(gameState, trainable, { "trainer": corral.id() }, 5));
 			return;
 		}
 	}
@@ -2514,6 +2529,9 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 			this.strategy = KIARA.Strategy.DOG_RAID;
 			this.attackManager.maxDogRaids = 1;
 			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
+		} else if (numStables == 0 && (this.strategy == KIARA.Strategy.EARLY_RAID || this.cavalryRush)) {
+			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
+			return;
 		}
 		// first barracks/range and stables.
 		if (numBarracks + numRanges < 2)
@@ -3397,7 +3415,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 
 	if (this.currentPhase > 1 && gameState.ai.playedTurn % 3 == 0)
 	{
-		if (!gameState.getOwnEntitiesByClass("Corral", true).hasEntities() && gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Corral]))
+		if (gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Corral]))
 			this.manageCorral(gameState, queues);
 
 		if (!this.canBarter)
@@ -3460,6 +3478,7 @@ KIARA.HQ.prototype.Serialize = function()
 {
 	let properties = {
 		"rangedSwitcher": this.rangedSwitcher,
+		"cavSwitcher": this.cavSwitcher,
 		"phasing": this.phasing,
 		"currentBase": this.currentBase,
 		"lastFailedGather": this.lastFailedGather,

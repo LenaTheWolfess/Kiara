@@ -731,6 +731,8 @@ KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 			let orderData = target.unitAIOrderData();
 			let currentTarget = orderData && orderData.length && orderData[0].target ?
 				gameState.getEntityById(orderData[0].target) : undefined;
+			if (target.getMetadata(PlayerID, "role") == "retreat")
+				continue;
 			if (currentTarget)
 			{
 				let unitAIState = target.unitAIState();

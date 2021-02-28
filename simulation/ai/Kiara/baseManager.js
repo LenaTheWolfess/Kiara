@@ -663,6 +663,22 @@ KIARA.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
 		else if (ent.hasClass("Support") && ent.hasClass("Elephant"))
 			ent.setMetadata(PlayerID, "role", "worker");
 	}
+
+	let retreating = this.units.filter(API3.Filters.byMetadata(PlayerID, "role", "retreat")).values();
+	for (let ent of retreating)
+	{
+		if (ent.isIdle())
+		{
+			if (ent.hasClass("Worker") || ent.hasClass("CitizenSoldier") || ent.hasClass("FishingBoat"))
+				ent.setMetadata(PlayerID, "role", "worker");
+			else if (ent.hasClass("FastMoving"))
+				ent.setMetadata(PlayerID, "role", "hunter");
+			else if (ent.hasClass("Support") && ent.hasClass("Elephant"))
+				ent.setMetadata(PlayerID, "role", "worker");
+			else
+				ent.setMetadata(PlayerID, "role", undefined);
+		}
+	}
 };
 
 /**
