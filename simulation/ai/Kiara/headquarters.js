@@ -2300,7 +2300,7 @@ KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 	let numPlanned = queues.house.length();
 	if (numPlanned < 3 || numPlanned < 5 && gameState.getPopulation() > 80)
 	{
-		let plan = new PETRA.ConstructionPlan(gameState, houseTemplateString);
+		let plan = new KIARA.ConstructionPlan(gameState, houseTemplateString);
 		// change the starting condition according to the situation.
 		plan.goRequirement = "houseNeeded";
 		queues.house.addPlan(plan);

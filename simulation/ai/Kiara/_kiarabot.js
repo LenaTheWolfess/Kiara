@@ -230,7 +230,7 @@ KIARA.KiaraBot.prototype.OnUpdate = function(sharedScript)
 
 	for (let i in this.events)
 	{
-		if (i == "AIMetadata")   // not used inside petra
+		if (i == "AIMetadata")   // not used inside KIARA
 			continue;
 		if(this.savedEvents[i] !== undefined)
 			this.savedEvents[i] = this.savedEvents[i].concat(this.events[i]);
