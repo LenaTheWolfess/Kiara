@@ -657,7 +657,11 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 	if (firstOrder[3].classes.indexOf("Siege") && nSiege > 10) {
 		this.buildOrders.splice(0, 1);
 	}
+
 	firstOrder = this.buildOrders[0];
+
+	if (!firstOrder)
+		return;
 
 	if (firstOrder[0] < firstOrder[3].targetSize)
 	{

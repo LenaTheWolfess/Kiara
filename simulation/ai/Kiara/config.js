@@ -116,11 +116,13 @@ KIARA.Config = function(difficulty, behavior)
 		"dock": 90,
 		"corral": 350,
 		"economicBuilding": 90,
+		"market": 800,
 		"militaryBuilding": 130,
 		"defenseBuilding": 70,
 		"civilCentre": 950,
 		"majorTech": 700,
 		"minorTech": 270,
+		"wonderN": 400,
 		"wonder": 1000,
 		"emergency": 1000    // used only in emergency situations, should be the highest one
 	};

@@ -510,7 +510,7 @@ KIARA.QueueManager.prototype.update = function(gameState)
 KIARA.QueueManager.prototype.checkPausedQueues = function(gameState)
 {
 	let numWorkers = gameState.countOwnEntitiesAndQueuedWithRole("worker");
-	let workersMin =  gameState.ai.HQ.strategy == "recover" ? 100 : 20;
+	let workersMin =  gameState.ai.HQ.strategy == KIARA.Strategy.RECOVER ? 100 : 20;
 	if (numWorkers < workersMin) {
 		KIARA.Logger.debug("workers: " + numWorkers + " < " + workersMin);
 	}
@@ -553,10 +553,14 @@ KIARA.QueueManager.prototype.checkPausedQueues = function(gameState)
 		{
 			queue.paused = true;
 			this.accounts[q].reset();
+			KIARA.Logger.debug(q + " paused");
 		}
-		else if (queue.paused && !toBePaused)
+		else if (queue.paused && !toBePaused) {
 			queue.paused = false;
+			KIARA.Logger.debug(q + " resumed");
+		}
 
+		/*
 		// And reduce the batch sizes of attack queues
 		if (q.indexOf("plan_") != -1 && numWorkers < workersMin && queue.plans[0])
 		{
@@ -564,6 +568,7 @@ KIARA.QueueManager.prototype.checkPausedQueues = function(gameState)
 			if (queue.plans[1])
 				queue.plans[1].number = 1;
 		}
+		*/
 	}
 };
 

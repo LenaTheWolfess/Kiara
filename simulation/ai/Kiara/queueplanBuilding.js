@@ -53,6 +53,7 @@ KIARA.ConstructionPlan.prototype.start = function(gameState)
 	let pos = this.findGoodPosition(gameState);
 	if (!pos)
 	{
+		KIARA.Logger.debug("No position for " + this.type);
 		gameState.ai.HQ.buildManager.setUnbuildable(gameState, this.type, 90, "room");
 		Engine.ProfileStop();
 		this.started = true;
@@ -67,6 +68,7 @@ KIARA.ConstructionPlan.prototype.start = function(gameState)
 		tradeManager.checkRoutes(gameState);
 		if (!tradeManager.isNewMarketWorth(this.metadata.expectedGain))
 		{
+			KIARA.Logger.debug("Market not worth " + this.type);
 			this.started = true;
 			Engine.ProfileStop();
 			return;
@@ -170,9 +172,11 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				if ( (template.hasClass("Tower") && gameState.getOwnEntitiesByClass("Tower", true).length < 3)
 				)
 					return { "x": pos[0], "z": pos[1], "angle": 3*Math.PI/4, "base": pos[2] };
+				else
+					return { "x": pos[0], "z": pos[1], "angle": 3*Math.PI/4, "base": pos[2] };
 			}
 		}
-		else if (template.hasClass("Market")) // Docks are done before.
+		else if (template.hasClass("Trade") && template.hasClass("Market")) // Docks are done before.
 		{
 			pos = HQ.findMarketLocation(gameState, template);
 			if (pos && pos[2] > 0)
@@ -182,8 +186,10 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				this.metadata.expectedGain = pos[3];
 				return { "x": pos[0], "z": pos[1], "angle": 3*Math.PI/4, "base": pos[2] };
 			}
-			else if (!pos)
+			else if (!pos && (!template.hasClass("Barter") || gameState.getOwnEntitiesByClass("Market", true).hasEntities())) {
+				KIARA.Logger.trace("Market no pos and has one ? " + gameState.getOwnEntitiesByClass("Market", true).hasEntities());
 				return false;
+			}
 		}
 	}
 
@@ -263,7 +269,10 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				if (template.genericName() == "Rotary Mill" && ent.hasClass("Field"))
 					placement.addInfluence(x, z, 60/cellSize, 40);
 
-				placement.addInfluence(x, z, 20/cellSize, 20);
+				if (template.hasClass("Barter"))
+					placement.addInfluence(x, z, 50/cellSize, 80);
+				else
+					placement.addInfluence(x, z, 20/cellSize, 20);
 /**/
 			});
 		}
@@ -271,7 +280,7 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 		{
 			for (let j = 0; j < placement.map.length; ++j)
 			{
-				let value = placement.map[j] - gameState.sharedScript.resourceMaps.wood.map[j]/3;
+				let value = placement.map[j] - gameState.sharedScript.resourceMaps.food.map[j]/3;
 				if (HQ.borderMap.map[j] & KIARA.fullBorder_Mask)
 					value /= 2;	// we need space around farmstead, so disfavor map border
 				placement.set(j, value);
@@ -303,7 +312,8 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 	// and if our first market, put it on border if possible to maximize distance with next market
 	let favorBorder = false;
 	let disfavorBorder = true;
-	let favoredBase = this.metadata && this.metadata.favoredBase;	if (this.metadata && this.metadata.base !== undefined)
+	let favoredBase = this.metadata && this.metadata.favoredBase;
+	if (this.metadata && this.metadata.base !== undefined)
 	{
 		let base = this.metadata.base;
 		for (let j = 0; j < placement.map.length; ++j)
@@ -355,6 +365,7 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 	if (!bestTile)
 		bestTile = placement.findBestTile(radius, obstructions);
 
+//	placement.dumpIm(this.type + "_placement.png");
 	if (!bestTile.val)
 		return false;
 

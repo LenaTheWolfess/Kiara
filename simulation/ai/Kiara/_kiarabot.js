@@ -12,7 +12,7 @@ KIARA.Logger.level = KIARA.Logger.RELEASE;
 //KIARA.Logger.level = KIARA.Logger.ERROR;
 //KIARA.Logger.level = KIARA.Logger.WARN;
 //KIARA.Logger.level = KIARA.Logger.DEBUG;
-KIARA.Logger.level = KIARA.Logger.TRACE;
+//KIARA.Logger.level = KIARA.Logger.TRACE;
 
 KIARA.Strategy = function() {};
 KIARA.Strategy.NONE = "none";

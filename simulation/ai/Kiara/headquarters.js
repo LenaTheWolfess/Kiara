@@ -2092,26 +2092,29 @@ KIARA.HQ.prototype.buildTemple = function(gameState, queues)
 
 KIARA.HQ.prototype.buildMarket = function(gameState, queues)
 {
-	if (gameState.getOwnEntitiesByClass("Market", true).hasEntities() ||
+	KIARA.Logger.debug("want new market?");
+	if (gameState.getOwnEntitiesByClass("Barter", true).hasEntities() ||
 		!this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Market]))
 		return;
 
-	if (queues.economicBuilding.hasQueuedUnitsWithClass("Market"))
+	KIARA.Logger.debug("yes, i need new market");
+	if (queues.market.hasQueuedUnitsWithClass("Barter"))
 	{
-		if (!queues.economicBuilding.paused)
+		if (!queues.market.paused)
 		{
+			KIARA.Logger.debug("switching res in market queue");
 			// Put available resources in this market
 			let queueManager = gameState.ai.queueManager;
-			let cost = queues.economicBuilding.plans[0].getCost();
-			queueManager.setAccounts(gameState, cost, "economicBuilding");
-			if (!queueManager.canAfford("economicBuilding", cost))
+			let cost = queues.market.plans[0].getCost();
+			queueManager.setAccounts(gameState, cost, "market");
+			if (!queueManager.canAfford("market", cost))
 			{
 				for (let q in queueManager.queues)
 				{
-					if (q == "economicBuilding")
+					if (q == "market")
 						continue;
-					queueManager.transferAccounts(cost, q, "economicBuilding");
-					if (queueManager.canAfford("economicBuilding", cost))
+					queueManager.transferAccounts(cost, q, "market");
+					if (queueManager.canAfford("market", cost))
 						break;
 				}
 			}
@@ -2119,43 +2122,51 @@ KIARA.HQ.prototype.buildMarket = function(gameState, queues)
 		return;
 	}
 
-	gameState.ai.queueManager.changePriority("economicBuilding", 3 * this.Config.priorities.economicBuilding);
-	let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Market]);
-	plan.queueToReset = "economicBuilding";
-	queues.economicBuilding.addPlan(plan);
+	KIARA.Logger.debug("new market to queue");
+	queues.market.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Market]));
 };
 
 /** Build a farmstead */
-KIARA.HQ.prototype.buildFoodSupply = function(gameState, queues, type, res)
+KIARA.HQ.prototype.buildFoodSupply = function(gameState, queues, type, res, research)
 {
-		if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Farmstead])))
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Farmstead])))
 		return false;
 
 	for (let x = 1; x < this.numActiveBases() + 1; x++) {
 		let newSF = this.baseManagers[x].findBestFarmsteadLocation(gameState, res);
 		if (newSF.quality > 10) {
 			queues[type].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Farmstead], {"base": this.baseManagers[x].ID, "type": "food"}, newSF.pos));
-	//		KIARA.Logger.debug("Build food supply for " + res);
+			KIARA.Logger.debug("Build food supply for " + res);
 			return true;
 		}
 	}
 
+	KIARA.Logger.debug("Building foodsupply failed");
+	if (research) {
+		if (
+			!gameState.getOwnEntitiesByClass("Farmstead", true).length && 
+			!queues.economicBuilding.hasQueuedUnitsWithClass("Farmstead") &&
+			!gameState.getOwnFoundationsByClass("Farmstead", true).length
+		) {
+			KIARA.Logger.debug("Forcing farmstead for research");
+			queues.economicBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Farmstead]));
+			return true;
+		}
+	}
 	return false;
 }
 
 /** Build field */
 KIARA.HQ.prototype.buildField = function(gameState, queues)
 {
+	// Make sure to have at least one farmsted
+	if (!gameState.getOwnEntitiesByClass("Farmstead", true).hasEntities()) {
+		this.buildDropsite(gameState, queues, "dropsites", "food", true);
+		return;
+	}
 	if (!this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Field]))
-	// Only build one farmstead for the time being ("DropsiteFood" does not refer to CCs)
-	if (gameState.getOwnEntitiesByClass("Farmstead", true).hasEntities())
 		return;
-	// Wait to have at least one dropsite and house before the farmstead
-	if (!gameState.getOwnEntitiesByClass("Storehouse", true).hasEntities())
-		return;
-	if (!gameState.getOwnEntitiesByClass("House", true).hasEntities())
-		return;
-	if (queues.economicBuilding.hasQueuedUnitsWithClass("DropsiteFood"))
+	if (queues.economicBuilding.hasQueuedUnitsWithClass("Field"))
 		return;
 	if (!this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Field]))
 		return;
@@ -2176,6 +2187,8 @@ KIARA.HQ.prototype.buildWonder = function(gameState, queues, force = false)
 
 	if (!force)
 	{
+		if (queues.wonderN && queues.wonderN.hasQueuedUnits())
+			return;
 		let template = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Wonder]));
 		// Check that we have enough resources to start thinking to build a wonder
 		let cost = template.cost();
@@ -2191,6 +2204,8 @@ KIARA.HQ.prototype.buildWonder = function(gameState, queues, force = false)
 		}
 		if (highLevel == 0 || lowLevel > 1)
 			return;
+		queues.wonderN.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Wonder]));
+		return;
 	}
 
 	queues.wonder.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Wonder]));
@@ -2256,10 +2271,10 @@ KIARA.HQ.prototype.signalNoNeedSupply = function(gameState, resource)
 	this.needDropsite[resource] = false;
 }
 
-KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res)
+KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res, research)
 {
 	if (res == "food" || res == "farm")
-		return this.buildFoodSupply(gameState, queues, type, res);
+		return this.buildFoodSupply(gameState, queues, type, res, research);
 	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Dropsite]))) {
 		KIARA.Logger.debug("signalNoSupply: cannot build storehouse");
 		return false;
@@ -2270,12 +2285,18 @@ KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res)
 	for (let x = 1; x < this.numActiveBases() + 1; x++) {
 		let newDP = this.baseManagers[x].findBestDropsiteLocation(gameState, res);
 		if (newDP.quality > cut) {
-		//	warn("build new dropsite for " + res);
+			warn("build new dropsite for " + res);
 			queues[type].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Dropsite], {"base": this.baseManagers[x].ID, "type": res}, newDP.pos));
 			return true;
 		} else {
 	//		warn("rejected dropsite for " + res + " with " + newDP.quality);
 		}
+	}
+	KIARA.Logger.debug("Failed to build dropsite for " + res);
+	if (research) {
+		KIARA.Logger.debug("Forcing dropsite for research");
+		queues[type].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Dropsite], {"base": 0}));
+		return true;
 	}
 	return false;
 }
@@ -2390,6 +2411,14 @@ KIARA.HQ.prototype.checkBaseExpansion = function(gameState, queues)
 		KIARA.Logger.debug("try to build a new base because not enough room to build ");
 		this.buildNewBase(gameState, queues);
 		return;
+	}
+	if (this.currentPhase > 2)
+	{
+		let pop = gameState.getOwnUnits().length;
+		if (pop > 150) {
+			KIARA.Logger.debug("create new base with " + pop);
+			this.buildNewBase(gameState, queues);
+		}
 	}
 };
 
@@ -3300,7 +3329,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 	Engine.ProfileStart("Headquarters update");
 	this.turnCache = {};
 	this.territoryMap = KIARA.createTerritoryMap(gameState);
-	this.canBarter = gameState.getOwnEntitiesByClass("Market", true).filter(API3.Filters.isBuilt()).hasEntities();
+	this.canBarter = gameState.getOwnEntitiesByClass("Barter", true).filter(API3.Filters.isBuilt()).hasEntities();
 	// TODO find a better way to update
 	if (this.currentPhase != gameState.currentPhase())
 	{
@@ -3357,7 +3386,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 			!queues.dropsites.hasQueuedUnitsWithClass("Farmstead") &&
 			!gameState.getOwnFoundationsByClass("Farmstead", true).length
 	)
-		this.buildFoodSupply(gameState, queues, "dropsites", "food");
+		this.buildFoodSupply(gameState, queues, "dropsites", "food", true);
 
 	if (
 			!gameState.getOwnEntitiesByClass("Storehouse", true).length &&
@@ -3365,7 +3394,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 			!gameState.getOwnFoundationsByClass("Storehouse", true).length
 	) {
 	//	KIARA.Logger.debug("wanna another dropsite");
-		this.buildDropsite(gameState, queues, "dropsites", "any");
+		this.buildDropsite(gameState, queues, "dropsites", "any", true);
 	}
 
 //	KIARA.Logger.debug(uneval(this.needDropsite));
@@ -3392,7 +3421,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 			!gameState.getOwnFoundationsByClass(cl, true).length
 		) {
 			KIARA.Logger.debug("building for : " + res + " : " + cl);
-			let dq = this.buildDropsite(gameState, queues, "dropsites", res);
+			let dq = this.buildDropsite(gameState, queues, "dropsites", res, false);
 			if (!dq && res == "food") {
 				if (nFields < 2*this.currentPhase && !quedFields)
 					this.buildField(gameState, queues);
@@ -3421,7 +3450,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		if (this.needCorral && gameState.ai.playedTurn % 4 == 3)
 			this.manageCorral(gameState, queues);
 
-	if (!queues.minorTech.hasQueuedUnits() && this.strategy != "recover"/* && gameState.ai.playedTurn % 5 == 1*/)
+	if (!queues.minorTech.hasQueuedUnits() && this.strategy != KIARA.Strategy.RECOVER/* && gameState.ai.playedTurn % 5 == 1*/)
 			this.researchManager.update(gameState, queues);
 	}
 
