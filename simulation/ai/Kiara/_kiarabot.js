@@ -55,6 +55,7 @@ KIARA.Difficulty.DEFAULT = KIARA.Difficulty.MEDIUM;
 
 KIARA.TemplateConstants = function() {};
 KIARA.TemplateConstants.MorePopulation = "MorePopulation";
+KIARA.TemplateConstants.MorePopulationAdv = "MorePopulationAdv";
 KIARA.TemplateConstants.Dropsite = "Dropsite";
 KIARA.TemplateConstants.Farmstead = "Farmstead";
 KIARA.TemplateConstants.Market = "Market";
@@ -72,6 +73,7 @@ KIARA.TemplateConstants.Elephants = "Elephants";
 
 KIARA.Templates = function() {};
 KIARA.Templates[KIARA.TemplateConstants.MorePopulation] = "structures/{civ}/house";
+KIARA.Templates[KIARA.TemplateConstants.MorePopulationAdv] = "structures/{civ}/apartment";
 KIARA.Templates[KIARA.TemplateConstants.Dropsite] = "structures/{civ}/storehouse";
 KIARA.Templates[KIARA.TemplateConstants.Farmstead] = "structures/{civ}/farmstead";
 KIARA.Templates[KIARA.TemplateConstants.Market] = "structures/{civ}/market";

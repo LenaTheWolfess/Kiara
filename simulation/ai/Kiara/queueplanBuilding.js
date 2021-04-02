@@ -919,7 +919,10 @@ KIARA.ConstructionPlan.prototype.isGo = function(gameState)
 		return false;
 	if (this.goRequirement && this.goRequirement == "houseNeeded")
 	{
-		if (!gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]))
+		if (
+			!gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]) &&
+			!gameState.ai.HQ.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulationAdv])
+		)
 			return false;
 		if (gameState.getPopulationMax() <= gameState.getPopulationLimit())
 			return false;

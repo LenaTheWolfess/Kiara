@@ -674,6 +674,9 @@ KIARA.HQ.prototype.OnPhaseUp = function(gameState, phase)
 
 KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 {
+	if (gameState.getPopulationMax() <= gameState.getPopulationLimit())
+		return;
+
 	if (gameState.getPopulation() > gameState.getPopulationMax() * 0.8)
 		return;
 
@@ -681,11 +684,14 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 		return;
 	let fHouse = gameState.getOwnFoundationsByClass("House").length;
 	let nHouses = queues.house.length();
+	let hTemplate = KIARA.Templates[KIARA.TemplateConstants.MorePopulationAdv];
+	if (!this.canBuild(gameState, hTemplate))
+		hTemplate = KIARA.Templates[KIARA.TemplateConstants.MorePopulation];
 
 	if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 		if (!fHouse && !nHouses) {
 			KIARA.Logger.debug("add house");
-			let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
+			let plan = new KIARA.ConstructionPlan(gameState, hTemplate);
 			// change the starting condition according to the situation.
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
@@ -695,7 +701,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	}
 
 	let civ = gameState.getPlayerCiv();
-	let tHouse = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]));
+	let tHouse = gameState.getTemplate(gameState.applyCiv(hTemplate));
 	let pHouse = tHouse.getPopulationBonus();
 
 	let numberInTraining = 0;
@@ -867,7 +873,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 				this.wantPop = pop;
 				while (nHouses < 3 && missing > 0) {
 					warn("add house");
-					let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
+					let plan = new KIARA.ConstructionPlan(gameState, hTemplate);
 					// change the starting condition according to the situation.
 					plan.goRequirement = "houseNeeded";
 					queues.house.addPlan(plan);
@@ -904,14 +910,10 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	}
 }
 
-/** This code trains citizen workers, trying to keep close to a ratio of worker/soldiers */
-KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
+KIARA.HQ.prototype.trainMoreWorkersOld = function(gameState, queues)
 {
-	// default template
 	if (gameState.getPopulationMax() <= gameState.getPopulationLimit())
 		return;
-	this.alwaysTrain(gameState, queues);
-	return;
 	let fHouse = gameState.getOwnFoundationsByClass("House").length;
 
 	if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
@@ -1118,6 +1120,12 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 		queues.citizenSoldier.addPlan(new KIARA.TrainingPlan(gameState, template, { "role": "worker", "base": 0 }, size, mSize));
 	else if (templateDef)
 		queues.villager.addPlan(new KIARA.TrainingPlan(gameState, templateDef, { "role": "worker", "base": 0, "support": true }, size, mSize));
+}
+
+/** This code trains citizen workers, trying to keep close to a ratio of worker/soldiers */
+KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
+{
+	this.alwaysTrain(gameState, queues);
 };
 
 KIARA.HQ.prototype.findBestTrainableUnitSpecial = function(gameState, classes, requirements, units)
@@ -2278,14 +2286,21 @@ KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res)
  */
 KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 {
-	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation])) ||
-	    gameState.getPopulationMax() <= gameState.getPopulationLimit())
+	let houseTemplateString = KIARA.Templates[KIARA.TemplateConstants.MorePopulationAdv];
+	if (!gameState.isTemplateAvailable(gameState.applyCiv(houseTemplateString)) ||
+		!this.canBuild(gameState, houseTemplateString))
+	{
+		houseTemplateString = KIARA.Templates[KIARA.TemplateConstants.MorePopulation];
+		if (!gameState.isTemplateAvailable(gameState.applyCiv(houseTemplateString)))
+			return;
+	}
+	if (gameState.getPopulationMax() <= gameState.getPopulationLimit())
 		return;
 
 	let numPlanned = queues.house.length();
 	if (numPlanned < 3 || numPlanned < 5 && gameState.getPopulation() > 80)
 	{
-		let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
+		let plan = new PETRA.ConstructionPlan(gameState, houseTemplateString);
 		// change the starting condition according to the situation.
 		plan.goRequirement = "houseNeeded";
 		queues.house.addPlan(plan);
@@ -2293,7 +2308,7 @@ KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 
 	if (numPlanned > 0 && this.phasing && gameState.getPhaseEntityRequirements(this.phasing).length)
 	{
-		let houseTemplateName = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
+		let houseTemplateName = gameState.applyCiv(houseTemplateString);
 		let houseTemplate = gameState.getTemplate(houseTemplateName);
 
 		let needed = 0;
@@ -2325,7 +2340,7 @@ KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 
 	if (this.requireHouses)
 	{
-		let houseTemplate = gameState.getTemplate(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]));
+		let houseTemplate = gameState.getTemplate(gameState.applyCiv(houseTemplateString));
 		if (!this.phasing || gameState.getPhaseEntityRequirements(this.phasing).every(req =>
 			!houseTemplate.hasClass(req.class) || gameState.getOwnStructures().filter(API3.Filters.byClass(req.class)).length >= req.count))
 			this.requireHouses = undefined;
@@ -2334,7 +2349,7 @@ KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 	// When population limit too tight
 	//    - if no room to build, try to improve with technology
 	//    - otherwise increase temporarily the priority of houses
-	let house = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.MorePopulation]);
+	let house = gameState.applyCiv(houseTemplateString);
 	let HouseNb = gameState.getOwnFoundations().filter(API3.Filters.byClass("House")).length;
 	let popBonus = gameState.getTemplate(house).getPopulationBonus();
 	let freeSlots = gameState.getPopulationLimit() + HouseNb*popBonus - this.getAccountedPopulation(gameState);
