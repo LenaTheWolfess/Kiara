@@ -680,8 +680,6 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	if (gameState.getPopulation() > gameState.getPopulationMax() * 0.8)
 		return;
 
-	if (gameState.getPopulationMax() <= gameState.getPopulationLimit())
-		return;
 	let fHouse = gameState.getOwnFoundationsByClass("House").length;
 	let nHouses = queues.house.length();
 	let hTemplate = KIARA.Templates[KIARA.TemplateConstants.MorePopulationAdv];
