@@ -474,6 +474,7 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 		this.maxFields = false;
 
 	// - count the available food resource, and react accordingly
+	this.hasBerries = false;
 	let startingFood = gameState.getResources().food;
 	let check = {};
 	let hunt = 0;
@@ -487,6 +488,7 @@ KIARA.HQ.prototype.configFirstBase = function(gameState)
 					continue;
 				check[supply.id] = true;
 				startingFood += supply.ent.resourceSupplyAmount();
+				this.hasBerries = true;
 			}
 			for (let supply of base.dropsiteSupplies.hunt[proxim])
 			{

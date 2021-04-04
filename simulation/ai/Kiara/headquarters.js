@@ -723,6 +723,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let free = gameState.getPopulationLimit() - (gameState.getPopulation() + numberInTraining);
 
 	let anyClasses = ["Worker"];
+	let antiClasses = ["Mercenary"];
 	let anyRequirements = [ ["costsResource", 1, "food"], ["canGather", 1] ];
 
 	let classesInf = ["Infantry"];
@@ -836,14 +837,14 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 				}
 			}
 			if (!template)
-				template = this.findBestTrainableUnitSpecial(gameState, classes, requirements, t);
+				template = this.findBestTrainableUnitSpecial(gameState, classes, requirements, t, antiClasses);
 			if (!template && wantDefenders && this.rangedSwitcher)
-				template = this.findBestTrainableUnitSpecial(gameState, classesRangedInf, requirements, t);
+				template = this.findBestTrainableUnitSpecial(gameState, classesRangedInf, requirements, t, antiClasses);
 			if (!template && wantDefenders && !this.rangedSwitcher)
-				template = this.findBestTrainableUnitSpecial(gameState, classesMeleeInf, requirements, t);
+				template = this.findBestTrainableUnitSpecial(gameState, classesMeleeInf, requirements, t, antiClasses);
 
 			if (!template)
-				template = this.findBestTrainableUnitSpecial(gameState, anyClasses, anyRequirements, t);
+				template = this.findBestTrainableUnitSpecial(gameState, anyClasses, anyRequirements, t, antiClasses);
 
 			if (!template)
 				continue;
@@ -1128,13 +1129,12 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 	this.alwaysTrain(gameState, queues);
 };
 
-KIARA.HQ.prototype.findBestTrainableUnitSpecial = function(gameState, classes, requirements, units)
+KIARA.HQ.prototype.findBestTrainableUnitSpecial = function(gameState, classes, requirements, units, anticlasses = [])
 {
-	let anticlasses = [];
 	if (classes.indexOf("Hero") != -1)
-		anticlasses = ["Hero"];
+		anticlasses.push("Hero");
 	else if (classes.indexOf("Siege") != -1)	// We do not want siege tower as AI does not know how to use it
-		anticlasses = ["SiegeTower"];
+		anticlasses.push("SiegeTower");
 
 	units = gameState.filterTrainableUnitsByClass(units, classes, anticlasses);
 
@@ -2285,7 +2285,7 @@ KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res, resear
 	for (let x = 1; x < this.numActiveBases() + 1; x++) {
 		let newDP = this.baseManagers[x].findBestDropsiteLocation(gameState, res);
 		if (newDP.quality > cut) {
-			warn("build new dropsite for " + res);
+			KIARA.Logger.debug("build new dropsite for " + res);
 			queues[type].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Dropsite], {"base": this.baseManagers[x].ID, "type": res}, newDP.pos));
 			return true;
 		} else {
@@ -3521,6 +3521,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 KIARA.HQ.prototype.Serialize = function()
 {
 	let properties = {
+		"hasBerries": this.hasBerries,
 		"rangedSwitcher": this.rangedSwitcher,
 		"cavSwitcher": this.cavSwitcher,
 		"phasing": this.phasing,

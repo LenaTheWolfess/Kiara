@@ -531,7 +531,7 @@ m.Template = m.Class({
 
 	"isBuilder": function() { return this.get("Builder") !== undefined; },
 
-	"isGatherer": function() { return this.get("ResourceGatherer") !== undefined; },
+	"isGatherer": function() { return this.get("ResourceGatherer") !== undefined && !this.hasClass("Mercenary"); },
 
 	"canGather": function(type) {
 		let gatherRates = this.get("ResourceGatherer/Rates");

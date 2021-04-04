@@ -812,7 +812,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	// Assign all units without specific role.
 	for (let ent of gameState.getOwnEntitiesByRole(undefined, true).values())
 	{
-		if ((!ent.hasClass("Unit") && !ent.hasClass("Siege")) || !this.isAvailableUnit(gameState, ent))
+		if (!ent.hasClass("Unit") || !this.isAvailableUnit(gameState, ent))
 			continue;
 		if (ent.hasClass("Ship") || ent.hasClass("Support") || ent.attackTypes() === undefined)
 			continue;
@@ -2295,7 +2295,7 @@ KIARA.AttackPlan.prototype.RegroupAndAttack = function(gameState)
 /** reset any units */
 KIARA.AttackPlan.prototype.Abort = function(gameState)
 {
-	KIARA.Logger.warn("aborting " + this.type);
+	KIARA.Logger.debug("aborting " + this.type);
 	this.unitCollection.unregister();
 	for (let group of this.formationList) {
 		group.unregister();
@@ -2326,11 +2326,13 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 		{
 			if (!rallyPoint && ent.getMetadata(PlayerID, "role") == "attack") {
 				ent.stopMoving();
-				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 0, 0] });
+				if (KIARA.Logger.isTrace())
+					Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 0, 0] });
 			}
 			if (rallyPoint) {
 				ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 40);
-				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [0, 0, 1] });
+				if (KIARA.Logger.isTrace())
+					Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [0, 0, 1] });
 			}
 			if (KIARA.Logger.isTrace())
 				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 1] });
