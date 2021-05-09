@@ -192,7 +192,8 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 			this.unitStat.Hero                = { "priority": 1, "minSize": 0, "targetSize":  1, "batchSize": 1, "classes": ["Hero"],
 				"interests": [["strength", 2]] };
 			this.unitStat.Healer 			  = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
-			this.unitStat.Siege = {"priority": 2, "minSize": 3, "targetSize": 5, "batchSize": 5, "classes": ["Siege"] , "interests":  [["strength", 1]]};
+			this.unitStat.Siege = {"priority": 2, "minSize": 2, "targetSize": 5, "batchSize": 2, "classes": ["Siege"] , "interests":  [["strength", 1]]};
+			this.unitStat.SiegeElephants = {"priority": 4, "minSize": 0, "targetSize": 5, "batchSize": 2, "classes": ["Elephant", "Champion", "Melee"] , "interests":  [["strength", 1]]};
 			this.neededShips = 5;
 		}
 	}

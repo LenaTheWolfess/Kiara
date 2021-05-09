@@ -2628,17 +2628,20 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	if (this.currentPhase < 3)
 		return;
 
-	let nArsenals = gameState.getOwnEntitiesByClass("Arsenal", true).length;
-	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege]) && nArsenals < 3)
-	{
-		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege], { "militaryBase": true }));
-		return;
-	}
-
-	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Elephants]) && !gameState.getOwnEntitiesByClass("ElephantStable", true).hasEntities())
+	let nElStables = gameState.getOwnEntitiesByClass("ElephantStable", true).length;
+	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Elephants]) && nElStables < 3)
 	{
 		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Elephants], { "militaryBase": true }));
 		return;
+	}
+
+	if (!nElStables) {
+		let nArsenals = gameState.getOwnEntitiesByClass("Arsenal", true).length;
+		if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege]) && nArsenals < 3)
+		{
+			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege], { "militaryBase": true }));
+			return;
+		}
 	}
 
 	if (this.getAccountedPopulation(gameState) < 80 || !this.bAdvanced.length)
