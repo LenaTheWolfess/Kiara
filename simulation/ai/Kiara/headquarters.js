@@ -2144,6 +2144,7 @@ KIARA.HQ.prototype.buildFoodSupply = function(gameState, queues, type, res, rese
 		if (
 			!gameState.getOwnEntitiesByClass("Farmstead", true).length && 
 			!queues.economicBuilding.hasQueuedUnitsWithClass("Farmstead") &&
+			!queues[type].hasQueuedUnitsWithClass("Farmstead") &&
 			!gameState.getOwnFoundationsByClass("Farmstead", true).length
 		) {
 			KIARA.Logger.debug("Forcing farmstead for research");
@@ -2287,7 +2288,7 @@ KIARA.HQ.prototype.buildDropsite = function(gameState, queues, type, res, resear
 			queues[type].addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Dropsite], {"base": this.baseManagers[x].ID, "type": res}, newDP.pos));
 			return true;
 		} else {
-	//		warn("rejected dropsite for " + res + " with " + newDP.quality);
+	//		KIARA.Logger.warn("rejected dropsite for " + res + " with " + newDP.quality);
 		}
 	}
 	KIARA.Logger.debug("Failed to build dropsite for " + res);

@@ -390,8 +390,9 @@ KIARA.gatherTreasure = function(gameState, ent, water = false)
 		if (territoryOwner != 0 && !gameState.isPlayerAlly(territoryOwner))
 			continue;
 		let dist = API3.SquareVectorDistance(ent.position(), treasure.position());
-		if (dist > 120000 || territoryOwner != PlayerID && dist > 14000) // AI has no LOS, so restrict it a bit
-			continue;
+		if (!KIARA.isFastMoving(ent))
+			if (dist > 120000 || territoryOwner != PlayerID && dist > 14000) // AI has no LOS, so restrict it a bit
+				continue;
 		if (dist > distmin)
 			continue;
 		distmin = dist;

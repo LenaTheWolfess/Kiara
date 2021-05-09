@@ -860,7 +860,7 @@ KIARA.Worker.prototype.startGathering = function(gameState)
 KIARA.Worker.prototype.startHunting = function(gameState, position)
 {
 	// First look for possible treasure if any
-	if (!position && KIARA.gatherTreasure(gameState, this.ent))
+	if (KIARA.gatherTreasure(gameState, this.ent))
 		return true;
 
 	let resources = gameState.getHuntableSupplies();
