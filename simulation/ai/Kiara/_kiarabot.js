@@ -23,6 +23,23 @@ KIARA.Strategy.RECOVER = "recover";
 KIARA.Strategy.DOG_RAID = "dogRaid";
 KIARA.Strategy.DEFAULT = KIARA.Strategy.NONE;
 
+KIARA.StrategyCode = function() {};
+KIARA.StrategyCode.TRAINING_FACILITIES = "TrainingFacilities";
+
+KIARA.StrategyPlan = function() {};
+KIARA.StrategyPlan[KIARA.Strategy.NONE] = function() {};
+KIARA.StrategyPlan[KIARA.Strategy.BOOM] = function() {};
+KIARA.StrategyPlan[KIARA.Strategy.EARLY_RAID] = function() {};
+KIARA.StrategyPlan[KIARA.Strategy.ATTACK] = function() {};
+KIARA.StrategyPlan[KIARA.Strategy.RECOVER] = function() {};
+KIARA.StrategyPlan[KIARA.Strategy.DOG_RAID] = function() {};
+KIARA.StrategyPlan[KIARA.Strategy.NONE][KIARA.StrategyCode.TRAINING_FACILITIES] = false;
+KIARA.StrategyPlan[KIARA.Strategy.BOOM][KIARA.StrategyCode.TRAINING_FACILITIES] = false;
+KIARA.StrategyPlan[KIARA.Strategy.EARLY_RAID][KIARA.StrategyCode.TRAINING_FACILITIES] = true;
+KIARA.StrategyPlan[KIARA.Strategy.ATTACK][KIARA.StrategyCode.TRAINING_FACILITIES] = true;
+KIARA.StrategyPlan[KIARA.Strategy.RECOVER][KIARA.StrategyCode.TRAINING_FACILITIES] = false;
+KIARA.StrategyPlan[KIARA.Strategy.DOG_RAID][KIARA.StrategyCode.TRAINING_FACILITIES] = true;
+
 KIARA.AttackTypes = function() {};
 KIARA.AttackTypes.ANIHILATION = "Anihilation";
 KIARA.AttackTypes.RUSH = "Rush";
@@ -66,10 +83,13 @@ KIARA.TemplateConstants.CC = "CC";
 KIARA.TemplateConstants.Colony = "Colony";
 KIARA.TemplateConstants.Fortress = "Fortress";
 KIARA.TemplateConstants.MeleeAndRanged = "MeleeAndRanged";
-KIARA.TemplateConstants.Ranged = "Ranged";
-KIARA.TemplateConstants.Cavalry = "Cavalry";
-KIARA.TemplateConstants.Siege = "Siege";
-KIARA.TemplateConstants.Elephants = "Elephants";
+KIARA.TemplateConstants.Ranged = "Range";
+KIARA.TemplateConstants.Cavalry = "Stable";
+KIARA.TemplateConstants.Siege = "Arsenal";
+KIARA.TemplateConstants.Elephants = "ElephantStable";
+KIARA.TemplateConstants.Tower = "Tower";
+KIARA.TemplateConstants.EarlyTower = "EarlyTower";
+KIARA.TemplateConstants.Forge = "Forge";
 
 KIARA.Templates = function() {};
 KIARA.Templates[KIARA.TemplateConstants.MorePopulation] = "structures/{civ}/house";
@@ -88,6 +108,9 @@ KIARA.Templates[KIARA.TemplateConstants.Cavalry] = "structures/{civ}/stable";
 KIARA.Templates[KIARA.TemplateConstants.Ranged] = "structures/{civ}/range";
 KIARA.Templates[KIARA.TemplateConstants.Siege] = "structures/{civ}/arsenal";
 KIARA.Templates[KIARA.TemplateConstants.Elephants] = "structures/{civ}/elephant_stables";
+KIARA.Templates[KIARA.TemplateConstants.Tower] = "structures/{civ}/defense_tower";
+KIARA.Templates[KIARA.TemplateConstants.EarlyTower] = "structures/{civ}/sentry_tower";
+KIARA.Templates[KIARA.TemplateConstants.Forge] = "structures/{civ}/forge";
 
 KIARA.Logger.warn = function(output)
 {

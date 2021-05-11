@@ -201,6 +201,7 @@ KIARA.DefenseManager.prototype.isDangerous = function(gameState, entity)
 
 KIARA.DefenseManager.prototype.checkEnemyUnits = function(gameState)
 {
+	Engine.ProfileStart("checkEnemyUnits");
 	const nbPlayers = gameState.sharedScript.playersData.length;
 	let i = gameState.ai.playedTurn % nbPlayers;
 	this.attackingUnits[i] = undefined;
@@ -227,10 +228,13 @@ KIARA.DefenseManager.prototype.checkEnemyUnits = function(gameState)
 				break;
 			}
 		}
+		Engine.ProfileStop();
 		return;
 	}
-	else if (!gameState.isPlayerEnemy(i))
+	else if (!gameState.isPlayerEnemy(i)) {
+		Engine.ProfileStop();
 		return;
+	}
 
 	for (let ent of gameState.getEnemyUnits(i).values())
 	{
@@ -259,8 +263,10 @@ KIARA.DefenseManager.prototype.checkEnemyUnits = function(gameState)
 			this.makeIntoArmy(gameState, ent.id());
 	}
 
-	if (i != 0 || this.armies.length > 1 || gameState.ai.HQ.numActiveBases() == 0)
+	if (i != 0 || this.armies.length > 1 || gameState.ai.HQ.numActiveBases() == 0) {
+		Engine.ProfileStop();
 		return;
+	}
 	// Look for possible gaia buildings inside our territory (may happen when enemy resign or after structure decay)
 	// and attack it only if useful (and capturable) or dangereous.
 	for (let ent of gameState.getEnemyStructures(i).values())
@@ -273,10 +279,12 @@ KIARA.DefenseManager.prototype.checkEnemyUnits = function(gameState)
 		if (owner == PlayerID)
 			this.makeIntoArmy(gameState, ent.id(), "capturing");
 	}
+	Engine.ProfileStop();
 };
 
 KIARA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 {
+	Engine.ProfileStart("checkEnemyArmies");
 	for (let i = 0; i < this.armies.length; ++i)
 	{
 		let army = this.armies[i];
@@ -312,8 +320,10 @@ KIARA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 		}
 	}
 
-	if (gameState.ai.playedTurn % 5 != 0)
+	if (gameState.ai.playedTurn % 5 != 0) {
+		Engine.ProfileStop();
 		return;
+	}
 	// Check if any army is no more dangerous (possibly because it has defeated us and destroyed our base).
 	this.attackingArmies = {};
 	for (let i = 0; i < this.armies.length; ++i)
@@ -409,6 +419,7 @@ KIARA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 		army.clear(gameState);
 		this.armies.splice(i--, 1);
 	}
+	Engine.ProfileStop();
 };
 
 KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
@@ -416,6 +427,7 @@ KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 	if (!this.armies.length)
 		return;
 
+	Engine.ProfileStart("assignDefenders");
 	let armiesNeeding = [];
 	// Let's add defenders.
 	for (let army of this.armies)
@@ -434,13 +446,15 @@ KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 			break;
 		}
 		if (!armyAccess)
-			KIARA.Logger.warn(" Kiara error: attacking army " + army.ID + " without access");
+			KIARA.Logger.error("attacking army " + army.ID + " without access");
 		army.recalculatePosition(gameState);
 		armiesNeeding.push({ "army": army, "access": armyAccess, "need": needsDef });
 	}
 
-	if (!armiesNeeding.length)
+	if (!armiesNeeding.length) {
+		Engine.ProfileStop();
 		return;
+	}
 
 	// Let's get our potential units.
 	let potentialDefenders = [];
@@ -521,16 +535,20 @@ KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 
 			if (armiesNeeding[aMin].need <= 0)
 				armiesNeeding.splice(aMin, 1);
-			if (!armiesNeeding.length)
+			if (!armiesNeeding.length) {
+				Engine.ProfileStop();
 				return;
+			}
 		}
 	}
 
 	// If shortage of defenders, produce infantry garrisoned in nearest civil center.
+	/*
 	let armiesPos = [];
 	for (let a = 0; a < armiesNeeding.length; ++a)
 		armiesPos.push(armiesNeeding[a].army.foePosition);
 	gameState.ai.HQ.trainEmergencyUnits(gameState, armiesPos);
+	*/
 };
 
 KIARA.DefenseManager.prototype.abortArmy = function(gameState, army)
@@ -553,6 +571,7 @@ KIARA.DefenseManager.prototype.abortArmy = function(gameState, army)
  */
 KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 {
+	Engine.ProfileStart("DefenseManager checkEvents");
 	// Must be called every turn for all armies.
 	for (let army of this.armies)
 		army.checkEvents(gameState, events);
@@ -784,6 +803,7 @@ KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 				target.attack(attacker.id(), allowCapture);
 		}
 	}
+	Engine.ProfileStop();
 };
 
 KIARA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target, data)
@@ -793,15 +813,21 @@ KIARA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target,
 	let minGarrison = data.min || target.garrisonMax();
 	if (gameState.ai.HQ.garrisonManager.numberOfGarrisonedUnits(target) >= minGarrison)
 		return false;
+
+	Engine.ProfileStart("DefenseManager garrisonUnitsInside");
 	if (data.attacker)
 	{
 		let attackTypes = target.attackTypes();
-		if (!attackTypes || attackTypes.indexOf("Ranged") == -1)
+		if (!attackTypes || attackTypes.indexOf("Ranged") == -1) {
+			Engine.ProfileStop();
 			return false;
+		}
 		let dist = API3.SquareVectorDistance(data.attacker.position(), target.position());
 		let range = target.attackRange("Ranged").max;
-		if (dist >= range*range)
+		if (dist >= range * range) {
+			Engine.ProfileStop();
 			return false;
+		}
 	}
 	let access = KIARA.getLandAccess(gameState, target);
 	let garrisonManager = gameState.ai.HQ.garrisonManager;
@@ -857,6 +883,7 @@ KIARA.DefenseManager.prototype.garrisonUnitsInside = function(gameState, target,
 		garrisonManager.garrison(gameState, ent, target, typeGarrison);
 		ret = true;
 	}
+	Engine.ProfileStop();
 	return ret;
 };
 
@@ -939,18 +966,24 @@ KIARA.DefenseManager.prototype.garrisonAttackedUnit = function(gameState, unit, 
 
 KIARA.DefenseManager.prototype.raiseAlert = function(gameState, unit, data)
 {
+	Engine.ProfileStart("raiseAlert");
 	let attacker = data.attacker;
 	let aPos = attacker.position();
 	let garrisonManager = gameState.ai.HQ.garrisonManager;
 	for (let ent of gameState.getOwnStructures().filter(API3.Filters.and(API3.Filters.not(API3.Filters.isFoundation()), API3.Filters.byClass("CivCentre"))).values()) {
 		let dist = API3.SquareVectorDistance(aPos, ent.position());
 		if (dist < 10000) {
-			if(garrisonManager.raiseAlert(gameState, ent))
+			if(garrisonManager.raiseAlert(gameState, ent)) {
+				Engine.ProfileStop();
 				return true;
-			else 
+			}
+			else {
+				Engine.ProfileStop();
 				return false;
+			}
 		}
 	}
+	Engine.ProfileStop();
 	return false;
 };
 

@@ -1513,6 +1513,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 				attackedByStructure[evt.target] = true;
 				if (this.type == KIARA.AttackTypes.EARLY_RAID) {
 					if (KIARA.getArrows(gameState, attacker) > 3) {
+						Engine.ProfileStop();
 						KIARA.Logger.warn("Attack " + this.type + " " + this.name + " under fire -> Abort");
 						return false;
 					}

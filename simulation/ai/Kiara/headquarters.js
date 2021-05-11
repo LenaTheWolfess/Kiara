@@ -871,7 +871,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 				KIARA.Logger.debug("missing " + missing + " -> " + pop);
 				this.wantPop = pop;
 				while (nHouses < 3 && missing > 0) {
-					warn("add house");
+					KIARA.Logger.debug("add house");
 					let plan = new KIARA.ConstructionPlan(gameState, hTemplate);
 					// change the starting condition according to the situation.
 					plan.goRequirement = "houseNeeded";
@@ -2411,7 +2411,8 @@ KIARA.HQ.prototype.checkBaseExpansion = function(gameState, queues)
 		this.buildNewBase(gameState, queues);
 		return;
 	}
-	if (this.currentPhase > 2)
+	let nBases = this.baseManagers.length;
+	if (this.currentPhase > nBases && this.currentPhase > 1)
 	{
 		let pop = gameState.getOwnUnits().length;
 		if (pop > 150) {
@@ -2471,16 +2472,17 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 			return;
 		}
 	}
-	return;
+	if (this.Config.behaviour != KIARA.Behaviour.DEFENSIVE)
+		return;
 
-	if (this.Config.Military.numSentryTowers && this.currentPhase < 2 && this.canBuild(gameState, "structures/{civ}/sentry_tower"))
+	if (this.Config.Military.numSentryTowers && this.currentPhase < 2 && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.EarlyTower]))
 	{
 		let numTowers = gameState.getOwnEntitiesByClass("Tower", true).length;	// we count all towers, including wall towers
 		let towerLapseTime = this.saveResource ? (1 + 0.5*numTowers) * this.towerLapseTime : this.towerLapseTime;
 		if (numTowers < this.Config.Military.numSentryTowers && gameState.ai.elapsedTime > towerLapseTime + this.fortStartTime)
 		{
 			this.fortStartTime = gameState.ai.elapsedTime;
-			queues.defenseBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/sentry_tower"));
+			queues.defenseBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.EarlyTower]));
 			return;
 		}
 	}
@@ -2488,7 +2490,7 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 	if (this.currentPhase < 2)
 		return;
 
-	if (this.canBuild(gameState, "structures/{civ}/defense_tower"))
+	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Tower]))
 	{
 		let numTowers = gameState.getOwnEntitiesByClass("StoneTower", true).length;
 		let towerLapseTime = this.towerLapseTime;
@@ -2497,7 +2499,7 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 			gameState.getOwnFoundationsByClass("Tower").length < 2)
 		{
 			this.towerStartTime = gameState.ai.elapsedTime;
-			let plan = new KIARA.ConstructionPlan(gameState, "structures/{civ}/defense_tower");
+			let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Tower]);
 			if (numTowers < 5)
 				plan.queueToReset = "defenseBuilding";
 			queues.defenseBuilding.addPlan(plan);
@@ -2529,14 +2531,14 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 KIARA.HQ.prototype.buildForge = function(gameState, queues)
 {
 	if (this.getAccountedPopulation(gameState) < this.Config.Military.popForForge ||
-		queues.militaryBuilding.hasQueuedUnits() || gameState.getOwnEntitiesByClass("Forge", true).length)
+		queues.militaryBuilding.hasQueuedUnits() || gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Forge, true).length)
 		return;
 	// Build a Market before the Forge.
 	if (!gameState.getOwnEntitiesByClass("Market", true).hasEntities())
 		return;
 
-	if (this.canBuild(gameState, "structures/{civ}/forge"))
-		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/forge"));
+	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Forge]))
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Forge]));
 };
 
 /**
@@ -2552,16 +2554,16 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	if (this.saveResources && numBarracks != 0)
 		return;
 
-	if (numBarracks && this.strategy != "attack")
+	if (numBarracks && !KIARA.StrategyPlan[this.strategy][KIARA.StrategyCode.TRAINING_FACILITIES])
 		return;
 
 	let barracksTemplate = this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.MeleeAndRanged]) ? KIARA.Templates[KIARA.TemplateConstants.MeleeAndRanged] : undefined;
 
 	let rangeTemplate = this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Ranged]) ? KIARA.Templates[KIARA.TemplateConstants.Ranged] : undefined;
-	let numRanges = gameState.getOwnEntitiesByClass("Range", true).length;
+	let numRanges = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Ranged, true).length;
 
 	let stableTemplate = this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Cavalry]) ? KIARA.Templates[KIARA.TemplateConstants.Cavalry] : undefined;
-	let numStables = gameState.getOwnEntitiesByClass("Stable", true).length;
+	let numStables = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Cavalry, true).length;
 
 	if (this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks1 ||
 	    this.phasing == 2 && gameState.getOwnStructures().filter(API3.Filters.byClass("Village")).length < 5)
@@ -2629,7 +2631,7 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	if (this.currentPhase < 3)
 		return;
 
-	let nElStables = gameState.getOwnEntitiesByClass("ElephantStable", true).length;
+	let nElStables = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Elephants, true).length;
 	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Elephants]) && nElStables < 3)
 	{
 		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Elephants], { "militaryBase": true }));
@@ -2637,7 +2639,7 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	}
 
 	if (!nElStables) {
-		let nArsenals = gameState.getOwnEntitiesByClass("Arsenal", true).length;
+		let nArsenals = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Siege, true).length;
 		if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege]) && nArsenals < 3)
 		{
 			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege], { "militaryBase": true }));

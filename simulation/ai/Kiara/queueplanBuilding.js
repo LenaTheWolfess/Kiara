@@ -453,8 +453,8 @@ KIARA.ConstructionPlan.prototype.findDockPosition = function(gameState)
 		let score = 0;
 		if (!proxyAccess && !oversea)
 		{
-			// if not in our (or allied) territory, we do not want it too far to be able to defend it
-			score = this.getFrontierProximity(gameState, j);
+			// if not in our territory, we do not want it too far to be able to defend it
+			score = this.getFrontierProximity(gameState, j, false);
 			if (score > 4)
 				continue;
 			score *= factor;
@@ -820,7 +820,7 @@ KIARA.ConstructionPlan.prototype.isDockLocation = function(gameState, j, dimensi
  * return a measure of the proximity to our frontier (including our allies)
  * 0=inside, 1=less than 24m, 2= less than 48m, 3= less than 72m, 4=less than 96m, 5=above 96m
  */
-KIARA.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
+KIARA.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j, allies = true)
 {
 	/**
 	* fast check if we can build a dock: returns false if nearest land is farther than the dock dimension
@@ -832,7 +832,7 @@ KIARA.ConstructionPlan.prototype.getFrontierProximity = function(gameState, j)
 	let alliedVictory = gameState.getAlliedVictory();
 	let territoryMap = gameState.ai.HQ.territoryMap;
 	let territoryOwner = territoryMap.getOwnerIndex(j);
-	if (territoryOwner == PlayerID || alliedVictory && gameState.isPlayerAlly(territoryOwner))
+	if (territoryOwner == PlayerID || (allies && alliedVictory && gameState.isPlayerAlly(territoryOwner)))
 		return 0;
 
 	let borderMap = gameState.ai.HQ.borderMap;
