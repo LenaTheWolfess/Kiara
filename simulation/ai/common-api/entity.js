@@ -767,6 +767,30 @@ m.Entity = m.Class({
 		return false;
 	},
 
+	"upgradeCost": function(upgrade)
+	{
+		if (!this.get("Upgrade"))
+			return undefined;
+		if (!this.get("Upgrade/"+upgrade))
+			return undefined;
+		if (!this.get("Upgrade/"+upgrade+"/Cost"))
+			return {};
+		let ret = {};
+		for (let type in this.get("Upgrade/"+upgrade+"/Cost/Resources"))
+			ret[type] = +this.get("Upgrade/"+upgrade+"/Cost/Resources/" + type);
+		return ret;
+	},
+
+
+	"upgradeTemplate": function(upgrade)
+	{
+		if (!this.get("Upgrade"))
+			return undefined;
+		if (!this.get("Upgrade/"+upgrade))
+			return undefined;
+		return this.get("Upgrade/"+upgrade+"/Entity");
+	},
+
 	/**
 	 * Derived from Attack.js' similary named function.
 	 * @return {boolean} - Whether an entity can attack a given target.

@@ -1,10 +1,12 @@
-KIARA.UpgradePlan = function(gameState, ent, template, metadata)
+KIARA.UpgradePlan = function(gameState, ent, upgrade, metadata)
 {
-	this.entId = ent.id();
-	if (!KIARA.QueuePlan.call(this, gameState, template, metadata))
+	if (!KIARA.QueuePlan.call(this, gameState, ent.upgradeTemplate(upgrade), metadata))
 		return false;
 
+	this.entId = ent.id();
 	this.category = "upgrade";
+	this.upgrade = upgrade;
+	this.cost = new API3.Resources(ent.upgradeCost(this.upgrade));
 
 	return true;
 };
@@ -56,6 +58,7 @@ KIARA.UpgradePlan.prototype.Serialize = function()
 		"cost": this.cost.Serialize(),
 		"number": this.number,
 		"entId": this.entId,
+		"upgrade": this.upgrade,
 		"queueToReset": this.queueToReset || undefined
 	};
 };

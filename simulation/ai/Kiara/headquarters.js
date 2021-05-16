@@ -2476,30 +2476,31 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 	if (this.Config.behavior != KIARA.Behavior.DEFENSIVE)
 		return;
 
-	if (this.Config.Military.numSentryTowers && this.currentPhase < 2 && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.EarlyTower]))
-	{
-		let numTowers = gameState.getOwnEntitiesByClass("Tower", true).length;	// we count all towers, including wall towers
-		let towerLapseTime = this.saveResource ? (1 + 0.5*numTowers) * this.towerLapseTime : this.towerLapseTime;
-		if (numTowers < this.Config.Military.numSentryTowers && gameState.ai.elapsedTime > towerLapseTime + this.fortStartTime)
-		{
-			this.fortStartTime = gameState.ai.elapsedTime;
-			queues.defenseBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.EarlyTower]));
-			return;
-		}
-	}
-
 	if (this.currentPhase < 2)
+	{
+		if (this.Config.Military.numSentryTowers && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.EarlyTower]))
+		{
+			let numTowers = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Tower, true).length;	// we count all towers, including wall towers
+			let towerLapseTime = this.saveResource ? (1 + 0.5*numTowers) * this.towerLapseTime : this.towerLapseTime;
+			if (numTowers < this.Config.Military.numSentryTowers && gameState.ai.elapsedTime > towerLapseTime + this.fortStartTime)
+			{
+				this.fortStartTime = gameState.ai.elapsedTime;
+				queues.defenseBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.EarlyTower]));
+				return;
+			}
+		}
 		return;
+	}
 
 	// Try to upgrade sentry towers first
 	if (!queues.upgrade.hasQueuedUnits()) {
 		for (let ent of gameState.getOwnStructures().filter(API3.Filters.byClass(KIARA.TemplateConstants.EarlyTower)).toEntityArray()) {
-			queues.upgrade.addPlan(new KIARA.UpgradePlan(gameState, ent, KIARA.Templates[KIARA.TemplateConstants.Tower]));
+			queues.upgrade.addPlan(new KIARA.UpgradePlan(gameState, ent, KIARA.TemplateConstants.Tower));
 			return;
 		}
 	}
 
-	if (queues.defenseBuilding.hasQueuedUnitsWithClass("Tower") && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Tower]))
+	if (!queues.upgrade.hasQueuedUnits() && queues.defenseBuilding.hasQueuedUnitsWithClass(KIARA.TemplateConstants.Tower) && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Tower]))
 	{
 		let numTowers = gameState.getOwnEntitiesByClass("StoneTower", true).length;
 		let towerLapseTime = this.towerLapseTime;
