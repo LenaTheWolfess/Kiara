@@ -158,19 +158,21 @@ KIARA.QueueManager.prototype.wantedGatherRates = function(gameState)
 
 KIARA.QueueManager.prototype.printQueues = function(gameState)
 {
+	if (!KIARA.Logger.isTrace())
+		return;
 	let numWorkers = 0;
 	gameState.getOwnUnits().forEach(ent => {
 		if (ent.getMetadata(PlayerID, "role") == "worker" && ent.getMetadata(PlayerID, "plan") === undefined)
 			numWorkers++;
 	});
-	KIARA.Logger.debug("---------- QUEUES ------------ with pop " + gameState.getPopulation() + " and workers " + numWorkers);
+	KIARA.Logger.trace("---------- QUEUES ------------ with pop " + gameState.getPopulation() + " and workers " + numWorkers);
 	for (let i in this.queues)
 	{
 		let q = this.queues[i];
 		if (q.hasQueuedUnits())
 		{
-			KIARA.Logger.debug(i + ": ( with priority " + this.priorities[i] +" and accounts " + uneval(this.accounts[i]) +")");
-			KIARA.Logger.debug(" while maxAccountWanted(0.8) is " + uneval(q.maxAccountWanted(gameState, 0.6)));
+			KIARA.Logger.trace(i + ": ( with priority " + this.priorities[i] +" and accounts " + uneval(this.accounts[i]) +")");
+			KIARA.Logger.trace(" while maxAccountWanted(0.8) is " + uneval(q.maxAccountWanted(gameState, 0.6)));
 		}
 		for (let plan of q.plans)
 		{
@@ -178,18 +180,18 @@ KIARA.QueueManager.prototype.printQueues = function(gameState)
 			if (plan.number)
 				qStr += "x" + plan.number;
 			qStr += "   isGo " + plan.isGo(gameState);
-			KIARA.Logger.debug(qStr);
+			KIARA.Logger.trace(qStr);
 		}
 	}
-	KIARA.Logger.debug("Accounts");
+	KIARA.Logger.trace("Accounts");
 	for (let p in this.accounts)
-	    KIARA.Logger.debug(p + ": " + uneval(this.accounts[p]));
-	KIARA.Logger.debug("Current Resources: " + uneval(gameState.getResources()));
-	KIARA.Logger.debug("Available Resources: " + uneval(this.getAvailableResources(gameState)));
-	KIARA.Logger.debug("Wanted Gather Rates: " + uneval(gameState.ai.HQ.GetWantedGatherRates(gameState)));
-	KIARA.Logger.debug("Current Gather Rates: " + uneval(gameState.ai.HQ.GetCurrentGatherRates(gameState)));
-	KIARA.Logger.debug("Most needed resources: " + uneval(gameState.ai.HQ.pickMostNeededResources(gameState)));
-	KIARA.Logger.debug("------------------------------------");
+	    KIARA.Logger.trace(p + ": " + uneval(this.accounts[p]));
+	KIARA.Logger.trace("Current Resources: " + uneval(gameState.getResources()));
+	KIARA.Logger.trace("Available Resources: " + uneval(this.getAvailableResources(gameState)));
+	KIARA.Logger.trace("Wanted Gather Rates: " + uneval(gameState.ai.HQ.GetWantedGatherRates(gameState)));
+	KIARA.Logger.trace("Current Gather Rates: " + uneval(gameState.ai.HQ.GetCurrentGatherRates(gameState)));
+	KIARA.Logger.trace("Most needed resources: " + uneval(gameState.ai.HQ.pickMostNeededResources(gameState)));
+	KIARA.Logger.trace("------------------------------------");
 };
 
 KIARA.QueueManager.prototype.clear = function()
@@ -500,7 +502,7 @@ KIARA.QueueManager.prototype.update = function(gameState)
 	// Start the next item in the queue if we can afford it.
 	this.startNextItems(gameState);
 
-	if (KIARA.Logger.isTrace() && gameState.ai.playedTurn%50 === 0)
+	if (gameState.ai.playedTurn%50 === 0)
 		this.printQueues(gameState);
 
 	Engine.ProfileStop();

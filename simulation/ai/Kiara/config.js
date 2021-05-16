@@ -2,7 +2,7 @@ KIARA.Config = function(difficulty, behavior)
 {
 	this.difficulty = difficulty !== undefined ? difficulty : KIARA.Difficulty.DEFAULT;
 
-	this.behavior = behavior || KIARA.Behaviour.DEFAULT;
+	this.behavior = behavior || KIARA.Behavior.DEFAULT;
 
 	this.chat = true;	// false to prevent AI's chats
 
@@ -119,6 +119,7 @@ KIARA.Config = function(difficulty, behavior)
 		"market": 800,
 		"militaryBuilding": 130,
 		"defenseBuilding": 70,
+		"upgrade": 100,
 		"civilCentre": 950,
 		"majorTech": 700,
 		"minorTech": 270,

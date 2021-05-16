@@ -815,7 +815,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	{
 		if (!ent.hasClass("Unit") || !this.isAvailableUnit(gameState, ent))
 			continue;
-		if (ent.hasClass("Ship") || ent.hasClass("Support") || ent.attackTypes() === undefined)
+		if (ent.hasClass("Ship") || (!ent.hasClass("Healer") && ent.hasClass("Support") || ent.attackTypes() === undefined))
 			continue;
 		ent.setMetadata(PlayerID, "plan", plan);
 		this.unitCollection.updateEnt(ent);
@@ -824,8 +824,6 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	// Add units previously in a plan, but which left it because needed for defense or attack finished.
 	for (let ent of gameState.ai.HQ.attackManager.outOfPlan.values())
 	{
-		if (!this.isAvailableUnit(gameState, ent))
-			continue;
 		ent.setMetadata(PlayerID, "plan", plan);
 		this.unitCollection.updateEnt(ent);
 		added = true;
@@ -891,7 +889,6 @@ KIARA.AttackPlan.prototype.reassignCavUnit = function(gameState, type)
 		ent.setMetadata(PlayerID, "plan", raid.name);
 		this.unitCollection.updateEnt(ent);
 		raid.unitCollection.updateEnt(ent);
-		return;
 	}
 };
 
@@ -1384,7 +1381,7 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 	for (let ent of this.unitCollection.values())
 	{
 		ent.setMetadata(PlayerID, "subrole", "walking");
-		let stance = ent.isPackable() ? "standground" : KIARA.isSiegeUnit(ent) ? KIARA.Behaviour.AGGRESIVE : "defensive";
+		let stance = ent.isPackable() ? "standground" : KIARA.isSiegeUnit(ent) ? KIARA.Behavior.AGGRESIVE : "defensive";
 		if (ent.getStance() != stance)
 			ent.setStance(stance);
 		if (KIARA.Logger.isTrace())

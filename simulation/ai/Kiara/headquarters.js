@@ -33,7 +33,7 @@ KIARA.HQ = function(Config)
 	this.fortressStartTime = 0;	// Fortresses, will start as soon as available (city phase).
 	this.fortressLapseTime = this.Config.Military.fortressLapseTime;
 	this.extraTowers = 5;
-	if (this.Config.behaviour == KIARA.Behaviour.AGGRESIVE)
+	if (this.Config.behavior == KIARA.Behavior.AGGRESIVE)
 		this.extraTowers = 0;
 	this.extraFortresses = 1;
 
@@ -64,12 +64,12 @@ KIARA.HQ = function(Config)
 
 	this.strategy = KIARA.Strategy.DEFAULT;
 
-	let beh = this.Config.behaviour;
-	if (beh == KIARA.Behaviour.BALANCED)
+	let beh = this.Config.behavior;
+	if (beh == KIARA.Behavior.BALANCED)
 		this.strategy = KIARA.Strategy.BOOM;
-	if (beh == KIARA.Behaviour.DEFENSIVE)
+	if (beh == KIARA.Behavior.DEFENSIVE)
 		this.strategy = KIARA.Strategy.NONE;
-	if (beh == KIARA.Behaviour.AGGRESIVE)
+	if (beh == KIARA.Behavior.AGGRESIVE)
 		this.strategy = KIARA.Strategy.BOOM;
 };
 
@@ -721,7 +721,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let free = gameState.getPopulationLimit() - (gameState.getPopulation() + numberInTraining);
 
 	let anyClasses = ["Worker"];
-	let antiClasses = ["Mercenary"];
+	let antiClasses = ["Mercenary", "Healer"];
 	let anyRequirements = [ ["costsResource", 1, "food"], ["canGather", 1] ];
 
 	let classesInf = ["Infantry"];
@@ -2458,7 +2458,7 @@ KIARA.HQ.prototype.buildNewBase = function(gameState, queues, resource)
 /** Deals with building fortresses and towers along our border with enemies. */
 KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 {
-	let numFortresses = gameState.getOwnEntitiesByClass("Fortress", true).length;
+	let numFortresses = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Fortress, true).length;
 	if (this.currentPhase > 2 && !queues.defenseBuilding.hasQueuedUnits()) {
 		// try to build fortresses
 		if (!numFortresses && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Fortress]))
@@ -2472,7 +2472,8 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 			return;
 		}
 	}
-	if (this.Config.behaviour != KIARA.Behaviour.DEFENSIVE)
+
+	if (this.Config.behavior != KIARA.Behavior.DEFENSIVE)
 		return;
 
 	if (this.Config.Military.numSentryTowers && this.currentPhase < 2 && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.EarlyTower]))
@@ -2490,13 +2491,20 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 	if (this.currentPhase < 2)
 		return;
 
-	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Tower]))
+	// Try to upgrade sentry towers first
+	if (!queues.upgrade.hasQueuedUnits()) {
+		for (let ent of gameState.getOwnStructures().filter(API3.Filters.byClass(KIARA.TemplateConstants.EarlyTower)).toEntityArray()) {
+			queues.upgrade.addPlan(new KIARA.UpgradePlan(gameState, ent, KIARA.Templates[KIARA.TemplateConstants.Tower]));
+			return;
+		}
+	}
+
+	if (queues.defenseBuilding.hasQueuedUnitsWithClass("Tower") && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Tower]))
 	{
 		let numTowers = gameState.getOwnEntitiesByClass("StoneTower", true).length;
 		let towerLapseTime = this.towerLapseTime;
 		if ((!numTowers || gameState.ai.elapsedTime > (1 + 0.1*numTowers)*towerLapseTime + this.towerStartTime) &&
-			numTowers < (2 + this.extraTowers) * this.numActiveBases()  &&
-			gameState.getOwnFoundationsByClass("Tower").length < 2)
+			numTowers < (2 + this.extraTowers) * this.numActiveBases())
 		{
 			this.towerStartTime = gameState.ai.elapsedTime;
 			let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Tower]);
@@ -2647,8 +2655,17 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		}
 	}
 
+	let nChampBuild = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Champions, true).length;
+	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Champions]) && nChampBuild < 3)
+	{
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Champions], { "militaryBase": true }));
+		return;
+	}
+
 	if (this.getAccountedPopulation(gameState) < 80 || !this.bAdvanced.length)
 		return;
+
+	
 
 	// Build advanced military buildings
 	let nAdvanced = 0;

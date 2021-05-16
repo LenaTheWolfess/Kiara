@@ -982,6 +982,11 @@ m.Entity = m.Class({
 		return this;
 	},
 
+	"upgrade": function(template) {
+		Engine.PostCommand(PlayerID, { "type": "upgrade", "entities": [this.id()], "template": template });
+		return this;
+	},
+
 	"stopProduction": function(id) {
 		Engine.PostCommand(PlayerID, { "type": "stop-production", "entity": this.id(), "id": id });
 		return this;

@@ -336,7 +336,6 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 
 	let stablesNb = gameState.getOwnEntitiesByClass("Stable", true).filter(API3.Filters.isBuilt()).length;
 
-	KIARA.Logger.debug("dogRaids ? " + doDogRaid + " stables ? " + stablesNb + " dogRaidNumber " + this.dogRaidNumber + " / " + this.maxDogRaids);
 	if (doSmallAttacks && this.rushNumber < this.maxRushes && barracksNb >= 1)
 	{
 		if (unexecutedAttacks.Rush === 0)

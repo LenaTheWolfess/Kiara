@@ -54,12 +54,12 @@ KIARA.AttackTypes.RANGE_CAV = "RangeCav";
 KIARA.AttackTypes.DOG_RAID = "DogRaid";
 
 // for instance "balanced", "aggressive" or "defensive"
-KIARA.Behaviour = function() {};
-KIARA.Behaviour.BALANCED = "balanced";
-KIARA.Behaviour.AGGRESIVE = "aggressive";
-KIARA.Behaviour.DEFENSIVE = "defensive";
-KIARA.Behaviour.RANDOM = "random";
-KIARA.Behaviour.DEFAULT = KIARA.Behaviour.RANDOM;
+KIARA.Behavior = function() {};
+KIARA.Behavior.BALANCED = "balanced";
+KIARA.Behavior.AGGRESIVE = "aggressive";
+KIARA.Behavior.DEFENSIVE = "defensive";
+KIARA.Behavior.RANDOM = "random";
+KIARA.Behavior.DEFAULT = KIARA.Behavior.RANDOM;
 
 KIARA.Difficulty = function() {};
 KIARA.Difficulty.SANDBOX = 0;
@@ -88,8 +88,9 @@ KIARA.TemplateConstants.Cavalry = "Stable";
 KIARA.TemplateConstants.Siege = "Arsenal";
 KIARA.TemplateConstants.Elephants = "ElephantStable";
 KIARA.TemplateConstants.Tower = "Tower";
-KIARA.TemplateConstants.EarlyTower = "EarlyTower";
+KIARA.TemplateConstants.EarlyTower = "SentryTower";
 KIARA.TemplateConstants.Forge = "Forge";
+KIARA.TemplateConstants.Champions = "Gymnasium";
 
 KIARA.Templates = function() {};
 KIARA.Templates[KIARA.TemplateConstants.MorePopulation] = "structures/{civ}/house";
@@ -111,6 +112,7 @@ KIARA.Templates[KIARA.TemplateConstants.Elephants] = "structures/{civ}/elephant_
 KIARA.Templates[KIARA.TemplateConstants.Tower] = "structures/{civ}/defense_tower";
 KIARA.Templates[KIARA.TemplateConstants.EarlyTower] = "structures/{civ}/sentry_tower";
 KIARA.Templates[KIARA.TemplateConstants.Forge] = "structures/{civ}/forge";
+KIARA.Templates[KIARA.TemplateConstants.Champions] = "structures/{civ}/gymnasium";
 
 KIARA.Logger.warn = function(output)
 {
