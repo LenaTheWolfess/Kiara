@@ -35,7 +35,7 @@ KIARA.NavalManager = function(Config)
 KIARA.NavalManager.prototype.init = function(gameState, deserializing)
 {
 	// docks
-	this.docks = gameState.getOwnStructures().filter(API3.Filters.byClassesOr(["Dock", "Shipyard"]));
+	this.docks = gameState.getOwnStructures().filter(API3.Filters.byClasses(["Dock", "Shipyard"]));
 	this.docks.registerUpdates();
 
 	this.ships = gameState.getOwnUnits().filter(API3.Filters.and(API3.Filters.byClass("Ship"), API3.Filters.not(API3.Filters.byMetadata(PlayerID, "role", "trader"))));

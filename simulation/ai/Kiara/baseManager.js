@@ -334,7 +334,7 @@ KIARA.BaseManager.prototype.findBestFarmsteadLocation = function(gameState, reso
 		halfSize = +template.get("Footprint/Circle/@radius");
 
 //	let ccEnts = gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).toEntityArray();
-	let dpEnts = gameState.getOwnStructures().filter(API3.Filters.byClassesOr(["Farmstead", "Dock"])).toEntityArray();
+	let dpEnts = gameState.getOwnStructures().filter(API3.Filters.byClasses(["Farmstead", "Dock"])).toEntityArray();
 
 	let obstructions = KIARA.createObstructionMap(gameState, this.accessIndex, template);
 
@@ -485,7 +485,7 @@ KIARA.BaseManager.prototype.findBestDropsiteLocation = function(gameState, resou
 	let obstructions = KIARA.createObstructionMap(gameState, this.accessIndex, template);
 
 	let ccEnts = gameState.getOwnStructures().filter(API3.Filters.byClass("CivCentre")).toEntityArray();
-	let dpEnts = gameState.getOwnStructures().filter(API3.Filters.byClassesOr(["Storehouse", "Dock"])).toEntityArray();
+	let dpEnts = gameState.getOwnStructures().filter(API3.Filters.byClasses(["Storehouse", "Dock"])).toEntityArray();
 
 	let bestIdx;
 	let bestVal = 0;

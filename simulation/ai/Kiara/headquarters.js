@@ -727,8 +727,8 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let classesInf = ["Infantry"];
 	let requirementsInf = [["strength", 2]];
 
-	let classesMeleeInf = ["Melee", "CitizenSoldier", "Infantry"];
-	let classesRangedInf = ["Ranged", "CitizenSoldier", "Infantry"];
+	let classesMeleeInf = ["Melee+CitizenSoldier+Infantry"];
+	let classesRangedInf = ["Ranged+CitizenSoldier+Infantry"];
 
 	let farmers = gameState.getOwnEntitiesByClass("FemaleCitizen", true).length;
 	let sieges = gameState.getOwnEntitiesByClass("Siege", true).length;
@@ -1066,7 +1066,7 @@ KIARA.HQ.prototype.trainMoreWorkersOld = function(gameState, queues)
 			else
 				requirements = [ ["strength", 1], ["canGather", 1] ];
 
-			let classes = ["CitizenSoldier", "Infantry"];
+			let classes = ["CitizenSoldier+Infantry"];
 			//  We want at least 33% ranged and 33% melee
 /*
 			if (numberOfRanged / numberOfInfantry < 0.5)
@@ -1129,7 +1129,7 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 
 KIARA.HQ.prototype.findBestTrainableUnitSpecial = function(gameState, classes, requirements, units, anticlasses = [])
 {
-	if (classes.indexOf("Hero") != -1)
+	if (classes.indexOf("Hero") == -1)
 		anticlasses.push("Hero");
 	else if (classes.indexOf("Siege") != -1)	// We do not want siege tower as AI does not know how to use it
 		anticlasses.push("SiegeTower");
@@ -1483,7 +1483,7 @@ KIARA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 		halfSize = +template.get("Footprint/Circle/@radius");
 
 	let ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
-	let dpEnts = gameState.getOwnDropsites().filter(API3.Filters.not(API3.Filters.byClassesOr(["CivCentre", "Unit"])));
+	const dpEnts = gameState.getOwnDropsites().filter(API3.Filters.not(API3.Filters.byClasses(["CivCentre", "Unit"])));
 	let ccList = [];
 	for (let cc of ccEnts.values())
 		ccList.push({ "ent": cc, "pos": cc.position(), "ally": gameState.isPlayerAlly(cc.owner()) });
@@ -1933,16 +1933,16 @@ KIARA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 	// but requiring a minimal distance with our other defensive structures
 	// and not in range of any enemy defensive structure to avoid building under fire.
 
-	let ownStructures = gameState.getOwnStructures().filter(API3.Filters.byClassesOr(["Fortress", "Tower"])).toEntityArray();
+	let ownStructures = gameState.getOwnStructures().filter(API3.Filters.byClasses(["Fortress", "Tower"])).toEntityArray();
 	let enemyStructures = gameState.getEnemyStructures().filter(API3.Filters.not(API3.Filters.byOwner(0))).
-		filter(API3.Filters.byClassesOr(["CivCentre", "Fortress", "Tower"]));
+		filter(API3.Filters.byClasses(["CivCentre", "Fortress", "Tower"]));
 	if (!enemyStructures.hasEntities())	// we may be in cease fire mode, build defense against neutrals
 	{
 		enemyStructures = gameState.getNeutralStructures().filter(API3.Filters.not(API3.Filters.byOwner(0))).
-			filter(API3.Filters.byClassesOr(["CivCentre", "Fortress", "Tower"]));
+			filter(API3.Filters.byClasses(["CivCentre", "Fortress", "Tower"]));
 		if (!enemyStructures.hasEntities() && !gameState.getAlliedVictory())
 			enemyStructures = gameState.getAllyStructures().filter(API3.Filters.not(API3.Filters.byOwner(PlayerID))).
-				filter(API3.Filters.byClassesOr(["CivCentre", "Fortress", "Tower"]));
+				filter(API3.Filters.byClasses(["CivCentre", "Fortress", "Tower"]));
 		if (!enemyStructures.hasEntities())
 			return undefined;
 	}
