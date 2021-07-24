@@ -18,6 +18,7 @@ KIARA.AttackManager = function(Config)
 	this.rushSize = [];
 	this.currentEnemyPlayer = undefined; // enemy player we are currently targeting
 	this.defeated = {};
+	this.raidSize = [ 5, 10 ];
 };
 
 /** More initialisation for stuff that needs the gameState */
@@ -34,8 +35,6 @@ KIARA.AttackManager.prototype.setRushes = function(allowed)
 	this.maxRushes = allowed;
 	if (allowed > 3)
 		this.maxRaids = 2;
-	this.raidSize = [ 5, 10 ];
-	this.rushSize = [ 16, 20, 24 ];
 
 	this.maxRushes = 0;
 	this.maxRaids = 0;

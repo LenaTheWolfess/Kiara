@@ -368,16 +368,13 @@ KIARA.gatherTreasure = function(gameState, ent, water = false)
 		return false;
 	if (!ent || !ent.position())
 		return false;
-	let rates = ent.resourceGatherRates();
-	if (!rates || !rates.treasure || rates.treasure <= 0)
+	if (!ent.isTreasureCollector())
 		return false;
 	let treasureFound;
 	let distmin = Math.min();
 	let access = water ? KIARA.getSeaAccess(gameState, ent) : KIARA.getLandAccess(gameState, ent);
 	for (let treasure of gameState.ai.HQ.treasures.values())
 	{
-		if (KIARA.IsSupplyFull(gameState, treasure))
-			continue;
 		// let some time for the previous gatherer to reach the treasure before trying again
 		let lastGathered = treasure.getMetadata(PlayerID, "lastGathered");
 		if (lastGathered && gameState.ai.elapsedTime - lastGathered < 20)
@@ -401,7 +398,7 @@ KIARA.gatherTreasure = function(gameState, ent, water = false)
 	if (!treasureFound)
 		return false;
 	treasureFound.setMetadata(PlayerID, "lastGathered", gameState.ai.elapsedTime);
-	ent.gather(treasureFound);
+	ent.collectTreasure(treasureFound);
 	gameState.ai.HQ.AddTCGatherer(treasureFound.id());
 	ent.setMetadata(PlayerID, "supply", treasureFound.id());
 	return true;

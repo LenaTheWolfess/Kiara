@@ -88,10 +88,7 @@ KIARA.HQ.prototype.init = function(gameState, queues)
 	this.navalMap = false;
 	this.navalRegions = {};
 
-	this.treasures = gameState.getEntities().filter(ent => {
-		let type = ent.resourceSupplyType();
-		return type && type.generic == "treasure";
-	});
+	this.treasures = gameState.getEntities().filter(ent => ent.isTreasure());
 	this.treasures.registerUpdates();
 	this.currentPhase = gameState.currentPhase();
 	this.decayingStructures = new Set();
@@ -325,7 +322,7 @@ KIARA.HQ.prototype.checkEvents = function(gameState, events)
 		base.buildings.updateEnt(ent);
 		if (ent.resourceDropsiteTypes())
 			base.assignResourceToDropsite(gameState, ent);
-		if (ent.hasClass("Field"))
+		if (ent.hasClass("Field") || ent.hasClass("DropsiteFood"))
 			this.signalNoNeedSupply("food");
 
 		if (ent.getMetadata(PlayerID, "baseAnchor") === true)
@@ -438,8 +435,7 @@ KIARA.HQ.prototype.checkEvents = function(gameState, events)
 			if (!ent.position())
 			{
 				// we are autogarrisoned, check that the holder is registered in the garrisonManager
-				let holderId = ent.unitAIOrderData()[0].target;
-				let holder = gameState.getEntityById(holderId);
+				let holder = gameState.getEntityById(ent.garrisonHolderID());
 				if (holder)
 					this.garrisonManager.registerHolder(gameState, holder);
 			}
@@ -2127,6 +2123,10 @@ KIARA.HQ.prototype.buildMarket = function(gameState, queues)
 /** Build a farmstead */
 KIARA.HQ.prototype.buildFoodSupply = function(gameState, queues, type, res, research)
 {
+	if (queues[type].hasQueuedUnitsWithClass("Farmstead") ||
+		queues.economicBuilding.hasQueuedUnitsWithClass("Farmstead"))
+		return false;
+	
 	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Farmstead])))
 		return false;
 

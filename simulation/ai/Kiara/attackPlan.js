@@ -1881,10 +1881,10 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 				{
 					mUnit.sort((unitA, unitB) => {
 						let vala = unitA.hasClass("Support") ? 50 : 0;
-						if (ent.countersClasses(unitA.classes()))
+						if (ent.counters(unitA))
 							vala += 100;
 						let valb = unitB.hasClass("Support") ? 50 : 0;
-						if (ent.countersClasses(unitB.classes()))
+						if (ent.counters(unitB))
 							valb += 100;
 						let distA = unitA.getMetadata(PlayerID, "distance");
 						let distB = unitB.getMetadata(PlayerID, "distance");

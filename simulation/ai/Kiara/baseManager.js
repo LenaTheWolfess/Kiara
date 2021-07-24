@@ -204,8 +204,6 @@ KIARA.BaseManager.prototype.assignResourceToDropsite = function(gameState, drops
 			if (supply.hasClass("Field"))     // fields are treated separately
 				return;
 			let res = supply.resourceSupplyType().generic;
-			if (res == "treasure")  // treasures are treated separately
-				return;
 			// quick accessibility check
 			if (KIARA.getLandAccess(gameState, supply) != accessIndex)
 				return;
