@@ -36,16 +36,13 @@ m.Template = m.Class({
 
 		if (!this._tpCache.has(string))
 		{
+			let value = this._template;
 			let args = string.split("/");
 			for (let arg of args)
 			{
-				if (value[arg] != undefined)
-					value = value[arg];
-				else
-				{
-					value = undefined;
+				value = value[arg];
+				if (value == undefined)
 					break;
-				}
 			}
 			this._tpCache.set(string, value);
 		}
@@ -72,21 +69,13 @@ m.Template = m.Class({
 	"hasClass": function(name) {
 		if (!this._classes)
 			this._classes = this.classes();
-		let classes = this._classes;
-		return classes && classes.indexOf(name) != -1;
+		return this._classes && this._classes.indexOf(name) != -1;
 	},
 
 	"hasClasses": function(array) {
 		if (!this._classes)
 			this._classes = this.classes();
-		let classes = this._classes;
-		if (!classes)
-			return false;
-
-		for (let cls of array)
-			if (classes.indexOf(cls) == -1)
-				return false;
-		return true;
+		return this._classes && MatchesClassList(this._classes, array);
 	},
 
 	"requiredTech": function() { return this.get("Identity/RequiredTechnology"); },
@@ -151,7 +140,7 @@ m.Template = m.Class({
 		{
 			let w = +this.get("Obstruction/Static/@width");
 			let h = +this.get("Obstruction/Static/@depth");
-			return { "max": Math.sqrt(w*w + h*h) / 2, "min": Math.min(h, w) / 2 };
+			return { "max": Math.sqrt(w * w + h * h) / 2, "min": Math.min(h, w) / 2 };
 		}
 
 		if (this.get("Obstruction/Unit"))
@@ -164,10 +153,10 @@ m.Template = m.Class({
 		let left = this.get("Obstruction/Obstructions/Left");
 		if (left && right)
 		{
-			let w = +right["@x"] + right["@width"]/2 - left["@x"] + left["@width"]/2;
-			let h = Math.max(+right["@z"] + right["@depth"]/2, +left["@z"] + left["@depth"]/2) -
-			        Math.min(+right["@z"] - right["@depth"]/2, +left["@z"] - left["@depth"]/2);
-			return { "max": Math.sqrt(w*w + h*h) / 2, "min": Math.min(h, w) / 2 };
+			let w = +right["@x"] + right["@width"] / 2 - left["@x"] + left["@width"] / 2;
+			let h = Math.max(+right["@z"] + right["@depth"] / 2, +left["@z"] + left["@depth" ] / 2) -
+			        Math.min(+right["@z"] - right["@depth"] / 2, +left["@z"] - left["@depth"] / 2);
+			return { "max": Math.sqrt(w * w + h * h) / 2, "min": Math.min(h, w) / 2 };
 		}
 
 		return { "max": 0, "min": 0 }; // Units have currently no obstructions
@@ -184,7 +173,7 @@ m.Template = m.Class({
 		{
 			let w = +this.get("Footprint/Square/@width");
 			let h = +this.get("Footprint/Square/@depth");
-			return Math.sqrt(w*w + h*h) / 2;
+			return Math.sqrt(w * w + h * h) / 2;
 		}
 
 		if (this.get("Footprint/Circle"))
@@ -233,11 +222,12 @@ m.Template = m.Class({
 	},
 
 	"attackTypes": function() {
-		if (!this.get("Attack"))
+		let attack = this.get("Attack");
+		if (!attack)
 			return undefined;
 
 		let ret = [];
-		for (let type in this.get("Attack"))
+		for (let type in attack)
 			ret.push(type);
 		return ret;
 	},
@@ -285,11 +275,12 @@ m.Template = m.Class({
 	// returns the classes this templates counters:
 	// Return type is [ [-neededClasses- , multiplier], … ].
 	"getCounteredClasses": function() {
-		if (!this.get("Attack"))
+		let attack = this.get("Attack");
+		if (!attack)
 			return undefined;
 
 		let Classes = [];
-		for (let type in this.get("Attack"))
+		for (let type in attack)
 		{
 			let bonuses = this.get("Attack/" + type + "/Bonuses");
 			if (!bonuses)
@@ -307,10 +298,11 @@ m.Template = m.Class({
 	// returns true if the entity counters those classes.
 	// TODO: refine using the multiplier
 	"countersClasses": function(classes) {
-		if (!this.get("Attack"))
+		let attack = this.get("Attack");
+		if (!attack)
 			return false;
 		let mcounter = [];
-		for (let type in this.get("Attack"))
+		for (let type in attack)
 		{
 			let bonuses = this.get("Attack/" + type + "/Bonuses");
 			if (!bonuses)
@@ -322,10 +314,7 @@ m.Template = m.Class({
 					mcounter.concat(bonusClasses.split(" "));
 			}
 		}
-		for (let i in classes)
-			if (mcounter.indexOf(classes[i]) != -1)
-				return true;
-		return false;
+		return target.hasClasses(mcounter);
 	},
 
 	// returns, if it exists, the multiplier from each attack against a given class
@@ -333,9 +322,10 @@ m.Template = m.Class({
 		if (!this.get("Attack/" + type +""))
 			return undefined;
 
-		if (this.get("Attack/" + type + "/Bonuses"))
+		let bonuses = this.get("Attack/" + type + "/Bonuses");
+		if (bonuses)
 		{
-			for (let b in this.get("Attack/" + type + "/Bonuses"))
+			for (let b in bonuses)
 			{
 				let bonusClasses = this.get("Attack/" + type + "/Bonuses/" + b + "/Classes");
 				if (!bonusClasses)
@@ -385,14 +375,10 @@ m.Template = m.Class({
 		let [type, subtype] = this.get("ResourceSupply/Type").split('.');
 		return { "generic": type, "specific": subtype };
 	},
-	// will return either "food", "wood", "stone", "metal" and not treasure.
 	"getResourceType": function() {
 		if (!this.get("ResourceSupply"))
 			return undefined;
-		let [type, subtype] = this.get("ResourceSupply/Type").split('.');
-		if (type == "treasure")
-			return subtype;
-		return type;
+		return this.get("ResourceSupply/Type").split('.')[0];
 	},
 
 	"getDiminishingReturns": function() { return +(this.get("ResourceSupply/DiminishingReturns") || 1); },
@@ -419,6 +405,21 @@ m.Template = m.Class({
 		return types ? types.split(/\s+/) : [];
 	},
 
+	"isResourceDropsite": function(resourceType) {
+		const types = this.resourceDropsiteTypes();
+		return types && (!resourceType || types.indexOf(resourceType) !== -1);
+	},
+
+	"isTreasure": function() { return this.get("Treasure") !== undefined; },
+
+	"treasureResources": function() {
+		if (!this.get("Treasure"))
+			return undefined;
+		let ret = {};
+		for (let r in this.get("Treasure/Resources"))
+			ret[r] = +this.get("Treasure/Resources/" + r);
+		return ret;
+	},
 
 	"garrisonableClasses": function() { return this.get("GarrisonHolder/List/_string"); },
 
@@ -446,13 +447,10 @@ m.Template = m.Class({
 	 * Returns whether this is an animal that is too difficult to hunt.
 	 */
 	"isHuntable": function() {
-		if(!this.get("ResourceSupply/KillBeforeGather"))
-			return false;
-
-		// do not hunt retaliating animals (animals without UnitAI are dead animals)
-		let behaviour = this.get("UnitAI/NaturalBehaviour");
-		return !behaviour ||
-		        behaviour != "violent" && behaviour != "aggressive" && behaviour != "defensive";
+		// Do not hunt retaliating animals (dead animals can be used).
+		// Assume entities which can attack, will attack.
+		return this.get("ResourceSupply/KillBeforeGather") &&
+			(!this.get("Health") || !this.get("Attack"));
 	},
 
 	"walkSpeed": function() { return +this.get("UnitMotion/WalkSpeed"); },
@@ -481,9 +479,10 @@ m.Template = m.Class({
 	"buildPlacementType": function() { return this.get("BuildRestrictions/PlacementType"); },
 
 	"buildTerritories": function() {
-		if (!this.get("BuildRestrictions") || !this.get("BuildRestrictions/Territory"))
+		if (!this.get("BuildRestrictions"))
 			return undefined;
-		return this.get("BuildRestrictions/Territory").split(/\s+/);
+		let territory = this.get("BuildRestrictions/Territory");
+		return !territory ? undefined : territory.split(/\s+/);
 	},
 
 	"hasBuildTerritory": function(territory) {
@@ -613,23 +612,19 @@ m.Entity = m.Class({
 	"position": function() { return this._entity.position; },
 	"angle": function() { return this._entity.angle; },
 
-	"isIdle": function() {
-		if (typeof this._entity.idle === "undefined")
-			return undefined;
-		return this._entity.idle;
-	},
+	"isIdle": function() { return this._entity.idle; },
 
-	"getStance": function() { return this._entity.stance !== undefined ? this._entity.stance : undefined; },
-	"unitAIState": function() { return this._entity.unitAIState !== undefined ? this._entity.unitAIState : undefined; },
-	"unitAIOrderData": function() { return this._entity.unitAIOrderData !== undefined ? this._entity.unitAIOrderData : undefined; },
-	"getFormationController": function() {return this._entity.formationController;},
-	"hitpoints": function() { return this._entity.hitpoints !== undefined ? this._entity.hitpoints : undefined; },
+	"getStance": function() { return this._entity.stance; },
+	"unitAIState": function() { return this._entity.unitAIState; },
+	"unitAIOrderData": function() { return this._entity.unitAIOrderData; },
+
+	"hitpoints": function() { return this._entity.hitpoints; },
 	"isHurt": function() { return this.hitpoints() < this.maxHitpoints(); },
 	"healthLevel": function() { return this.hitpoints() / this.maxHitpoints(); },
 	"needsHeal": function() { return this.isHurt() && this.isHealable(); },
 	"needsRepair": function() { return this.isHurt() && this.isRepairable(); },
-	"decaying": function() { return this._entity.decaying !== undefined ? this._entity.decaying : undefined; },
-	"capturePoints": function() {return this._entity.capturePoints !== undefined ? this._entity.capturePoints : undefined; },
+	"decaying": function() { return this._entity.decaying; },
+	"capturePoints": function() {return this._entity.capturePoints; },
 	"isInvulnerable": function() { return this._entity.invulnerability || false; },
 
 	"isSharedDropsite": function() { return this._entity.sharedDropsite === true; },
@@ -639,8 +634,7 @@ m.Entity = m.Class({
 	 * [ { "id": 0, "template": "...", "count": 1, "progress": 0.5, "metadata": ... }, ... ]
 	 */
 	"trainingQueue": function() {
-		let queue = this._entity.trainingQueue;
-		return queue;
+		return this._entity.trainingQueue;
 	},
 
 	"trainingQueueTime": function() {
@@ -650,12 +644,10 @@ m.Entity = m.Class({
 		let time = 0;
 		for (let item of queue)
 			time += item.timeRemaining;
-		return time/1000;
+		return time / 1000;
 	},
 
 	"foundationProgress": function() {
-		if (this._entity.foundationProgress === undefined)
-			return undefined;
 		return this._entity.foundationProgress;
 	},
 
@@ -686,20 +678,14 @@ m.Entity = m.Class({
 	},
 
 	"resourceSupplyAmount": function() {
-		if (this._entity.resourceSupplyAmount === undefined)
-			return undefined;
 		return this._entity.resourceSupplyAmount;
 	},
 
-	"resourceSupplyNumGatherers": function()
-	{
-		if (this._entity.resourceSupplyNumGatherers !== undefined)
-			return this._entity.resourceSupplyNumGatherers;
-		return undefined;
+	"resourceSupplyNumGatherers": function() {
+		return this._entity.resourceSupplyNumGatherers;
 	},
 
-	"isFull": function()
-	{
+	"isFull": function() {
 		if (this._entity.resourceSupplyNumGatherers !== undefined)
 			return this.maxGatherers() === this._entity.resourceSupplyNumGatherers;
 
@@ -707,8 +693,6 @@ m.Entity = m.Class({
 	},
 
 	"resourceCarrying": function() {
-		if (this._entity.resourceCarrying === undefined)
-			return undefined;
 		return this._entity.resourceCarrying;
 	},
 
@@ -718,7 +702,7 @@ m.Entity = m.Class({
 			return undefined;
 
 		if (this.unitAIOrderData().length &&
-			(this.unitAIState().split(".")[1] == "GATHER" || this.unitAIState().split(".")[1] == "RETURNRESOURCE"))
+			this.unitAIState().split(".")[1] == "GATHER")
 		{
 			let res;
 			// this is an abuse of "_ai" but it works.
@@ -732,9 +716,6 @@ m.Entity = m.Class({
 			if (!type)
 				return 0;
 
-			if (type.generic == "treasure")
-				return 1000;
-
 			let tstring = type.generic + "." + type.specific;
 			let rate = +this.get("ResourceGatherer/BaseSpeed");
 			rate *= +this.get("ResourceGatherer/Rates/" +tstring);
@@ -745,18 +726,30 @@ m.Entity = m.Class({
 		return undefined;
 	},
 
+	"garrisonHolderID": function() { return this._entity.garrisonHolderID; },
 	"garrisoned": function() { return this._entity.garrisoned; },
 	"canGarrisonInside": function() { return this._entity.garrisoned.length < this.garrisonMax(); },
+
+	"garrisonedSlots": function() {
+		let count = 0;
+
+		if (this._entity.garrisoned)
+			for (let ent of this._entity.garrisoned)
+				count += +this._ai._entities.get(ent).garrisonSize();
+
+		return count;
+	},
 
 	/**
 	 * returns true if the entity can attack (including capture) the given class.
 	 */
 	"canAttackClass": function(aClass)
 	{
-		if (!this.get("Attack"))
+		let attack = this.get("Attack");
+		if (!attack)
 			return false;
 
-		for (let type in this.get("Attack"))
+		for (let type in attack)
 		{
 			if (type == "Slaughter")
 				continue;
@@ -880,8 +873,24 @@ m.Entity = m.Class({
 		return this;
 	},
 
+	"occupy-turret": function(target, queued = false, pushFront = false) {
+		Engine.PostCommand(PlayerID, { "type": "occupy-turret", "entities": [this.id()], "target": target.id(), "queued": queued, "pushFront": pushFront });
+		return this;
+	},
+
 	"attack": function(unitId, allowCapture = true, queued = false) {
 		Engine.PostCommand(PlayerID, { "type": "attack", "entities": [this.id()], "target": unitId, "allowCapture": allowCapture, "queued": queued });
+		return this;
+	},
+
+	"collectTreasure": function(target, queued = false, pushFront = false) {
+		Engine.PostCommand(PlayerID, {
+			"type": "collect-treasure",
+			"entities": [this.id()],
+			"target": target.id(),
+			"queued": queued,
+			"pushFront": pushFront
+		});
 		return this;
 	},
 
