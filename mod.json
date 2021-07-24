@@ -1,8 +1,8 @@
 {
 	"name": "kiara",
 	"label": "Kiara",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"description": "ai",
-	"dependencies": ["0ad=0.0.24"],
+	"dependencies": ["0ad=0.0.25"],
 	"type": "ai"
 }
