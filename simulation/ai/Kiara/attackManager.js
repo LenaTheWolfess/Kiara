@@ -36,6 +36,8 @@ KIARA.AttackManager.prototype.setRushes = function(allowed)
 	if (allowed > 3)
 		this.maxRaids = 2;
 
+	this.rushSize = [ 16, 20, 24 ];
+
 	this.maxRushes = 0;
 	this.maxRaids = 0;
 	this.maxDogRaids = 0;
