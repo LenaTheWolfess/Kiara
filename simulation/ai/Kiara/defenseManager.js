@@ -604,8 +604,6 @@ KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 		// Second pass assign all defenders.
 		// TODO could sort them by distance.
 		let backup = 0;
-	for (let a = 0; a < armiesNeeding.length; ++a)
-	{
 		for (let i = 0; i < potentialDefenders.length; ++i)
 		{
 			let ent = gameState.getEntityById(potentialDefenders[i]);
@@ -614,8 +612,8 @@ KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 			let aMin;
 			let distMin;
 			let access = ipass == 0 ? KIARA.getLandAccess(gameState, ent) : undefined;
-	//		for (let a = 0; a < armiesNeeding.length; ++a)
-	//		{
+			for (let a = 0; a < armiesNeeding.length; ++a)
+			{
 				if (access && armiesNeeding[a].access != access)
 					continue;
 
@@ -631,7 +629,7 @@ KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 					continue;
 				aMin = a;
 				distMin = dist;
-	//		}
+			}
 
 			// If outside our territory (helping an ally or attacking a cc foundation)
 			// or if in another access, keep some troops in backup.
@@ -657,7 +655,6 @@ KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 				return;
 			}
 		}
-	}
 	}
 
 	// If shortage of defenders, produce infantry garrisoned in nearest civil center.
