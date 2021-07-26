@@ -3386,7 +3386,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 			this.phasingQued = true;
 
 	// Handle strategy switching
-	KIARA.Logger.debug(this.strategy);
+	let prev = this.strategy;
 	if (this.strategy == KIARA.Strategy.RECOVER) {
 		if (pop > 200)
 			this.strategy = KIARA.Strategy.ATTACK;
@@ -3401,7 +3401,8 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		this.attackManager.maxRaids = 2;
 		this.cavalryRush = false;
 	}
-	KIARA.Logger.debug("new strategy = " + this.strategy);
+	if (prev != this.strategy)
+		KIARA.Logger.debug("strategy: " + prev + "->" + this.strategy);
 
 	if (
 			!gameState.getOwnEntitiesByClass("Farmstead", true).length && 

@@ -534,8 +534,10 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 				this.addSiegeUnits(gameState);
 			this.trainMoreUnits(gameState);
 			// may happen if we have no more training facilities and build orders are canceled
-			if (!this.buildOrders.length)
+			if (!this.buildOrders.length) {
+				KIARA.Logger.debug("no units to train, abort");
 				return 0;	// will abort the plan
+			}
 		}
 		return 1;
 	}

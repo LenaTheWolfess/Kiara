@@ -89,11 +89,14 @@ KIARA.NavalManager.prototype.init = function(gameState, deserializing)
 			collec.registerUpdates();
 			this.seaFishShips.push(collec);
 			this.wantedTransportShips.push(0);
-			this.wantedWarShips.push(0);
-			if (availableFishes[i] && availableFishes[i] > 1000)
-				this.wantedFishShips.push(this.Config.Economy.targetNumFishers);
-			else
+			if (availableFishes[i] && availableFishes[i] > 1000) {
+				this.wantedWarShips.push(1);
+				this.wantedFishShips.push(Math.min(5, (this.Config.Economy.targetNumFishers) * Math.max(1, Math.floor(availableFishes[i] / 1000))));
+			}
+			else {
+				this.wantedWarShips.push(0);
 				this.wantedFishShips.push(0);
+			}
 			this.neededTransportShips.push(0);
 			this.neededWarShips.push(0);
 		}
@@ -503,9 +506,20 @@ KIARA.NavalManager.prototype.maintainFleet = function(gameState, queues)
 			}
 		}
 
+		if (this.seaWarShips[sea].length < this.wantedWarShips[sea])
+		{
+			KIARA.Logger.warn("create warship");
+			let template = this.getBestShip(gameState, sea, "attack");
+			if (template)
+			{
+				queues.ships.addPlan(new KIARA.TrainingPlan(gameState, template, { "sea": sea }, 1, 1));
+				continue;
+			}
+		}
 
 		if (this.seaFishShips[sea].length < this.wantedFishShips[sea])
 		{
+			KIARA.Logger.warn("create fishing ship");
 			let template = this.getBestShip(gameState, sea, "fishing");
 			if (template)
 			{
@@ -793,6 +807,8 @@ KIARA.NavalManager.prototype.getBestShip = function(gameState, sea, goal)
 		let arrows = +(template.getDefaultArrow() || 0);
 		if (goal === "attack")    // choose the maximum default arrows
 		{
+			if (template.hasClass("FishingBoat"))
+				continue;
 			if (best > arrows)
 				continue;
 			best = arrows;
