@@ -88,10 +88,7 @@ KIARA.HQ.prototype.init = function(gameState, queues)
 	this.navalMap = false;
 	this.navalRegions = {};
 
-	this.treasures = gameState.getEntities().filter(ent => {
-		let type = ent.resourceSupplyType();
-		return type && type.generic == "treasure";
-	});
+	this.treasures = gameState.getEntities().filter(ent => ent.isTreasure());
 	this.treasures.registerUpdates();
 	this.currentPhase = gameState.currentPhase();
 	this.decayingStructures = new Set();
@@ -325,7 +322,7 @@ KIARA.HQ.prototype.checkEvents = function(gameState, events)
 		base.buildings.updateEnt(ent);
 		if (ent.resourceDropsiteTypes())
 			base.assignResourceToDropsite(gameState, ent);
-		if (ent.hasClass("Field"))
+		if (ent.hasClass("Field") || ent.hasClass("DropsiteFood"))
 			this.signalNoNeedSupply("food");
 
 		if (ent.getMetadata(PlayerID, "baseAnchor") === true)
@@ -438,8 +435,7 @@ KIARA.HQ.prototype.checkEvents = function(gameState, events)
 			if (!ent.position())
 			{
 				// we are autogarrisoned, check that the holder is registered in the garrisonManager
-				let holderId = ent.unitAIOrderData()[0].target;
-				let holder = gameState.getEntityById(holderId);
+				let holder = gameState.getEntityById(ent.garrisonHolderID());
 				if (holder)
 					this.garrisonManager.registerHolder(gameState, holder);
 			}
@@ -727,8 +723,8 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let classesInf = ["Infantry"];
 	let requirementsInf = [["strength", 2]];
 
-	let classesMeleeInf = ["Melee", "CitizenSoldier", "Infantry"];
-	let classesRangedInf = ["Ranged", "CitizenSoldier", "Infantry"];
+	let classesMeleeInf = ["Melee+CitizenSoldier+Infantry"];
+	let classesRangedInf = ["Ranged+CitizenSoldier+Infantry"];
 
 	let farmers = gameState.getOwnEntitiesByClass("FemaleCitizen", true).length;
 	let sieges = gameState.getOwnEntitiesByClass("Siege", true).length;
@@ -1066,7 +1062,7 @@ KIARA.HQ.prototype.trainMoreWorkersOld = function(gameState, queues)
 			else
 				requirements = [ ["strength", 1], ["canGather", 1] ];
 
-			let classes = ["CitizenSoldier", "Infantry"];
+			let classes = ["CitizenSoldier+Infantry"];
 			//  We want at least 33% ranged and 33% melee
 /*
 			if (numberOfRanged / numberOfInfantry < 0.5)
@@ -1129,7 +1125,7 @@ KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 
 KIARA.HQ.prototype.findBestTrainableUnitSpecial = function(gameState, classes, requirements, units, anticlasses = [])
 {
-	if (classes.indexOf("Hero") != -1)
+	if (classes.indexOf("Hero") == -1)
 		anticlasses.push("Hero");
 	else if (classes.indexOf("Siege") != -1)	// We do not want siege tower as AI does not know how to use it
 		anticlasses.push("SiegeTower");
@@ -1483,7 +1479,7 @@ KIARA.HQ.prototype.findEconomicCCLocation = function(gameState, template, resour
 		halfSize = +template.get("Footprint/Circle/@radius");
 
 	let ccEnts = gameState.updatingGlobalCollection("allCCs", API3.Filters.byClass("CivCentre"));
-	let dpEnts = gameState.getOwnDropsites().filter(API3.Filters.not(API3.Filters.byClassesOr(["CivCentre", "Unit"])));
+	const dpEnts = gameState.getOwnDropsites().filter(API3.Filters.not(API3.Filters.byClasses(["CivCentre", "Unit"])));
 	let ccList = [];
 	for (let cc of ccEnts.values())
 		ccList.push({ "ent": cc, "pos": cc.position(), "ally": gameState.isPlayerAlly(cc.owner()) });
@@ -1933,16 +1929,16 @@ KIARA.HQ.prototype.findDefensiveLocation = function(gameState, template)
 	// but requiring a minimal distance with our other defensive structures
 	// and not in range of any enemy defensive structure to avoid building under fire.
 
-	let ownStructures = gameState.getOwnStructures().filter(API3.Filters.byClassesOr(["Fortress", "Tower"])).toEntityArray();
+	let ownStructures = gameState.getOwnStructures().filter(API3.Filters.byClasses(["Fortress", "Tower"])).toEntityArray();
 	let enemyStructures = gameState.getEnemyStructures().filter(API3.Filters.not(API3.Filters.byOwner(0))).
-		filter(API3.Filters.byClassesOr(["CivCentre", "Fortress", "Tower"]));
+		filter(API3.Filters.byClasses(["CivCentre", "Fortress", "Tower"]));
 	if (!enemyStructures.hasEntities())	// we may be in cease fire mode, build defense against neutrals
 	{
 		enemyStructures = gameState.getNeutralStructures().filter(API3.Filters.not(API3.Filters.byOwner(0))).
-			filter(API3.Filters.byClassesOr(["CivCentre", "Fortress", "Tower"]));
+			filter(API3.Filters.byClasses(["CivCentre", "Fortress", "Tower"]));
 		if (!enemyStructures.hasEntities() && !gameState.getAlliedVictory())
 			enemyStructures = gameState.getAllyStructures().filter(API3.Filters.not(API3.Filters.byOwner(PlayerID))).
-				filter(API3.Filters.byClassesOr(["CivCentre", "Fortress", "Tower"]));
+				filter(API3.Filters.byClasses(["CivCentre", "Fortress", "Tower"]));
 		if (!enemyStructures.hasEntities())
 			return undefined;
 	}
@@ -2127,6 +2123,10 @@ KIARA.HQ.prototype.buildMarket = function(gameState, queues)
 /** Build a farmstead */
 KIARA.HQ.prototype.buildFoodSupply = function(gameState, queues, type, res, research)
 {
+	if (queues[type].hasQueuedUnitsWithClass("Farmstead") ||
+		queues.economicBuilding.hasQueuedUnitsWithClass("Farmstead"))
+		return false;
+	
 	if (!gameState.isTemplateAvailable(gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.Farmstead])))
 		return false;
 
@@ -3386,22 +3386,23 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 			this.phasingQued = true;
 
 	// Handle strategy switching
-	KIARA.Logger.debug(this.strategy);
+	let prev = this.strategy;
 	if (this.strategy == KIARA.Strategy.RECOVER) {
-		if (pop > 200)
+		if (pop > 200 * this.Config.popScaling)
 			this.strategy = KIARA.Strategy.ATTACK;
 	}
-	else if (pop < 200 && pop < this.lastPopGrow && this.lastPopGrow > 200) {
+	else if (pop < 200 * this.Config.popScaling && pop < this.lastPopGrow && this.lastPopGrow > 200 * this.Config.popScaling) {
 		this.strategy = KIARA.Strategy.RECOVER;
 	}
-	else if (pop > 100) {
+	else if (pop > 100 * this.Config.popScaling) {
 		this.strategy = KIARA.Strategy.ATTACK;
 	} else if (this.cavalryRush && pop > 20) {
 		this.strategy = KIARA.Strategy.EARLY_RAID;
 		this.attackManager.maxRaids = 2;
 		this.cavalryRush = false;
 	}
-	KIARA.Logger.debug("new strategy = " + this.strategy);
+	if (prev != this.strategy)
+		KIARA.Logger.debug("strategy: " + prev + "->" + this.strategy);
 
 	if (
 			!gameState.getOwnEntitiesByClass("Farmstead", true).length && 

@@ -2,6 +2,7 @@ KIARA.DefenseManager = function(Config)
 {
 	// Array of "army" Objects.
 	this.armies = [];
+	this.navalArmies = [];
 	this.Config = Config;
 	this.targetList = [];
 	this.armyMergeSize = this.Config.Defense.armyMergeSize;
@@ -61,6 +62,7 @@ KIARA.DefenseManager.prototype.update = function(gameState, events)
 	this.checkEnemyArmies(gameState);
 	this.checkEnemyUnits(gameState);
 	this.assignDefenders(gameState);
+	this.assignNavalDefenders(gameState);
 
 	Engine.ProfileStop();
 };
@@ -69,17 +71,31 @@ KIARA.DefenseManager.prototype.makeIntoArmy = function(gameState, entityID, type
 {
 	if (type == "default")
 	{
-		// Try to add it to an existing army.
 		for (let army of this.armies)
 			if (army.getType() == type && army.addFoe(gameState, entityID))
-				return;	// over
+				return;
 	}
 
-	// Create a new army for it.
-	let army = new KIARA.DefenseArmy(gameState, [entityID], type);
-
-	this.armies.push(army);
+	this.armies.push(new KIARA.DefenseArmy(gameState, [entityID], type));
 };
+
+KIARA.DefenseManager.prototype.makeIntoNavalArmy = function(gameState, entityID, sea)
+{
+	for (let army of this.navalArmies)
+		if (army.getSea() == sea && army.addFoe(gameState, entityID))
+			return;
+
+	this.navalArmies.push(new KIARA.DefenseNavalArmy(gameState, [entityID], sea));
+}
+
+KIARA.DefenseManager.prototype.getNavalArmy = function(partOfArmy)
+{
+	for (let army of this.navalArmies)
+		if (army.ID == partOfArmy)
+			return army;
+
+	return undefined;
+}
 
 KIARA.DefenseManager.prototype.getArmy = function(partOfArmy)
 {
@@ -422,6 +438,105 @@ KIARA.DefenseManager.prototype.checkEnemyArmies = function(gameState)
 	Engine.ProfileStop();
 };
 
+
+KIARA.DefenseManager.prototype.assignNavalDefenders = function(gameState)
+{
+	if (!this.navalArmies.length)
+		return;
+
+	Engine.ProfileStart("assignNavalDefenders");
+	let armiesNeeding = [];
+	// Let's add defenders.
+	for (let army of this.navalArmies)
+	{
+		let needsDef = army.needsDefenders(gameState);
+		if (needsDef === false)
+			continue;
+
+		let armyAccess = army.getSea();
+		army.recalculatePosition(gameState);
+		armiesNeeding.push({ "army": army, "sea": armyAccess, "need": needsDef });
+	}
+
+	if (!armiesNeeding.length) {
+		Engine.ProfileStop();
+		return;
+	}
+
+	// Let's get our potential units.
+	let potentialDefenders = [];
+	gameState.getOwnUnits().forEach(function(ent) {
+		if (!ent.position())
+			return;
+		if (!ent.hasClass("Ship"))
+			return;
+		if (ent.getMetadata(PlayerID, "plan") == -2 || ent.getMetadata(PlayerID, "plan") == -3)
+			return;
+		if (ent.hasClass("Support") || ent.attackTypes() === undefined)
+			return;
+		if (ent.hasClass("StoneThrower"))
+			return;
+		if (ent.hasClass("FishingBoat") || ent.hasClass("Trader"))
+			return;
+		if (ent.getMetadata(PlayerID, "transport") !== undefined ||
+		    ent.getMetadata(PlayerID, "transporter") !== undefined)
+			return;
+		if (gameState.ai.HQ.victoryManager.criticalEnts.has(ent.id()))
+			return;
+		if (ent.getMetadata(PlayerID, "plan") !== undefined && ent.getMetadata(PlayerID, "plan") != -1)
+		{
+			let subrole = ent.getMetadata(PlayerID, "subrole");
+			if (subrole && (subrole == "completing" || subrole == "walking" || subrole == "attacking"))
+				return;
+		}
+		KIARA.Logger.warn("adding potential defender");
+		potentialDefenders.push(ent.id());
+	});
+
+	let backup = 0;
+	for (let i = 0; i < potentialDefenders.length; ++i)
+	{
+		let ent = gameState.getEntityById(potentialDefenders[i]);
+		if (!ent || !ent.position())
+			continue;
+		let aMin = undefined;
+		let distMin;
+		let sea = ent.getMetadata(PlayerID, "sea");
+		for (let a = 0; a < armiesNeeding.length; ++a)
+		{
+			if (sea != a.sea)
+				continue;
+			// Do not assign defender if it cannot attack at least part of the attacking army.
+			if (!armiesNeeding[a].army.foeEntities.some(eEnt => {
+				let eEntID = gameState.getEntityById(eEnt);
+				return ent.canAttackTarget(eEntID, KIARA.allowCapture(gameState, ent, eEntID));
+			}))
+				continue;
+
+			let dist = API3.SquareVectorDistance(ent.position(), armiesNeeding[a].army.foePosition);
+			if (aMin !== undefined && dist > distMin)
+				continue;
+			aMin = a;
+			distMin = dist;
+		}
+
+		if (aMin === undefined)
+			continue;
+
+		armiesNeeding[aMin].need -= KIARA.getMaxStrength(ent, this.Config.DamageTypeImportance);
+		armiesNeeding[aMin].army.addOwn(gameState, potentialDefenders[i]);
+		armiesNeeding[aMin].army.assignUnit(gameState, potentialDefenders[i]);
+		potentialDefenders[i] = undefined;
+
+		if (armiesNeeding[aMin].need <= 0)
+			armiesNeeding.splice(aMin, 1);
+		if (!armiesNeeding.length) {
+			Engine.ProfileStop();
+			return;
+		}
+	}
+};
+
 KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 {
 	if (!this.armies.length)
@@ -576,6 +691,9 @@ KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 	for (let army of this.armies)
 		army.checkEvents(gameState, events);
 
+	for (let army of this.navalArmies)
+		army.checkEvents(gameState, events);
+
 	// Capture events.
 	for (let evt of events.OwnershipChanged)
 	{
@@ -632,7 +750,14 @@ KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 		
 		// TODO integrate other ships later, need to be sure it is accessible.
 		if (target.hasClass("Ship"))
-			continue;
+		{
+			if (!attacker.hasClass("Ship"))
+				continue;
+			if (target.hasClass("FishingBoat") || target.hasClass("Trader")) {
+				this.makeIntoNavalArmy(gameState, attacker.id(), target.getMetadata(PlayerID, "sea"));
+				continue;
+			}
+		}
 
 		// If a building on a blinking tile is attacked, check if it can be defended.
 		// Same thing for a building in an isolated base (not connected to a base with anchor).
@@ -1049,7 +1174,11 @@ KIARA.DefenseManager.prototype.Serialize = function()
 	for (let army of this.armies)
 		armies.push(army.Serialize());
 
-	return { "properties": properties, "armies": armies };
+	let navalArmies = [];
+	for (let army of this.navalArmies)
+		navalArmies.push(army.Serialize());
+
+	return { "properties": properties, "armies": armies, "navalArmies": navalArmies};
 };
 
 KIARA.DefenseManager.prototype.Deserialize = function(gameState, data)
@@ -1063,5 +1192,13 @@ KIARA.DefenseManager.prototype.Deserialize = function(gameState, data)
 		let army = new KIARA.DefenseArmy(gameState, []);
 		army.Deserialize(dataArmy);
 		this.armies.push(army);
+	}
+
+	this.navalArmies = [];
+	for (let dataArmy of data.armies)
+	{
+		let army = new KIARA.DefenseNavalArmy(gameState, []);
+		army.Deserialize(dataArmy);
+		this.navalArmies.push(army);
 	}
 };

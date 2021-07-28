@@ -267,16 +267,16 @@ KIARA.HQ.prototype.buildFirstBase = function(gameState)
 			if (ent.isIdle())
 				KIARA.gatherTreasure(gameState, ent);
 			// Then count the resources from the treasures being collected
-			let supplyId = ent.getMetadata(PlayerID, "supply");
-			if (!supplyId)
+			let treasureId = ent.getMetadata(PlayerID, "treasure");
+			if (!treasureId)
 				continue;
-			let supply = gameState.getEntityById(supplyId);
-			if (!supply || supply.resourceSupplyType().generic != "treasure")
+			let treasure = gameState.getEntityById(treasureId);
+			if (!treasure)
 				continue;
-			let type = supply.resourceSupplyType().specific;
-			if (!(type in totalExpected))
-				continue;
-			totalExpected[type] += supply.resourceSupplyMax();
+			let types = treasure.treasureResources();
+			for (let type in types)
+				if (type in totalExpected)
+					totalExpected[type] += types[type];
 			// If we can collect enough resources from these treasures, wait for them
 			if (totalExpected.canAfford(new API3.Resources(template.cost())))
 				return;
@@ -367,7 +367,7 @@ KIARA.HQ.prototype.dispatchUnits = function(gameState)
 		let num1 = Math.floor(num / 2);
 		let num2 = num1;
 		// first pass to affect ranged infantry
-		units.filter(API3.Filters.byClassesAnd(["Infantry", "Ranged"])).forEach(ent => {
+		units.filter(API3.Filters.byClasses(["Infantry+Ranged"])).forEach(ent => {
 			if (!num || !num1)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))
@@ -386,7 +386,7 @@ KIARA.HQ.prototype.dispatchUnits = function(gameState)
 			}
 		});
 		// second pass to affect melee infantry
-		units.filter(API3.Filters.byClassesAnd(["Infantry", "Melee"])).forEach(ent => {
+		units.filter(API3.Filters.byClasses(["Infantry+Melee"])).forEach(ent => {
 			if (!num || !num2)
 				return;
 			if (ent.getMetadata(PlayerID, "allied"))

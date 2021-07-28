@@ -31,7 +31,7 @@ KIARA.GarrisonManager.prototype.raiseAlert = function(gameState, holder)
 	let holderAccess = KIARA.getLandAccess(gameState, holder);
 	let range = holder.attackRange("Ranged") ? holder.attackRange("Ranged").max : 80;
 	let searchRange = range;
-	let structures = gameState.getOwnStructures().filter(API3.Filters.and(API3.Filters.byClassesOr(["DefenseTower", "House", "Fortress", "CivCentre"]),API3.Filters.not(API3.Filters.isFoundation()))).values();
+	let structures = gameState.getOwnStructures().filter(API3.Filters.and(API3.Filters.byClasses(["DefenseTower", "House", "Fortress", "CivCentre"]),API3.Filters.not(API3.Filters.isFoundation()))).values();
 
 	let validStructures = [];
 
@@ -122,7 +122,7 @@ KIARA.GarrisonManager.prototype.endAlert = function(gameState, holder)
 	}
 	let range = holder.attackRange("Ranged") ? holder.attackRange("Ranged").max : 80;
 	holder.setMetadata(PlayerID, "alert", false);
-	let structures = gameState.getOwnStructures().filter(API3.Filters.and(API3.Filters.byClassesOr(["DefenseTower", "House", "Fortress", "CivCentre"]),API3.Filters.not(API3.Filters.isFoundation()))).values();
+	let structures = gameState.getOwnStructures().filter(API3.Filters.and(API3.Filters.byClasses(["DefenseTower", "House", "Fortress", "CivCentre"]),API3.Filters.not(API3.Filters.isFoundation()))).values();
 	let holderPos = holder.position();
 	for (let saveHouse of structures) {
 		let spos = saveHouse.position();

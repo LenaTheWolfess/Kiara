@@ -126,7 +126,7 @@ KIARA.TradeManager.prototype.updateTrader = function(gameState, ent)
 	if (!route)
 	{
 		// TODO try to garrison land trader inside merchant ship when only sea routes available
-		KIARA.Logger.error(" no available route for " + ent.genericName() + " " + ent.id());
+		KIARA.Logger.trace(" no available route for " + ent.genericName() + " " + ent.id());
 		Engine.ProfileStop();
 		return;
 	}

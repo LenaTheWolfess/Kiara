@@ -120,7 +120,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		priority = 250;
 		this.unitStat.Infantry = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 10, "classes": ["Infantry"],
 			"interests": [["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"]] };
-		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 4, "batchSize": 4, "classes": ["FastMoving", "CitizenSoldier"],
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 4, "batchSize": 4, "classes": ["FastMoving+CitizenSoldier"],
 			"interests": [ ["strength", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
 	if (data && data.targetSize)
 			this.unitStat.Infantry.targetSize = data.targetSize;
@@ -143,7 +143,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	else if (type == KIARA.AttackTypes.RAID)
 	{
 		priority = 150;
-		this.unitStat.FastMoving = { "priority": 1, "minSize": 5, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "CitizenSoldier"],
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 5, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving+CitizenSoldier"],
 			"interests": [ ["strength", 1] ] };
 		this.unitStat.Siege = {"priority": 2, "minSize": 1, "targetSize": 2, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 		this.neededShips = 1;
@@ -152,59 +152,59 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	{
 		priority = 350;
 		if (popCaped) {
-			this.unitStat.RangedInfantry    = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry", "Ranged"],
+			this.unitStat.RangedInfantry    = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["Infantry+Ranged"],
 				"interests": [["strength", 3]] };
-			this.unitStat.MeleeInfantry     = { "priority": 1.2, "minSize": 0, "targetSize": 30, "batchSize": 5, "classes": ["Infantry", "Melee"],
+			this.unitStat.MeleeInfantry     = { "priority": 1.2, "minSize": 0, "targetSize": 30, "batchSize": 5, "classes": ["Infantry+Melee"],
 				"interests": [["strength", 3]] };
 /*			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "Champion"],
 				"interests": [["strength", 3]] };
 			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "Champion"],
 				"interests": [["strength", 3]] };
-*/			this.unitStat.RangedFastMoving     = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving", "Ranged"],
+*/			this.unitStat.RangedFastMoving     = { "priority": 1, "minSize": 0, "targetSize": 10, "batchSize": 5, "classes": ["FastMoving+Ranged"],
 				"interests": [["strength", 2]] };
-			this.unitStat.MeleeFastMoving      = { "priority": 1, "minSize": 0, "targetSize": 30, "batchSize": 5, "classes": ["FastMoving", "Melee"],
+			this.unitStat.MeleeFastMoving      = { "priority": 1, "minSize": 0, "targetSize": 30, "batchSize": 5, "classes": ["FastMoving+Melee"],
 				"interests": [["strength", 2]] };
-	/*		this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged", "Champion"],
+	/*		this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving+Ranged+Champion"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee", "Champion"],
+			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving+Melee+Champion"],
 				"interests": [["strength", 2]] };
 		*/	this.unitStat.Healer = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
 			this.unitStat.Siege = {"priority": 2, "minSize": 2, "targetSize": 5, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 			this.neededShips = 10;
 		} else {
 			// basically we want a mix of citizen soldiers so our barracks have a purpose, and champion units.
-	/*		this.unitStat.RangedInfantry    = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged", "CitizenSoldier"],
+	/*		this.unitStat.RangedInfantry    = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry+Ranged+CitizenSoldier"],
 				"interests": [["strength", 3]] };
-			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Melee", "CitizenSoldier"],
+			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry+Melee+CitizenSoldier"],
 				"interests": [["strength", 3]] };
-*/			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 20, "targetSize": 20, "batchSize": 5, "classes": ["Infantry", "Ranged"],
+*/			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 20, "targetSize": 20, "batchSize": 5, "classes": ["Infantry+Ranged"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 10, "targetSize": 40, "batchSize": 5, "classes": ["Infantry", "Melee"],
+			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 10, "targetSize": 40, "batchSize": 5, "classes": ["Infantry+Melee"],
 				"interests": [["strength", 3]] };
-/*			this.unitStat.RangedFastMoving     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged", "CitizenSoldier"],
+/*			this.unitStat.RangedFastMoving     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving+Ranged+CitizenSoldier"],
 				"interests": [["strength", 2]] };
-			this.unitStat.MeleeFastMoving      = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee", "CitizenSoldier"],
+			this.unitStat.MeleeFastMoving      = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving+Melee+CitizenSoldier"],
 				"interests": [["strength", 2]] };
-*/			this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Ranged"],
+*/			this.unitStat.ChampRangedFastMoving  = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving+Ranged"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving", "Melee"],
+			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving+Melee"],
 				"interests": [["strength", 2]] };
 			this.unitStat.Hero                = { "priority": 1, "minSize": 0, "targetSize":  1, "batchSize": 1, "classes": ["Hero"],
 				"interests": [["strength", 2]] };
 			this.unitStat.Healer 			  = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
 			this.unitStat.Siege = {"priority": 2, "minSize": 2, "targetSize": 2, "batchSize": 2, "classes": ["Siege"] , "interests":  [["strength", 1]]};
-			this.unitStat.SiegeElephants = {"priority": 4, "minSize": 0, "targetSize": 5, "batchSize": 2, "classes": ["Elephant", "Champion", "Melee"] , "interests":  [["strength", 1]]};
+			this.unitStat.SiegeElephants = {"priority": 4, "minSize": 0, "targetSize": 5, "batchSize": 2, "classes": ["Elephant+Champion+Melee"] , "interests":  [["strength", 1]]};
 			this.neededShips = 5;
 		}
 	}
 	else
 	{
 		priority = 70;
-		this.unitStat.RangedInfantry = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 6, "classes": ["Infantry", "Ranged"],
+		this.unitStat.RangedInfantry = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 6, "classes": ["Infantry+Ranged"],
 			"interests": [["canGather", 1], ["strength", 1.6], ["costsResource", 0.3, "stone"], ["costsResource", 0.3, "metal"]] };
-		this.unitStat.MeleeInfantry  = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 6, "classes": ["Infantry", "Melee"],
+		this.unitStat.MeleeInfantry  = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 6, "classes": ["Infantry+Melee"],
 			"interests": [["canGather", 1], ["strength", 1.6], ["costsResource", 0.3, "stone"], ["costsResource", 0.3, "metal"]] };
-		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 6, "batchSize": 6, "classes": ["FastMoving", "CitizenSoldier"],
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 6, "batchSize": 6, "classes": ["FastMoving+CitizenSoldier"],
 			"interests": [["strength", 1]] };
 		this.neededShips = 3;
 	}
@@ -259,7 +259,7 @@ KIARA.AttackPlan.prototype.init = function(gameState)
 	for (let cat in this.unitStat)
 	{
 		let Unit = this.unitStat[cat];
-		this.unit[cat] = this.unitCollection.filter(API3.Filters.byClassesAnd(Unit.classes));
+		this.unit[cat] = this.unitCollection.filter(API3.Filters.byClasses(Unit.classes));
 		this.unit[cat].registerUpdates();
 		if (this.canBuildUnits)
 			this.buildOrders.push([0, Unit.classes, this.unit[cat], Unit, cat]);
@@ -370,7 +370,7 @@ KIARA.AttackPlan.prototype.addBuildOrder = function(gameState, name, unitStats, 
 		// no minsize as we don't want the plan to fail at the last minute though.
 		this.unitStat[name] = unitStats;
 		let Unit = this.unitStat[name];
-		this.unit[name] = this.unitCollection.filter(API3.Filters.byClassesAnd(Unit.classes));
+		this.unit[name] = this.unitCollection.filter(API3.Filters.byClasses(Unit.classes));
 		this.unit[name].registerUpdates();
 		this.buildOrders.push([0, Unit.classes, this.unit[name], Unit, name]);
 		if (resetQueue)
@@ -384,7 +384,7 @@ KIARA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 		return false;
 
 	let civ = gameState.getPlayerCiv();
-	let classes = [["Siege", "Melee"], ["Siege", "Ranged"], ["Elephant", "Melee"]];
+	let classes = [["Siege+Melee"], ["Siege+Ranged"], ["Elephant+Melee"]];
 	let hasTrainer = [false, false, false];
 	for (let ent of gameState.getOwnTrainingFacilities().values())
 	{
@@ -534,8 +534,10 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 				this.addSiegeUnits(gameState);
 			this.trainMoreUnits(gameState);
 			// may happen if we have no more training facilities and build orders are canceled
-			if (!this.buildOrders.length)
+			if (!this.buildOrders.length) {
+				KIARA.Logger.debug("no units to train, abort");
 				return 0;	// will abort the plan
+			}
 		}
 		return 1;
 	}
@@ -655,7 +657,7 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 
 	let firstOrder = this.buildOrders[0];
 	let nSiege = gameState.getOwnEntitiesByClass("Siege", true).length;
-	if (firstOrder[3].classes.indexOf("Siege") && nSiege > 10) {
+	if (firstOrder[4] == "Siege" && nSiege > 10) {
 		this.buildOrders.splice(0, 1);
 	}
 
@@ -668,8 +670,7 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 	{
 		// find the actual queue we want
 		let queue = this.queue;
-		if (firstOrder[3].classes.indexOf("Siege") != -1 || firstOrder[3].classes.indexOf("Elephant") != -1 &&
-		    firstOrder[3].classes.indexOf("Melee") != -1 && firstOrder[3].classes.indexOf("Champion") != -1)
+		if (firstOrder[4] != "Siege" || firstOrder[4] != "SiegeElephants")
 			queue = this.queueSiege;
 		else if (firstOrder[3].classes.indexOf("Hero") != -1)
 			queue = this.queueSiege;
@@ -1882,10 +1883,10 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 				{
 					mUnit.sort((unitA, unitB) => {
 						let vala = unitA.hasClass("Support") ? 50 : 0;
-						if (ent.countersClasses(unitA.classes()))
+						if (ent.counters(unitA))
 							vala += 100;
 						let valb = unitB.hasClass("Support") ? 50 : 0;
-						if (ent.countersClasses(unitB.classes()))
+						if (ent.counters(unitB))
 							valb += 100;
 						let distA = unitA.getMetadata(PlayerID, "distance");
 						let distB = unitB.getMetadata(PlayerID, "distance");
