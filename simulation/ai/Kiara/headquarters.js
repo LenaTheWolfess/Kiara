@@ -3388,13 +3388,13 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 	// Handle strategy switching
 	let prev = this.strategy;
 	if (this.strategy == KIARA.Strategy.RECOVER) {
-		if (pop > 200)
+		if (pop > 200 * this.Config.popScaling)
 			this.strategy = KIARA.Strategy.ATTACK;
 	}
-	else if (pop < 200 && pop < this.lastPopGrow && this.lastPopGrow > 200) {
+	else if (pop < 200 * this.Config.popScaling && pop < this.lastPopGrow && this.lastPopGrow > 200 * this.Config.popScaling) {
 		this.strategy = KIARA.Strategy.RECOVER;
 	}
-	else if (pop > 100) {
+	else if (pop > 100 * this.Config.popScaling) {
 		this.strategy = KIARA.Strategy.ATTACK;
 	} else if (this.cavalryRush && pop > 20) {
 		this.strategy = KIARA.Strategy.EARLY_RAID;

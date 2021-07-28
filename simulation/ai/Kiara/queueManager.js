@@ -512,7 +512,7 @@ KIARA.QueueManager.prototype.update = function(gameState)
 KIARA.QueueManager.prototype.checkPausedQueues = function(gameState)
 {
 	let numWorkers = gameState.countOwnEntitiesAndQueuedWithRole("worker");
-	let workersMin =  gameState.ai.HQ.strategy == KIARA.Strategy.RECOVER ? 100 : 20;
+	let workersMin =  gameState.ai.HQ.strategy == KIARA.Strategy.RECOVER ? 100 * this.Config.popScaling : 20;
 	if (numWorkers < workersMin) {
 		KIARA.Logger.debug("workers: " + numWorkers + " < " + workersMin);
 	}
