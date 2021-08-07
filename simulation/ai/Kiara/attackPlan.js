@@ -177,9 +177,9 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 				"interests": [["strength", 3]] };
 			this.unitStat.MeleeInfantry     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["Infantry+Melee+CitizenSoldier"],
 				"interests": [["strength", 3]] };
-*/			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 20, "targetSize": 20, "batchSize": 5, "classes": ["Infantry+Ranged"],
+*/			this.unitStat.ChampRangedInfantry = { "priority": 1, "minSize": 10, "targetSize": 20, "batchSize": 5, "classes": ["Infantry+Ranged"],
 				"interests": [["strength", 3]] };
-			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 10, "targetSize": 40, "batchSize": 5, "classes": ["Infantry+Melee"],
+			this.unitStat.ChampMeleeInfantry  = { "priority": 1, "minSize": 20, "targetSize": 40, "batchSize": 5, "classes": ["Infantry+Melee"],
 				"interests": [["strength", 3]] };
 /*			this.unitStat.RangedFastMoving     = { "priority": 0.7, "minSize": 5, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving+Ranged+CitizenSoldier"],
 				"interests": [["strength", 2]] };
@@ -193,7 +193,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 				"interests": [["strength", 2]] };
 			this.unitStat.Healer 			  = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
 			this.unitStat.Siege = {"priority": 2, "minSize": 2, "targetSize": 2, "batchSize": 2, "classes": ["Siege"] , "interests":  [["strength", 1]]};
-			this.unitStat.SiegeElephants = {"priority": 4, "minSize": 0, "targetSize": 5, "batchSize": 2, "classes": ["Elephant+Champion+Melee"] , "interests":  [["strength", 1]]};
+			this.unitStat.SiegeElephants = {"priority": 4, "minSize": 0, "targetSize": 4, "batchSize": 2, "classes": ["Elephant+Champion+Melee"] , "interests":  [["strength", 1]]};
 			this.neededShips = 5;
 		}
 	}
