@@ -39,6 +39,8 @@ KIARA.ResearchPlan.prototype.getBestResearchers = function(gameState, noRequirem
 	let researchers;
 	for (let ent of allResearchers.values())
 	{
+		if (ent.getMetadata(PlayerID, "upgrading") != undefined)
+			continue;
 		let cost = this.template.costSum(ent);
 		if (cost === costMin)
 			researchers.push(ent);

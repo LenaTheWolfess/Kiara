@@ -33,6 +33,7 @@ KIARA.UpgradePlan.prototype.start = function(gameState)
 		return;
 	}
 	ent.upgrade(this.template.templateName());
+	ent.setMetadata(PlayerID, "upgrading", "true");
 	this.onStart(gameState);
 	Engine.ProfileStop();
 };
