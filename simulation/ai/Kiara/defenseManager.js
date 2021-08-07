@@ -751,11 +751,14 @@ KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 		// TODO integrate other ships later, need to be sure it is accessible.
 		if (target.hasClass("Ship"))
 		{
-			if (attacker && !attacker.hasClass("Ship"))
-				continue;
-			if (target.hasClass("FishingBoat") || target.hasClass("Trader")) {
-				this.makeIntoNavalArmy(gameState, attacker.id(), target.getMetadata(PlayerID, "sea"));
-				continue;
+			if (attacker)
+			{
+				if (!attacker.hasClass("Ship"))
+					continue;
+				if (target.hasClass("FishingBoat") || target.hasClass("Trader")) {
+					this.makeIntoNavalArmy(gameState, attacker.id(), target.getMetadata(PlayerID, "sea"));
+					continue;
+				}
 			}
 			continue;
 		}
