@@ -90,7 +90,8 @@ KIARA.TemplateConstants.Elephants = "ElephantStable";
 KIARA.TemplateConstants.Tower = "Tower";
 KIARA.TemplateConstants.EarlyTower = "SentryTower";
 KIARA.TemplateConstants.Forge = "Forge";
-KIARA.TemplateConstants.Champions = {"athen": "Gymnasium", "pers": "Apadana", "cart": "Temple", "gaul": "Temple", "kush": "Temple"};
+KIARA.TemplateConstants.Healing = "Temple";
+KIARA.TemplateConstants.Champions = {"athen": "Gymnasium", "pers": "Apadana", "cart": "Temple", "gaul": "Temple", "kush": "Temple", "maur": "Palace", "spart": "Syssiton"};
 
 KIARA.Templates = function() {};
 KIARA.Templates[KIARA.TemplateConstants.MorePopulation] = "structures/{civ}/house";
@@ -114,7 +115,9 @@ KIARA.Templates[KIARA.TemplateConstants.EarlyTower] = "structures/{civ}/sentry_t
 KIARA.Templates[KIARA.TemplateConstants.Forge] = "structures/{civ}/forge";
 KIARA.Templates[KIARA.TemplateConstants.Champions.athen] = "structures/{civ}/gymnasium";
 KIARA.Templates[KIARA.TemplateConstants.Champions.pers] = "structures/{civ}/apadana";
-KIARA.Templates["Temple"] = "structures/{civ}/temple";
+KIARA.Templates[KIARA.TemplateConstants.Champions.maur] = "structures/{civ}/palace";
+KIARA.Templates[KIARA.TemplateConstants.Champions.spart] = "structures/{civ}/syssiton";
+KIARA.Templates[KIARA.TemplateConstants.Healing] = "structures/{civ}/temple";
 
 KIARA.Logger.warn = function(output)
 {
