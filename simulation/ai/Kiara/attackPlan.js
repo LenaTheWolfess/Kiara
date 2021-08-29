@@ -995,6 +995,8 @@ KIARA.AttackPlan.prototype.chooseTarget = function(gameState)
  */
 KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, sameLand)
 {
+	if (position === undefined)
+		return undefined;
 	this.isBlocked = false;
 	// Temporary variables needed by isValidTarget
 	this.gameState = gameState;
@@ -1447,6 +1449,12 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 	Engine.ProfileStart("Update Attack");
 
 	this.position = this.unitCollection.getCentrePosition();
+	if (this.position === undefined) {
+		KIARA.Logger.warn(this.type + " position of army is undefined");
+		if (this.unitCollection.length) {
+			KIARA.Logger.warn(this.type + " all units may be garrisoned");
+		}
+	}
 
 	if (this.unitCollection.length < this.nUnits / 2) {
 		Engine.ProfileStop();
