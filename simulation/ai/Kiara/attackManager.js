@@ -397,7 +397,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 				type = KIARA.AttackTypes.HUGE_ATTACK;
 
 			//This is hack, because i am lazy to do it properly
-			type = KIARA.AttackTypes.HUGE_ATTACK;
+	//		type = KIARA.AttackTypes.HUGE_ATTACK;
 			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, type);
 			if (attackPlan.failed)
 				this.attackPlansEncounteredWater = true; // hack

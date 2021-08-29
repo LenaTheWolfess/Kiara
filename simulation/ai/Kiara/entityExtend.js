@@ -316,7 +316,7 @@ KIARA.getHolder = function(gameState, ent)
 KIARA.getArrows = function(gameState, ent)
 {
 	if (!ent.isGarrisonHolder())
-		return ent.getDefaultArrow();
+		return ent.getDefaultArrow() || 0;
 	return ent.getDefaultArrow() + (ent.getArrowMultiplier() * ent.garrisoned());
 }
 

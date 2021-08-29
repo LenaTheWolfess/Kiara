@@ -125,13 +125,19 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	if (data && data.targetSize)
 			this.unitStat.Infantry.targetSize = data.targetSize;
 		this.neededShips = 1;
+		this.siegeState = 0;
 	}
 	else if (type == KIARA.AttackTypes.DOG_RAID)
 	{
 		priority = 330;
 		this.unitStat.Dogs = { "priority": 1, "minSize": 10, "targetSize": 15, "batchSize": 5, "classes": ["Dog"],
 			"interests": [ ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
+		if (data && data.targetSize) {
+			this.unitStat.Dogs.targetSize = data.targetSize;
+			this.unitStat.Dogs.minSize = data.targetSize;
+		}
 		this.neededShips = 1;
+		this.siegeState = 0;
 	}
 	else if (type == KIARA.AttackTypes.EARLY_RAID)
 	{
@@ -139,6 +145,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		this.unitStat.FastMoving = { "priority": 1, "minSize": 10, "targetSize": 15, "batchSize": 2, "classes": ["FastMoving"],
 			"interests": [ ["canGather", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
 		this.neededShips = 1;
+		this.siegeState = 0;
 	}
 	else if (type == KIARA.AttackTypes.RAID)
 	{
@@ -147,6 +154,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 			"interests": [ ["strength", 1] ] };
 		this.unitStat.Siege = {"priority": 2, "minSize": 1, "targetSize": 2, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 		this.neededShips = 1;
+		this.siegeState = 2;
 	}
 	else if (type == KIARA.AttackTypes.HUGE_ATTACK)
 	{
@@ -195,6 +203,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 			this.unitStat.Siege = {"priority": 2, "minSize": 2, "targetSize": 2, "batchSize": 2, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 			this.unitStat.SiegeElephants = {"priority": 4, "minSize": 0, "targetSize": 4, "batchSize": 2, "classes": ["Elephant+Champion+Melee"] , "interests":  [["strength", 1]]};
 			this.neededShips = 5;
+			this.siegeState = 2;
 		}
 	}
 	else
@@ -207,6 +216,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 6, "batchSize": 6, "classes": ["FastMoving+CitizenSoldier"],
 			"interests": [["strength", 1]] };
 		this.neededShips = 3;
+		this.siegeState = 0;
 	}
 
 	// change the sizes according to max population
@@ -230,7 +240,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		this.canBuildUnits = false;
 		this.noAll = true;
 	}
-	this.siegeState = 2;	// 0 = not yet tested, 1 = not yet any siege trainer, 2 = siege added in build orders
+//	this.siegeState = 2;	// 0 = not yet tested, 1 = not yet any siege trainer, 2 = siege added in build orders
 
 	// some variables used during the attack
 	this.position5TurnsAgo = [0, 0];
@@ -427,7 +437,7 @@ KIARA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 /** Three returns possible: 1 is "keep going", 0 is "failed plan", 2 is "start". */
 KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 {
-	KIARA.Logger.debug(this.type + ": update preparation");
+	KIARA.Logger.debug(this.type + ": update preparation in state " + this.state + " size " + this.unitCollection.length);
 	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
 	// the completing step is used to return resources and regroup the units
 	// so we check that we have no more forced order before starting the attack
@@ -436,6 +446,7 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 		// if our target was destroyed, go back to "unexecuted" state
 		if (this.targetPlayer === undefined || !this.target || !gameState.getEntityById(this.target.id()))
 		{
+			KIARA.Logger.debug(this.type + ": update preparation no target -> unexecuted");
 			this.state = "unexecuted";
 			this.target = undefined;
 		}
@@ -546,8 +557,10 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 	this.state = "completing";
 
 	// Raids have their predefined target
-	if (!this.target && !this.chooseTarget(gameState))
+	if (!this.target && !this.chooseTarget(gameState)) {
+		KIARA.Logger.debug(this.type + "updatePreparation: failed to pick target -> abort");
 		return 0;
+	}
 	if (!this.overseas)
 		this.getPathToTarget(gameState);
 
@@ -1010,8 +1023,10 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 		else
 			targets = this.defaultTargetFinder(gameState, this.targetPlayer);
 	}
-	if (!targets.hasEntities())
+	if (!targets.hasEntities()) {
+		KIARA.Logger.trace(this.type + ": getNearestTarget: no targets");
 		return undefined;
+	}
 
 	// picking the nearest target
 	let target;
@@ -1119,6 +1134,8 @@ KIARA.AttackPlan.prototype.isValidTarget = function(ent)
 		return false;
 	if (ent.decaying())
 		return false;
+	if (ent.hasClass("Unit"))
+		return true;
 	if (this.hasSiegeUnits())
 		return ent.getDefaultArrow() || ent.isGarrisonHolder() && ent.garrisoned().length;
 	return KIARA.getArrows(this.gameState, ent) < 1;
@@ -2166,6 +2183,8 @@ KIARA.AttackPlan.prototype.UpdateTarget = function(gameState)
 			{
 				this.target = holder;
 				this.targetPos = holder.position();
+				if (this.type == KIARA.AttackTypes.DOG_RAID || this.type == KIARA.AttackTypes.EARLY_RAID)
+					this.target = undefined;
 			}
 			else
 				this.target = undefined;

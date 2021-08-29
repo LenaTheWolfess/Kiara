@@ -287,8 +287,8 @@ KIARA.ResearchManager.prototype.update = function(gameState, queues)
 			continue;
 		}
 	}
-	if (!techs.length)
-		return;
+//	if (!techs.length)
+//		return;
 
 	// randomly pick one. No worries about pairs in that case.
 	//queues.minorTech.addPlan(new KIARA.ResearchPlan(gameState, pickRandom(techs)[0]));
