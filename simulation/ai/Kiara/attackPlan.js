@@ -240,7 +240,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		this.canBuildUnits = false;
 		this.noAll = true;
 	}
-//	this.siegeState = 2;	// 0 = not yet tested, 1 = not yet any siege trainer, 2 = siege added in build orders
+	this.siegeState = 2;	// 0 = not yet tested, 1 = not yet any siege trainer, 2 = siege added in build orders
 
 	// some variables used during the attack
 	this.position5TurnsAgo = [0, 0];
@@ -481,7 +481,7 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 		this.assignUnits(gameState);
 
 	// Fasten the end game.
-	if (gameState.ai.playedTurn % 5 == 0 && this.hasSiegeUnits() || popCaped)
+	if (gameState.ai.playedTurn % 5 == 0 && (this.hasSiegeUnits() || popCaped))
 	{
 		let totEnemies = 0;
 		let hasEnemies = false;
@@ -1051,8 +1051,10 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 			target = ent;
 		}
 	}
-	if (!target)
+	if (!target) {
+		KIARA.Logger.debug(this.type + ": no target after filtering");
 		return undefined;
+	}
 
 	// Check that we can reach this target
 	target = this.checkTargetObstruction(gameState, target, position);
@@ -1096,7 +1098,7 @@ KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 
 	let hasSiege = this.hasSiegeUnits();
 	let validTargets = eStructures.filter(this.isValidTarget, this);
-	if (hasSiege)
+	if (hasSiege || eUnits.length * 3 < this.unitCollection.length)
 		targets = validTargets.filter(API3.Filters.byClass("Fortress"));
 	let towers = validTargets.filter(API3.Filters.byClass("Tower"));
 	if (!targets.hasEntities())
@@ -1140,7 +1142,7 @@ KIARA.AttackPlan.prototype.isValidTarget = function(ent)
 		return true;
 	if (this.hasSiegeUnits())
 		return ent.getDefaultArrow() || ent.isGarrisonHolder() && ent.garrisoned().length;
-	return KIARA.getArrows(this.gameState, ent) < 1;
+	return KIARA.getArrows(this.gameState, ent) < 1/* || this.unitCollection.length > 100*/;
 };
 
 /** Rush target finder aims at isolated non-defended buildings */

@@ -2574,10 +2574,10 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	let stableTemplate = this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Cavalry]) ? KIARA.Templates[KIARA.TemplateConstants.Cavalry] : undefined;
 	let numStables = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Cavalry, true).length;
 
+	let civ = gameState.getPlayerCiv();
 	if (this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks1 ||
 	    this.phasing == 2 && gameState.getOwnStructures().filter(API3.Filters.byClass("Village")).length < 5)
 	{
-		let civ = gameState.getPlayerCiv();
 		if (numStables == 0 && stableTemplate && civ == "brit")
 		{
 			this.strategy = KIARA.Strategy.DOG_RAID;
@@ -2656,10 +2656,11 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		}
 	}
 
-	let nChampBuild = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Champions, true).length;
-	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Champions]) && nChampBuild < 3)
+	let champTempl = KIARA.TemplateConstants.Champions[civ];
+	let nChampBuild = gameState.getOwnEntitiesByClass(champTempl, true).length;
+	if (this.canBuild(gameState, KIARA.Templates[champTempl]) && nChampBuild < 3)
 	{
-		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Champions], { "militaryBase": true }));
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[champTempl], { "militaryBase": true }));
 		return;
 	}
 

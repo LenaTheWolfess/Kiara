@@ -84,9 +84,15 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 	{
 		for (let tech of techs)
 		{
-			if (tech[0].indexOf("batch_training") == 0)
+			if (tech[0].indexOf("batch_training") != -1)
 				return { "name": tech[0], "increasePriority": true };
 			if (tech[0] == "training_conscription")
+				return { "name": tech[0], "increasePriority": true };
+			if (tech[0] == "cavalry_cost_time")
+				return { "name": tech[0], "increasePriority": true };
+			if (tech[0] == "infantry_cost_time")
+				return { "name": tech[0], "increasePriority": true };
+			if (tech[0] == "hoplite_tradition")
 				return { "name": tech[0], "increasePriority": true };
 		}
 	}
@@ -94,11 +100,22 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 	{
 		for (let tech of techs)
 		{
-			if (tech[0].indexOf("unlock_champion") == 0)
+			if (tech[0].indexOf("unlock_champion") != -1)
 				return { "name": tech[0], "increasePriority": true };
 			if (tech[0] == "traditional_army_sele" || tech[0] == "reformed_army_sele")
 				return { "name": pickRandom(["traditional_army_sele", "reformed_army_sele"]), "increasePriority": true };
 		}
+		
+		for (let tech of techs)
+		{
+			if (tech[0] == "siege_cost_time")
+				return { "name": tech[0], "increasePriority": true };
+			if (tech[0] == "immortals")
+				return { "name": tech[0], "increasePriority": true };
+			if (tech[0] == "archer_attack_spread")
+				return { "name": tech[0], "increasePriority": true };
+		}
+		
 		for (let tech of techs)
 		{
 			if (!tech[1]._template.modifications)
