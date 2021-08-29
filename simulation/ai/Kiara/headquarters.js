@@ -2657,13 +2657,18 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	}
 
 	let champTempl = KIARA.TemplateConstants.Champions[civ];
-	let nChampBuild = gameState.getOwnEntitiesByClass(champTempl, true).length;
-	if (this.canBuild(gameState, KIARA.Templates[champTempl]) && nChampBuild < 3)
+	if (champTempl !== undefined)
 	{
-		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[champTempl], { "militaryBase": true }));
-		return;
+		let nChampBuild = gameState.getOwnEntitiesByClass(champTempl, true).length;
+		if (!KIARA.Templates[champTempl]) {
+			KIARA.Logger.error(champTempl + " is null for " + civ);
+		} else 
+		if (this.canBuild(gameState, KIARA.Templates[champTempl]) && nChampBuild < 3)
+		{
+			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[champTempl], { "militaryBase": true }));
+			return;
+		}
 	}
-
 	if (this.getAccountedPopulation(gameState) < 80 || !this.bAdvanced.length)
 		return;
 

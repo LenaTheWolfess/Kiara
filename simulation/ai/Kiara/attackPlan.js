@@ -2074,6 +2074,8 @@ KIARA.AttackPlan.prototype.UpdateTransporting = function(gameState, events)
 
 KIARA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 {
+	if (!this.position)
+		return false;
 	// we're marching towards the target
 	// Let's check if any of our unit has been attacked.
 	// In case yes, we'll determine if we're simply off against an enemy army, a lone unit/building

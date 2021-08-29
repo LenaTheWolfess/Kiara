@@ -126,6 +126,8 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 	{
 		// recompute the best dropsite location in case some conditions have changed
 		let base = HQ.getBaseByID(this.metadata.base);
+		if (!base)
+			return false;
 		let type = this.metadata.type ? this.metadata.type : "wood";
 		let newpos;
 		if (type === "food")
