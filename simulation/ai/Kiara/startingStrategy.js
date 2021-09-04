@@ -48,8 +48,12 @@ KIARA.HQ.prototype.gameAnalysis = function(gameState)
 			this.canBuildUnits = false;
 			this.dispatchUnits(gameState);
 		}
-		else
-			this.buildFirstBase(gameState);
+		else if (!this.buildFirstBase(gameState))
+		{
+			KIARA.Logger.warn(" this AI is unable to produce any units");
+			this.canBuildUnits = false;
+			this.dispatchUnits(gameState);
+		}
 	}
 
 	// configure our first base strategy
@@ -246,13 +250,13 @@ KIARA.HQ.prototype.structureAnalysis = function(gameState)
 KIARA.HQ.prototype.buildFirstBase = function(gameState)
 {
 	if (gameState.ai.queues.civilCentre.hasQueuedUnits())
-		return;
+		return false;
 	let templateName = gameState.applyCiv(KIARA.Templates[KIARA.TemplateConstants.CC]);
 	if (gameState.isTemplateDisabled(templateName))
-		return;
+		return false;
 	let template = gameState.getTemplate(templateName);
 	if (!template)
-		return;
+		return false;
 	let total = gameState.getResources();
 	let goal = "civil_centre";
 	if (!total.canAfford(new API3.Resources(template.cost())))
@@ -279,25 +283,25 @@ KIARA.HQ.prototype.buildFirstBase = function(gameState)
 					totalExpected[type] += types[type];
 			// If we can collect enough resources from these treasures, wait for them
 			if (totalExpected.canAfford(new API3.Resources(template.cost())))
-				return;
+				return false;
 		}
 
 		// not enough resource to build a cc, try with a dock to accumulate resources if none yet
 		if (!this.navalManager.docks.filter(API3.Filters.byClass("Dock")).hasEntities())
 		{
 			if (gameState.ai.queues.dock.hasQueuedUnits())
-				return;
+				return false;
 			templateName = gameState.applyCiv("structures/{civ}/dock");
 			if (gameState.isTemplateDisabled(templateName))
-				return;
+				return false;
 			template = gameState.getTemplate(templateName);
 			if (!template || !total.canAfford(new API3.Resources(template.cost())))
-				return;
+				return false;
 			goal = "dock";
 		}
 	}
 	if (!this.canBuild(gameState, templateName))
-		return;
+		return false;
 
 	// We first choose as startingPoint the point where we have the more units
 	let startingPoint = [];
@@ -334,7 +338,7 @@ KIARA.HQ.prototype.buildFirstBase = function(gameState)
 			startingPoint.push({ "pos": pos, "land": land, "sea": sea, "weight": 1 });
 	}
 	if (!startingPoint.length)
-		return;
+		return false;
 
 	let imax = 0;
 	for (let i = 1; i < startingPoint.length; ++i)
@@ -348,6 +352,7 @@ KIARA.HQ.prototype.buildFirstBase = function(gameState)
 	}
 	else
 		gameState.ai.queues.civilCentre.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.CC], { "base": -1, "resource": "wood", "proximity": startingPoint[imax].pos }));
+	return true;
 };
 
 /**
