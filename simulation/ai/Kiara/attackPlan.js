@@ -835,6 +835,15 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 		this.unitCollection.updateEnt(ent);
 		added = true;
 	}
+	// Assign all retreating units with enough health
+	for (let ent of gameState.getOwnEntitiesByRole("retreat", true).values())
+	{
+		if (ent.healthLevel() < 0.6)
+			continue;
+		ent.setMetadata(PlayerID, "plan", plan);
+		this.unitCollection.updateEnt(ent);
+		added = true;
+	}
 	// Add units previously in a plan, but which left it because needed for defense or attack finished.
 	for (let ent of gameState.ai.HQ.attackManager.outOfPlan.values())
 	{
@@ -925,6 +934,7 @@ KIARA.AttackPlan.prototype.chooseTarget = function(gameState)
 		this.targetPlayer = gameState.ai.HQ.attackManager.getEnemyPlayer(gameState, this);
 		if (this.targetPlayer !== undefined)
 			this.target = this.getNearestTarget(gameState, this.rallyPoint);
+
 		if (!this.target)
 			return false;
 	}
@@ -1052,6 +1062,27 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 		}
 	}
 	if (!target) {
+		// For huge attack return any target so we finish enemy
+		if (this.type == KIARA.AttackTypes.HUGE_ATTACK) {
+			for (let ent of targets.values())
+			{
+				if (this.targetPlayer == 0 && gameState.getVictoryConditions().has("capture_the_relic") &&
+				   (!ent.hasClass("Relic") || gameState.ai.HQ.victoryManager.targetedGaiaRelics.has(ent.id())))
+					continue;
+				// Do not bother with some pointless targets
+				if (!this.isValidTargetAny(ent))
+					continue;
+				let dist = API3.SquareVectorDistance(ent.position(), position);
+				// In normal attacks, disfavor fields
+				if (this.type != KIARA.AttackTypes.RUSH && this.type != KIARA.AttackTypes.RAID && ent.hasClass("Field"))
+					dist += 100000;
+				if (dist < minDist)
+				{
+					minDist = dist;
+					target = ent;
+				}
+			}
+		}
 		KIARA.Logger.debug(this.type + ": no target after filtering");
 		return undefined;
 	}
@@ -1129,6 +1160,15 @@ KIARA.AttackPlan.prototype.defaultTargetFinder = function(gameState, playerEnemy
 		                                       filter(API3.Filters.not(API3.Filters.byClass("Ship")));
 	return targets;
 };
+
+KIARA.AttackPlan.prototype.isValidTargetAny = function(ent)
+{
+	if (!ent.position())
+		return false;
+	if (this.sameLand && KIARA.getLandAccess(this.gameState, ent) != this.sameLand)
+		return false;
+	return true;
+}
 
 KIARA.AttackPlan.prototype.isValidTarget = function(ent)
 {
@@ -1403,7 +1443,7 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 	for (let ent of this.unitCollection.values())
 	{
 		ent.setMetadata(PlayerID, "subrole", "walking");
-		let stance = ent.isPackable() ? "standground" : KIARA.isSiegeUnit(ent) ? KIARA.Behavior.AGGRESIVE : "defensive";
+		let stance = ent.isPackable() ? "standground" : KIARA.isSiegeUnit(ent) ? KIARA.Behavior.AGGRESSIVE : "defensive";
 		if (ent.getStance() != stance)
 			ent.setStance(stance);
 		if (KIARA.Logger.isTrace())
@@ -1678,7 +1718,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 						ent.setMetadata(PlayerID, "role", "retreat");
 					}
 					ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 40);
-					this.removeUnit(ent);
+					this.removeUnit(ent, true);
 				}
 			}
 		}
@@ -2367,6 +2407,7 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 			}
 			if (KIARA.Logger.isTrace())
 				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 1] });
+			ent.setStance("standground");
 			this.removeUnit(ent);
 		}
 	}

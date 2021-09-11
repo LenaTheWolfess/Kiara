@@ -675,6 +675,7 @@ KIARA.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
 				ent.setMetadata(PlayerID, "role", "worker");
 			else
 				ent.setMetadata(PlayerID, "role", undefined);
+			ent.setStance("aggressive");
 		}
 	}
 };

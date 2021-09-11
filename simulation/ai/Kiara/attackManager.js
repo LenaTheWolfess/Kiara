@@ -329,7 +329,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 
 	// creating plans after updating because an aborted plan might be reused in that case.
 
-	let doSmallAttacks = this.Config.behavior == "aggressive" && gameState.ai.HQ.strategy == KIARA.Strategy.ATTACK;
+	let doSmallAttacks = this.Config.behavior == KIARA.Behavoir.AGGRESSIVE && gameState.ai.HQ.strategy == KIARA.Strategy.ATTACK;
 	let doEarlyRaid = gameState.ai.HQ.strategy == KIARA.Strategy.EARLY_RAID;
 	let doDogRaid = gameState.ai.HQ.strategy == KIARA.Strategy.DOG_RAID;
 

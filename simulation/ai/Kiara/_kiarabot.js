@@ -56,7 +56,7 @@ KIARA.AttackTypes.DOG_RAID = "DogRaid";
 // for instance "balanced", "aggressive" or "defensive"
 KIARA.Behavior = function() {};
 KIARA.Behavior.BALANCED = "balanced";
-KIARA.Behavior.AGGRESIVE = "aggressive";
+KIARA.Behavior.AGGRESSIVE = "aggressive";
 KIARA.Behavior.DEFENSIVE = "defensive";
 KIARA.Behavior.RANDOM = "random";
 KIARA.Behavior.DEFAULT = KIARA.Behavior.RANDOM;

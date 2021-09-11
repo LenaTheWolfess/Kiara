@@ -822,7 +822,7 @@ KIARA.DefenseManager.prototype.checkEvents = function(gameState, events)
 		if (target.getMetadata(PlayerID, "PartOfArmy") !== undefined)
 		{
 			let army = this.getArmy(target.getMetadata(PlayerID, "PartOfArmy"));
-			if (army.getType() == "capturing")
+			if (army != undefined && army.getType() == "capturing")
 			{
 				let abort = false;
 				// If one of the units trying to capture a structure is attacked,
