@@ -3390,9 +3390,6 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 	// Some units were killed, reset wantPop
 	if (this.lastPop && pop < this.lastPop)
 		this.wantPop = 0;
-	this.lastPop = pop;
-	if (this.lastPopGrow < pop)
-		this.lastPopGrow = pop;
 
 	let popCaped = gameState.getPopulationMax() - pop < 5;
 
@@ -3420,8 +3417,15 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		this.attackManager.maxRaids = 2;
 		this.cavalryRush = false;
 	}
+	if (pop < this.lastPopGrow * 0.5 && this.Config.behavior != KIARA.Behaviour.DEFENSIVE) {
+		this.Config.behavior = KIARA.Behaviour.DEFENSIVE;
+	}
 	if (prev != this.strategy)
 		KIARA.Logger.debug("strategy: " + prev + "->" + this.strategy);
+
+	this.lastPop = pop;
+	if (this.lastPopGrow < pop)
+		this.lastPopGrow = pop;
 
 	if (
 			!gameState.getOwnEntitiesByClass("Farmstead", true).length && 
