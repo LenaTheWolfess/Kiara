@@ -445,9 +445,9 @@ KIARA.HQ.prototype.checkEvents = function(gameState, events)
 				ent.setMetadata(PlayerID, "garrisonType", undefined);
 			}
 
-			let stance = "defensive";
-			let st = ent.getStance();
-			if (st != stance && st != "passive")
+			const stance = KIARA.Stances.DEFEND;;
+			const st = ent.getStance();
+			if (st != stance && st != KIARA.Stances.FLEE)
 				ent.setStance(stance);
 			// Check if this unit is no more needed in its attack plan
 			// (happen when the training ends after the attack is started or aborted)
@@ -2459,20 +2459,33 @@ KIARA.HQ.prototype.buildNewBase = function(gameState, queues, resource)
 KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 {
 	let numFortresses = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Fortress, true).length;
+	const fortressTemplate = KIARA.Templates[KIARA.TemplateConstants.Fortress];
 	if (this.currentPhase > 2 && !queues.defenseBuilding.hasQueuedUnits()) {
 		// try to build fortresses
-		if (!numFortresses && this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Fortress]))
+		if (!numFortresses && this.canBuild(gameState, fortressTemplate))
 		{
 			this.fortressStartTime = gameState.ai.elapsedTime;
 			if (!numFortresses)
 				gameState.ai.queueManager.changePriority("defenseBuilding", 3*this.Config.priorities.defenseBuilding);
-			let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Fortress]);
+			let plan = new KIARA.ConstructionPlan(gameState, fortressTemplate);
 			plan.queueToReset = "defenseBuilding";
 			queues.defenseBuilding.addPlan(plan);
 			return;
 		}
 	}
-
+/*
+	const numVision = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Vision, true).length;
+	const visionTemplate = KIARA.Templates[KIARA.TemplateConstants.Vision];
+	if (!queues.defenseBuilding.hasQueuedUnitsWithClass(KIARA.TemplateConstants.Vision) && this.canBuild(gameState, visionTemplate))
+	{
+		if (numVision < 3 * this.currentPhase)
+		{
+			let plan = new KIARA.ConstructionPlan(gameState, visionTemplate);
+			queues.defenseBuilding.addPlan(plan);
+			return;
+		}
+	}
+*/
 	if (this.Config.behavior != KIARA.Behaviour.DEFENSIVE)
 		return;
 
@@ -2521,14 +2534,14 @@ KIARA.HQ.prototype.buildDefenses = function(gameState, queues)
 	if (!this.saveResources && (this.currentPhase > 2 || gameState.isResearching(gameState.getPhaseName(3))))
 	{
 		// Try to build fortresses.
-		if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Fortress]))
+		if (this.canBuild(gameState, fortressTemplate))
 		{
 			if ((!numFortresses || gameState.ai.elapsedTime > (1 + 0.10*numFortresses)*this.fortressLapseTime + this.fortressStartTime))
 			{
 				this.fortressStartTime = gameState.ai.elapsedTime;
 				if (!numFortresses)
 					gameState.ai.queueManager.changePriority("defenseBuilding", 2 * this.Config.priorities.defenseBuilding);
-				let plan = new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Fortress]);
+				let plan = new KIARA.ConstructionPlan(gameState, fortressTemplate);
 				plan.queueToReset = "defenseBuilding";
 				queues.defenseBuilding.addPlan(plan);
 				return;
@@ -2543,7 +2556,7 @@ KIARA.HQ.prototype.buildForge = function(gameState, queues)
 		queues.militaryBuilding.hasQueuedUnits() || gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Forge, true).length)
 		return;
 	// Build a Market before the Forge.
-	if (!gameState.getOwnEntitiesByClass("Market", true).hasEntities())
+	if (!gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Market, true).hasEntities())
 		return;
 
 	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Forge]))
@@ -3497,7 +3510,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		if (!this.saveResources)
 		{
 			if (this.currentPhase > 1) {
-				if (!gameState.getOwnEntitiesByClass("Forge", true).hasEntities() && gameState.ai.HQ.canBuild(gameState,"structures/{civ}/forge"))
+				if (!gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Forge, true).hasEntities() && gameState.ai.HQ.canBuild(gameState,KIARA.Templates[KIARA.TemplateConstants.Forge]))
 					this.buildForge(gameState, queues);
 				this.buildTemple(gameState, queues);
 			}

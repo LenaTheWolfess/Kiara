@@ -67,6 +67,12 @@ KIARA.Behaviour.DEFENSIVE = "defensive";
 KIARA.Behaviour.RANDOM = "random";
 KIARA.Behaviour.DEFAULT = KIARA.Behaviour.RANDOM;
 
+KIARA.Stances = function() {};
+KIARA.Stances.ATTACK = "aggressive";
+KIARA.Stances.DEFEND = "defensive";
+KIARA.Stances.FLEE = "passive";
+KIARA.Stances.DONT_MOVE = "standground";
+
 KIARA.Difficulty = function() {};
 KIARA.Difficulty.SANDBOX = 0;
 KIARA.Difficulty.VERY_EASY = 1;
@@ -94,10 +100,11 @@ KIARA.TemplateConstants.Cavalry = "Stable";
 KIARA.TemplateConstants.Siege = "Arsenal";
 KIARA.TemplateConstants.Elephants = "ElephantStable";
 KIARA.TemplateConstants.Tower = "Tower";
+KIARA.TemplateConstants.Vision = "Outpost";
 KIARA.TemplateConstants.EarlyTower = "SentryTower";
 KIARA.TemplateConstants.Forge = "Forge";
 KIARA.TemplateConstants.Healing = "Temple";
-KIARA.TemplateConstants.Champions = {"athen": "Gymnasium", "pers": "Apadana", "cart": "Temple", "gaul": "Temple", "kush": "Temple", "maur": "Palace", "spart": "Syssiton"};
+KIARA.TemplateConstants.Champions = {"athen": "Gymnasium", "pers": "Apadana", "cart": "Temple", "gaul": "Temple", "kush": "Temple", "maur": "Palace", "spart": "Syssiton", "mace": "Arsenal"};
 
 KIARA.Templates = function() {};
 KIARA.Templates[KIARA.TemplateConstants.MorePopulation] = "structures/{civ}/house";
@@ -118,11 +125,13 @@ KIARA.Templates[KIARA.TemplateConstants.Siege] = "structures/{civ}/arsenal";
 KIARA.Templates[KIARA.TemplateConstants.Elephants] = "structures/{civ}/elephant_stables";
 KIARA.Templates[KIARA.TemplateConstants.Tower] = "structures/{civ}/defense_tower";
 KIARA.Templates[KIARA.TemplateConstants.EarlyTower] = "structures/{civ}/sentry_tower";
+KIARA.Templates[KIARA.TemplateConstants.Vision] = "structures/{civ}/outpost";
 KIARA.Templates[KIARA.TemplateConstants.Forge] = "structures/{civ}/forge";
 KIARA.Templates[KIARA.TemplateConstants.Champions.athen] = "structures/{civ}/gymnasium";
 KIARA.Templates[KIARA.TemplateConstants.Champions.pers] = "structures/{civ}/apadana";
 KIARA.Templates[KIARA.TemplateConstants.Champions.maur] = "structures/{civ}/palace";
 KIARA.Templates[KIARA.TemplateConstants.Champions.spart] = "structures/{civ}/syssiton";
+KIARA.Templates[KIARA.TemplateConstants.Champions.mace] = "structures/{civ}/arsenal";
 KIARA.Templates[KIARA.TemplateConstants.Healing] = "structures/{civ}/temple";
 
 KIARA.Logger.warn = function(output)
