@@ -1083,8 +1083,10 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 				}
 			}
 		}
-		KIARA.Logger.debug(this.type + ": no target after filtering");
-		return undefined;
+		if (!target) {
+			KIARA.Logger.debug(this.type + ": no target after filtering");
+			return undefined;
+		}
 	}
 
 	// Check that we can reach this target
