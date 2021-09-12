@@ -2,7 +2,7 @@ KIARA.Config = function(difficulty, behavior)
 {
 	this.difficulty = difficulty !== undefined ? difficulty : KIARA.Difficulty.DEFAULT;
 
-	this.behavior = behavior || KIARA.Behavior.DEFAULT;
+	this.behavior = behavior || KIARA.Behaviour.DEFAULT;
 
 	this.chat = true;	// false to prevent AI's chats
 

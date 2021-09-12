@@ -14,6 +14,12 @@ KIARA.Logger.level = KIARA.Logger.ERROR;
 //KIARA.Logger.level = KIARA.Logger.DEBUG;
 //KIARA.Logger.level = KIARA.Logger.TRACE;
 
+KIARA.BuidOrders = function() {};
+KIARA.BuildOrders.CLASSES = 1;
+KIARA.BuildOrders.COLLECTION = 2;
+KIARA.BuildOrders.UNIT = 3;
+KIARA.BuildOrders.CAT = 4;
+
 KIARA.Strategy = function() {};
 KIARA.Strategy.NONE = "none";
 KIARA.Strategy.BOOM = "boom";
@@ -54,12 +60,12 @@ KIARA.AttackTypes.RANGE_CAV = "RangeCav";
 KIARA.AttackTypes.DOG_RAID = "DogRaid";
 
 // for instance "balanced", "aggressive" or "defensive"
-KIARA.Behavior = function() {};
-KIARA.Behavior.BALANCED = "balanced";
-KIARA.Behavior.AGGRESSIVE = "aggressive";
-KIARA.Behavior.DEFENSIVE = "defensive";
-KIARA.Behavior.RANDOM = "random";
-KIARA.Behavior.DEFAULT = KIARA.Behavior.RANDOM;
+KIARA.Behaviour = function() {};
+KIARA.Behaviour.BALANCED = "balanced";
+KIARA.Behaviour.AGGRESSIVE = "aggressive";
+KIARA.Behaviour.DEFENSIVE = "defensive";
+KIARA.Behaviour.RANDOM = "random";
+KIARA.Behaviour.DEFAULT = KIARA.Behaviour.RANDOM;
 
 KIARA.Difficulty = function() {};
 KIARA.Difficulty.SANDBOX = 0;

@@ -177,7 +177,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 			this.unitStat.ChampMeleeFastMoving   = { "priority": 1, "minSize": 0, "targetSize": 20, "batchSize": 5, "classes": ["FastMoving+Melee+Champion"],
 				"interests": [["strength", 2]] };
 		*/	this.unitStat.Healer = { "priority": 1, "minSize": 0, "targetSize": 3, "batchSize": 3, "classes": ["Healer"], "interests": [["strength", 2]] };
-			this.unitStat.Siege = {"priority": 2, "minSize": 2, "targetSize": 5, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
+			this.unitStat.Siege = {"priority": 2, "minSize": 2, "targetSize": 2, "batchSize": 1, "classes": ["Siege"] , "interests":  [["strength", 1]]};
 			this.neededShips = 10;
 		} else {
 			// basically we want a mix of citizen soldiers so our barracks have a purpose, and champion units.
@@ -216,7 +216,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 6, "batchSize": 6, "classes": ["FastMoving+CitizenSoldier"],
 			"interests": [["strength", 1]] };
 		this.neededShips = 3;
-		this.siegeState = 0;
+		this.siegeState = 2;
 	}
 
 	// change the sizes according to max population
@@ -642,11 +642,11 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 		order[0] = order[2].length + aQueued;
 	}
 	this.buildOrders.sort((a, b) => {
-		let va = a[0]/a[3].targetSize - a[3].priority;
-		if (a[0] >= a[3].targetSize)
+		let va = a[0]/a[KIARA.BuildOrders.UNIT].targetSize - a[KIARA.BuildOrders.UNIT].priority;
+		if (a[0] >= a[KIARA.BuildOrders.UNIT].targetSize)
 			va += 1000;
-		let vb = b[0]/b[3].targetSize - b[3].priority;
-		if (b[0] >= b[3].targetSize)
+		let vb = b[0]/b[KIARA.BuildOrders.UNIT].targetSize - b[KIARA.BuildOrders.UNIT].priority;
+		if (b[0] >= b[KIARA.BuildOrders.UNIT].targetSize)
 			vb += 1000;
 		return va - vb;
 	});
@@ -679,22 +679,22 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 	if (!firstOrder)
 		return;
 
-	if (firstOrder[0] < firstOrder[3].targetSize)
+	if (firstOrder[0] < firstOrder[KIARA.BuildOrders.UNIT].targetSize)
 	{
 		// find the actual queue we want
 		let queue = this.queue;
-		if (firstOrder[4] != "Siege" || firstOrder[4] != "SiegeElephants")
+		if (firstOrder[KIARA.BuildOrders.CAT] != "Siege" || firstOrder[KIARA.BuildOrders.CAT] != "SiegeElephants")
 			queue = this.queueSiege;
-		else if (firstOrder[3].classes.indexOf("Hero") != -1)
+		else if (firstOrder[KIARA.BuildOrders.UNIT].classes.indexOf("Hero") != -1)
 			queue = this.queueSiege;
-		else if (firstOrder[3].classes.indexOf("Champion") != -1)
+		else if (firstOrder[KIARA.BuildOrders.UNIT].classes.indexOf("Champion") != -1)
 			queue = this.queueChamp;
 
 		if (queue.length() <= 5)
 		{
-			let template = gameState.ai.HQ.findBestTrainableUnit(gameState, firstOrder[1], firstOrder[3].interests);
+			let template = gameState.ai.HQ.findBestTrainableUnit(gameState, firstOrder[1], firstOrder[KIARA.BuildOrders.UNIT].interests);
 			let allTrainers = gameState.findTrainers(template).values();
-			if (allTrainers.length == 1 && firstOrder[3].targetSize > 5 && !gameState.ai.queues.militaryBuilding.hasQueuedUnits())
+			if (allTrainers.length == 1 && firstOrder[KIARA.BuildOrders.UNIT].targetSize > 5 && !gameState.ai.queues.militaryBuilding.hasQueuedUnits())
 			{
 				// Request another trainer
 				let t = allTrainers[0];
@@ -706,32 +706,32 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 			// HACK (TODO replace) : if we have no trainable template... Then we'll simply remove the buildOrder,
 			// effectively removing the unit from the plan.
 			let skip = false;
-			if (template === undefined && firstOrder[3].Fallback)
+			if (template === undefined && firstOrder[KIARA.BuildOrders.UNIT].Fallback)
 			{
-				KIARA.Logger.debug("attack no template found " + firstOrder[1] + " fallback to " + firstOrder[3].Fallback);
-				template = gameState.ai.HQ.findBestTrainableUnit(gameState, firstOrder[3].Fallback, firstOrder[3].interests);
+				KIARA.Logger.debug("attack no template found " + firstOrder[1] + " fallback to " + firstOrder[KIARA.BuildOrders.UNIT].Fallback);
+				template = gameState.ai.HQ.findBestTrainableUnit(gameState, firstOrder[KIARA.BuildOrders.UNIT].Fallback, firstOrder[KIARA.BuildOrders.UNIT].interests);
 				if (template === undefined)
 				{
-					KIARA.Logger.debug("attack no template found " + firstOrder[3].Fallback);
-					delete this.unitStat[firstOrder[4]];	// deleting the associated unitstat.
+					KIARA.Logger.debug("attack no template found " + firstOrder[KIARA.BuildOrders.UNIT].Fallback);
+					delete this.unitStat[firstOrder[KIARA.BuildOrders.CAT]];
 					this.buildOrders.splice(0, 1);
 					skip = true;
 				}
 			}
-			if (template === undefined && !firstOrder[3].Fallback)
+			if (template === undefined && !firstOrder[KIARA.BuildOrders.UNIT].Fallback)
 			{
-				KIARA.Logger.debug("attack no template found " + firstOrder[1]);
-				delete this.unitStat[firstOrder[4]];	// deleting the associated unitstat.
+				KIARA.Logger.debug("attack no template found " + firstOrder[KIARA.BuildOrders.CLASSES]);
+				delete this.unitStat[firstOrder[KIARA.BuildOrders.CAT]];
 				this.buildOrders.splice(0, 1);
 				skip = true;
 			}
 
 			if (!skip)
 			{
-				let max = firstOrder[3].batchSize;
+				let max = firstOrder[KIARA.BuildOrders.UNIT].batchSize;
 				KIARA.Logger.debug("attack template " + template + " added for plan " + this.name);
 
-				let specialData = "Plan_" + this.name + "_" + firstOrder[4];
+				let specialData = "Plan_" + this.name + "_" + firstOrder[KIARA.BuildOrders.CAT];
 				let data = { "plan": this.name, "special": specialData, "base": 0 };
 				data.role = gameState.getTemplate(template).hasClass("CitizenSoldier") ? "worker" : "attack";
 				let trainingPlan = new KIARA.TrainingPlan(gameState, template, data, max, max);
@@ -740,8 +740,8 @@ KIARA.AttackPlan.prototype.trainMoreUnits = function(gameState)
 					addTotal += max;
 				}
 				else if (KIARA.Logger.isDebug())
-					KIARA.Logger.debug("training plan canceled because no template for " + template + "   build1 " + uneval(firstOrder[1]) +
-						  " build3 " + uneval(firstOrder[3].interests));
+					KIARA.Logger.debug("training plan canceled because no template for " + template + "   build1 " + uneval(firstOrder[KIARA.BuildOrders.CLASSES]) +
+						  " build3 " + uneval(firstOrder[KIARA.BuildOrders.UNIT].interests));
 			}
 		}
 	}
@@ -1443,7 +1443,7 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 	for (let ent of this.unitCollection.values())
 	{
 		ent.setMetadata(PlayerID, "subrole", "walking");
-		let stance = ent.isPackable() ? "standground" : KIARA.isSiegeUnit(ent) ? KIARA.Behavior.AGGRESSIVE : "defensive";
+		let stance = ent.isPackable() ? "standground" : KIARA.isSiegeUnit(ent) ? KIARA.Behaviour.AGGRESSIVE : "defensive";
 		if (ent.getStance() != stance)
 			ent.setStance(stance);
 		if (KIARA.Logger.isTrace())
