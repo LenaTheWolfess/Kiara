@@ -14,7 +14,7 @@ KIARA.Logger.level = KIARA.Logger.ERROR;
 //KIARA.Logger.level = KIARA.Logger.DEBUG;
 //KIARA.Logger.level = KIARA.Logger.TRACE;
 
-KIARA.BuidOrders = function() {};
+KIARA.BuildOrders = function() {};
 KIARA.BuildOrders.CLASSES = 1;
 KIARA.BuildOrders.COLLECTION = 2;
 KIARA.BuildOrders.UNIT = 3;

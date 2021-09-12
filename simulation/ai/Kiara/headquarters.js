@@ -2649,7 +2649,7 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 
 	if (!nElStables) {
 		let nArsenals = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Siege, true).length;
-		if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege]) && nArsenals < 3)
+		if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege]) && nArsenals < 1)
 		{
 			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege], { "militaryBase": true }));
 			return;

@@ -437,7 +437,7 @@ KIARA.AttackPlan.prototype.addSiegeUnits = function(gameState)
 /** Three returns possible: 1 is "keep going", 0 is "failed plan", 2 is "start". */
 KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 {
-	KIARA.Logger.debug(this.type + ": update preparation in state " + this.state + " size " + this.unitCollection.length);
+	this.debug(" update preparation in state " + this.state + " size " + this.unitCollection.length);
 	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
 	// the completing step is used to return resources and regroup the units
 	// so we check that we have no more forced order before starting the attack
@@ -446,7 +446,7 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 		// if our target was destroyed, go back to "unexecuted" state
 		if (this.targetPlayer === undefined || !this.target || !gameState.getEntityById(this.target.id()))
 		{
-			KIARA.Logger.debug(this.type + ": update preparation no target -> unexecuted");
+			this.debug(" update preparation no target -> unexecuted");
 			this.state = "unexecuted";
 			this.target = undefined;
 		}
@@ -1036,7 +1036,7 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 			targets = this.defaultTargetFinder(gameState, this.targetPlayer);
 	}
 	if (!targets.hasEntities()) {
-		KIARA.Logger.trace(this.type + ": getNearestTarget: no targets");
+		this.debug("getNearestTarget: no targets");
 		return undefined;
 	}
 
@@ -1084,7 +1084,7 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 			}
 		}
 		if (!target) {
-			KIARA.Logger.debug(this.type + ": no target after filtering");
+			this.debug(" no target after filtering");
 			return undefined;
 		}
 	}
@@ -1092,8 +1092,10 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 	// Check that we can reach this target
 	target = this.checkTargetObstruction(gameState, target, position);
 
-	if (!target)
+	if (!target) {
+		this.debug("no target after obstruction check");
 		return undefined;
+	}
 	if (this.targetPlayer == 0 && gameState.getVictoryConditions().has("capture_the_relic") && target.hasClass("Relic"))
 		gameState.ai.HQ.victoryManager.targetedGaiaRelics.set(target.id(), [this.name]);
 	// Rushes can change their enemy target if nothing found with the preferred enemy
@@ -1105,6 +1107,11 @@ KIARA.AttackPlan.prototype.getNearestTarget = function(gameState, position, same
 KIARA.AttackPlan.prototype.defensiveFire = function(ent)
 {
 	
+}
+
+KIARA.AttackPlan.prototype.debug = function(msg)
+{
+	KIARA.Logger.debug(this.type + ": " + msg);
 }
 
 /**
