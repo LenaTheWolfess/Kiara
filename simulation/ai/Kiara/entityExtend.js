@@ -35,6 +35,23 @@ KIARA.getMaxStrength = function(ent, DamageTypeImportance, againstClass)
 				strength += DamageTypeImportance[str] * val / damageTypes.length;
 			else
 				KIARA.Logger.error("Kiara: " + str + " unknown attackStrength in getMaxStrength (please add " + str + "  to config.js).");
+
+			let attackTimes = ent.attackTimes(type);
+			for (let str in attackTimes)
+			{
+				let val = parseFloat(attackTimes[str]);
+				switch (str)
+				{
+				case "repeat":
+					strength += val / 100000;
+					break;
+				case "prepare":
+					strength -= val / 100000;
+					break;
+				default:
+					KIARA.Logger.error(str + " unknown attackTimes in getMaxStrength");
+				}
+			}
 		}
 	}
 

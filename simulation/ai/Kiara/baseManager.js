@@ -703,6 +703,21 @@ KIARA.BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
 	if (sumWanted > 0)
 		scale = sumCurrent / sumWanted;
 
+	//Check how many farms we have, and move women to them
+	let nFields = gameState.getOwnEntitiesByClass("Field", true).length  + gameState.getOwnFoundationsByClass("Field").length;
+	let nGatherers = this.gatherersByType(gameState, "food").filter((ent) => ent.hasClass("FemaleCitizen")).length;
+	let missing = Math.max(0, nFields * 5 - nGatherers);
+	if (missing)
+	{
+		let cycle = ["metal", "stone", "wood"];
+		for (let type of cycle)
+		{
+			missing = this.switchGatherer(gameState, cycle, "food", missing);
+			if (!missing)
+				break;
+		}
+	}
+
 	for (let i = mostNeeded.length-1; i > 0; --i)
 	{
 		let lessNeed = mostNeeded[i];
@@ -734,21 +749,6 @@ KIARA.BaseManager.prototype.setWorkersIdleByPriority = function(gameState)
 				if (nb == 0)
 					return;
 			}
-		}
-	}
-
-	//Check how many farms we have, and move women to them
-	let nFields = gameState.getOwnEntitiesByClass("Field", true).length  + gameState.getOwnFoundationsByClass("Field").length;
-	let nGatherers = this.gatherersByType(gameState, "food").filter((ent) => ent.hasClass("FemaleCitizen")).length;
-	let missing = Math.max(0, nFields * 5 - nGatherers);
-	if (missing)
-	{
-		let cycle = ["metal", "stone", "wood"];
-		for (let type of cycle)
-		{
-			missing = this.switchGatherer(gameState, cycle, "food", missing);
-			if (!missing)
-				break;
 		}
 	}
 };
@@ -794,6 +794,8 @@ KIARA.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorker
 			return 1;
 		});	}
 
+	let mostNeeded = gameState.ai.HQ.pickMostNeededResources(gameState);
+	KIARA.Logger.warn("reasignIdleWorkers: mostNeeded = " + uneval(mostNeeded));
 	for (let ent of idleWorkers)
 	{
 		// Check that the worker isn't garrisoned
@@ -808,7 +810,6 @@ KIARA.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorker
 				ent.repair(this.anchor);
 			else if (ent.isGatherer())
 			{
-				let mostNeeded = gameState.ai.HQ.pickMostNeededResources(gameState);
 				let usedPriority = false;
 				let notFound = true;
 				for (let needed of mostNeeded)
@@ -828,6 +829,10 @@ KIARA.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorker
 						usedPriority = true;
 						continue;
 					}
+					if ((needed.type == "metal" || needed.type == "stone") && !needed.wanted) {
+						usedPriority = true;
+						continue;
+					}
 					ent.setMetadata(PlayerID, "subrole", "gatherer");
 					ent.setMetadata(PlayerID, "gather-type", needed.type);
 					gameState.ai.HQ.AddTCResGatherer(needed.type, ent.resourceGatherRates());
@@ -844,7 +849,9 @@ KIARA.BaseManager.prototype.reassignIdleWorkers = function(gameState, idleWorker
 						if (needed.type != "food" && gameState.ai.HQ.isResourceExhausted(needed.type))
 							continue;
 						if (needed.type == "food" && ent.hasClass("CitizenSoldier")) {
-//							usedPriority = true;
+							continue;
+						}
+						if ((needed.type == "metal" || needed.type == "stone") && !needed.wanted) {
 							continue;
 						}
 						ent.setMetadata(PlayerID, "subrole", "gatherer");

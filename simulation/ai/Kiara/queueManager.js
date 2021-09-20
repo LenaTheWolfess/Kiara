@@ -505,6 +505,16 @@ KIARA.QueueManager.prototype.update = function(gameState)
 	if (gameState.ai.playedTurn%50 === 0)
 		this.printQueues(gameState);
 
+	if (KIARA.Logger.isWarn()) {
+		KIARA.Logger.warn("Current Resources: " + uneval(gameState.getResources()));
+		KIARA.Logger.warn("Available Resources: " + uneval(this.getAvailableResources(gameState)));
+		let wgr = gameState.ai.HQ.GetWantedGatherRates(gameState);
+		if (wgr["metal"] > 0 || wgr["stone"] > 0)
+			KIARA.Logger.warn("!!!");
+		KIARA.Logger.warn("Wanted Gather Rates: " + uneval(wgr));
+		KIARA.Logger.warn("Current Gather Rates: " + uneval(gameState.ai.HQ.GetCurrentGatherRates(gameState)));
+	}
+
 	Engine.ProfileStop();
 };
 

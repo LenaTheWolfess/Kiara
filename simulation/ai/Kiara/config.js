@@ -19,16 +19,16 @@ KIARA.Config = function(difficulty, behavior)
 	};
 
 	this.DamageTypeImportance = {
-		"Hack": 0.075,
-		"Pierce": 0.065,
-		"Crush": 0.085,
+		"Hack": 0.085,
+		"Pierce": 0.085,
+		"Crush": 0.055,
 		"Fire": 0.095
 	};
 
 	this.Economy = {
-		"popPhase2": 80,	// How many units we want before aging to phase2.
-		"workPhase3": 150,	// How many workers we want before aging to phase3.
-		"workPhase4": 150,	// How many workers we want before aging to phase4 or higher.
+		"popPhase2": 120,	// How many units we want before aging to phase2.
+		"workPhase3": 200,	// How many workers we want before aging to phase3.
+		"workPhase4": 250,	// How many workers we want before aging to phase4 or higher.
 		"popForDock": 25,
 		"targetNumWorkers": 80,	// dummy, will be changed later
 		"targetNumTraders": 5,	// Target number of traders
@@ -140,22 +140,22 @@ KIARA.Config = function(difficulty, behavior)
 	this.queues =
 	{
 		"firstTurn": {
-			"food": 10,
+			"food": 50,
 			"wood": 10,
 			"default": 0
 		},
 		"short": {
-			"food": 200,
+			"food": 500,
 			"wood": 100,
-			"default": 80
+			"default": 0
 		},
 		"medium": {
 			"food": 180,
-			"default": 80
+			"default": 0
 		},
 		"long": {
 			"food": 150,
-			"default": 80
+			"default": 0
 		}
 	};
 

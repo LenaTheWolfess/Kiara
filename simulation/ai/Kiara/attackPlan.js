@@ -208,11 +208,11 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	}
 	else
 	{
-		priority = 70;
-		this.unitStat.RangedInfantry = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 6, "classes": ["Infantry+Ranged"],
-			"interests": [["canGather", 1], ["strength", 1.6], ["costsResource", 0.3, "stone"], ["costsResource", 0.3, "metal"]] };
-		this.unitStat.MeleeInfantry  = { "priority": 1, "minSize": 6, "targetSize": 16, "batchSize": 6, "classes": ["Infantry+Melee"],
-			"interests": [["canGather", 1], ["strength", 1.6], ["costsResource", 0.3, "stone"], ["costsResource", 0.3, "metal"]] };
+		priority = 310;
+		this.unitStat.RangedInfantry = { "priority": 1, "minSize": 6, "targetSize": 50, "batchSize": 3, "classes": ["Infantry+Ranged"],
+			"interests": [["canGather", 5], ["strength", 1.6], ["costsResource", 0.3, "stone"], ["costsResource", 0.3, "metal"]] };
+		this.unitStat.MeleeInfantry  = { "priority": 1, "minSize": 6, "targetSize": 50, "batchSize": 3, "classes": ["Infantry+Melee"],
+			"interests": [["canGather", 5], ["strength", 1.6], ["costsResource", 0.3, "stone"], ["costsResource", 0.3, "metal"]] };
 		this.unitStat.FastMoving = { "priority": 1, "minSize": 2, "targetSize": 6, "batchSize": 6, "classes": ["FastMoving+CitizenSoldier"],
 			"interests": [["strength", 1]] };
 		this.neededShips = 3;
@@ -469,15 +469,16 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 	if (this.overseas && !gameState.ai.HQ.navalManager.seaTransportShips[this.overseas].length)
 		return 1;
 
-	if (this.type != KIARA.AttackTypes.RAID || !this.forced)    // Forced Raids have special purposes (as relic capture)
-		this.assignUnits(gameState);
+
 	if (this.type == KIARA.AttackTypes.RAID &&
 		gameState.ai.HQ.attackManager.getAttackInPreparation(KIARA.AttackTypes.RAID) !== undefined)
 		this.reassignCavUnit(gameState, this.type);    // reassign some cav (if any) to fasten raid preparations
-	if (this.type == KIARA.AttackTypes.EARLY_RAID &&
+	else if (this.type == KIARA.AttackTypes.EARLY_RAID &&
 		gameState.ai.HQ.attackManager.getAttackInPreparation(KIARA.AttackTypes.EARLY_RAID) !== undefined)
 		this.reassignCavUnit(gameState, this.type);    // reassign some cav (if any) to fasten early raid preparations
-	if (this.type == KIARA.AttackTypes.HUGE_ATTACK && !this.hasSiegeUnits())
+	else if (this.type == KIARA.AttackTypes.HUGE_ATTACK && !this.hasSiegeUnits())
+		this.assignUnits(gameState);
+	else if (this.type != KIARA.AttackTypes.RAID || !this.forced)    // Forced Raids have special purposes (as relic capture)
 		this.assignUnits(gameState);
 
 	// Fasten the end game.

@@ -445,7 +445,7 @@ KIARA.HQ.prototype.checkEvents = function(gameState, events)
 				ent.setMetadata(PlayerID, "garrisonType", undefined);
 			}
 
-			const stance = KIARA.Stances.DEFEND;;
+			const stance = KIARA.Stances.ATTACK;
 			const st = ent.getStance();
 			if (st != stance && st != KIARA.Stances.FLEE)
 				ent.setStance(stance);
@@ -670,11 +670,10 @@ KIARA.HQ.prototype.OnPhaseUp = function(gameState, phase)
 
 KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 {
-	if (gameState.getPopulationMax() <= gameState.getPopulationLimit())
+	if (gameState.getPopulation() > gameState.getPopulationMax() * 0.8) {
+		warn("pop "+ gameState.getPopulation() + " > " + (gameState.getPopulationMax() * 0.8) + "("+ gameState.getPopulationMax() +")");
 		return;
-
-	if (gameState.getPopulation() > gameState.getPopulationMax() * 0.8)
-		return;
+	}
 
 	let fHouse = gameState.getOwnFoundationsByClass("House").length;
 	let nHouses = queues.house.length();
@@ -690,7 +689,8 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
 		}
-		KIARA.Logger.debug("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
+		//KIARA.Logger.debug("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
+		warn("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
 		return;
 	}
 
@@ -721,7 +721,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let anyRequirements = [ ["costsResource", 1, "food"], ["canGather", 1] ];
 
 	let classesInf = ["Infantry"];
-	let requirementsInf = [["strength", 2]];
+	let requirementsInf = [["strength", 2], ["canGather", 2]];
 
 	let classesMeleeInf = ["Melee+CitizenSoldier+Infantry"];
 	let classesRangedInf = ["Ranged+CitizenSoldier+Infantry"];
@@ -732,7 +732,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let cavs = gameState.getOwnEntitiesByClass("FastMoving", true).length;
 
 //	KIARA.Logger.debug("farmers = " + farmers + ", workers = " + workers + ", sieges = " + sieges);
-	let supportNum = 40;
+	let supportNum = this.Config.Economy.provisionFields * 5;
 	let siegeNum = 5;
 
 	let wantDefenders = farmers + 1 > supportNum;
@@ -770,11 +770,11 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let cavClasses = ["FastMoving"];
 	let cavRequirements = [ ["canGather", 1] ];
 
-	let wantSiege = workers > 150 && gameState.currentPhase(gameState) > 2 && sieges < siegeNum;
+	let wantSiege = workers > 200 && gameState.currentPhase(gameState) > 2 && sieges < siegeNum;
 	let siegeClass = ["Siege"];
 	let siegeRequirements = [["strength", 3]];
 
-	let wantChampions = gameState.currentPhase(gameState) > 2 && workers > 150;
+	let wantChampions = gameState.currentPhase(gameState) > 2 && workers > 200;
 //	wantChampions = false;
 	let championClass = ["Champion"];
 	let championRequirements = [["strength", 2]];
@@ -2645,6 +2645,17 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 				return;
 			}
 		}
+
+		// Then 3rd barracks/range/stables if needed
+		if (numBarracks + numRanges < 4 && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2 + 30)
+		{
+			let template = barracksTemplate || stableTemplate || rangeTemplate;
+			if (template)
+			{
+				queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, template, { "militaryBase": true }));
+				return;
+			}
+		}
 	}
 
 	if (this.saveResources)
@@ -2685,14 +2696,12 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	if (this.getAccountedPopulation(gameState) < 80 || !this.bAdvanced.length)
 		return;
 
-	
-
 	// Build advanced military buildings
 	let nAdvanced = 0;
 	for (let advanced of this.bAdvanced)
 		nAdvanced += gameState.countEntitiesAndQueuedByType(advanced, true);
 
-	if (!nAdvanced || nAdvanced < this.bAdvanced.length && this.getAccountedPopulation(gameState) > 110)
+	if (!nAdvanced || nAdvanced < this.bAdvanced.length && this.getAccountedPopulation(gameState) > 200)
 	{
 		for (let advanced of this.bAdvanced)
 		{
