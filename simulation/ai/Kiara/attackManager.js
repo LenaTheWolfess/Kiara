@@ -306,23 +306,40 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 		}
 	}
 
+	const mine = gameState.getOwnUnits().length;
 	for (let attackType in this.startedAttacks)
 	{
 		for (let i = 0; i < this.startedAttacks[attackType].length; ++i)
 		{
-			let attack = this.startedAttacks[attackType][i];
+			const attack = this.startedAttacks[attackType][i];
 			attack.checkEvents(gameState, events);
 			// okay so then we'll update the attack.
 			if (attack.isPaused()) {
 				KIARA.Logger.warn("attack '"+attackType+"' is paused");
 				continue;
 			}
-			let remaining = attack.update(gameState, events);
+			const remaining = attack.update(gameState, events);
 			if (!remaining)
 			{
+				const aTargetPlayer = attack.getTargetPlayer();
 				KIARA.Logger.warn("Military Manager: " + attack.getType() + " plan " + attack.getName() + " is finished with remaining " + remaining);
 				attack.Abort(gameState);
 				this.startedAttacks[attackType].splice(i--, 1);
+				const isDogRaid = attackType  == KIARA.AttackTypes.DOG_RAID;
+				if (attackType == KIARA.AttackTypes.EARLY_RAID || isDogRaid) {
+					const eUnits = gameState.getEnemyUnits(aTargetPlayer);
+					const sup = eUnits.filter(a => a.hasClass("Support")).length;
+					const sol = eUnits.length - sup;
+					
+					const mRaids = isDogRaid ? this.maxDogRaids : this.maxRaids;
+					const nRaids = isDogRaid ? this.dogRaidNumber : this.raidNumber;
+					if (sol < mine && mRaids == nRaids) {
+						if (isDogRaid)
+							this.maxDogRaids++;
+						else
+							this.maxRaids++;
+					}
+				}
 			}
 		}
 	}

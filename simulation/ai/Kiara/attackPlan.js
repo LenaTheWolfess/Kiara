@@ -130,7 +130,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	else if (type == KIARA.AttackTypes.DOG_RAID)
 	{
 		priority = 330;
-		this.unitStat.Dogs = { "priority": 1, "minSize": 10, "targetSize": 15, "batchSize": 5, "classes": ["Dog"],
+		this.unitStat.Dogs = { "priority": 1, "minSize": 6, "targetSize": 6, "batchSize": 3, "classes": ["Dog"],
 			"interests": [ ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
 		if (data && data.targetSize) {
 			this.unitStat.Dogs.targetSize = data.targetSize;
@@ -142,7 +142,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	else if (type == KIARA.AttackTypes.EARLY_RAID)
 	{
 		priority = 310;
-		this.unitStat.FastMoving = { "priority": 1, "minSize": 10, "targetSize": 15, "batchSize": 2, "classes": ["FastMoving"],
+		this.unitStat.FastMoving = { "priority": 1, "minSize": 6, "targetSize": 6, "batchSize": 3, "classes": ["FastMoving"],
 			"interests": [ ["canGather", 1], ["costsResource", 0.5, "stone"], ["costsResource", 0.6, "metal"], ["costsResource", 0.6, "wood"],["costsResource", 0.6, "food"] ] };
 		this.neededShips = 1;
 		this.siegeState = 0;
@@ -830,7 +830,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	{
 		if (!ent.hasClass("Unit") || !this.isAvailableUnit(gameState, ent))
 			continue;
-		if (ent.hasClass("Ship") || (!ent.hasClass("Healer") && ent.hasClass("Support") || ent.attackTypes() === undefined))
+		if (ent.hasClass("Ship") || (!ent.hasClass("Healer") && (ent.hasClass("Support") || ent.attackTypes() === undefined)))
 			continue;
 		ent.setMetadata(PlayerID, "plan", plan);
 		this.unitCollection.updateEnt(ent);
@@ -848,6 +848,15 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	// Add units previously in a plan, but which left it because needed for defense or attack finished.
 	for (let ent of gameState.ai.HQ.attackManager.outOfPlan.values())
 	{
+		ent.setMetadata(PlayerID, "plan", plan);
+		this.unitCollection.updateEnt(ent);
+		added = true;
+	}
+	// Reassign any siege
+	for (let ent of gameState.getOwnUnits().values())
+	{
+		if (!KIARA.isSiegeUnit(ent) || !this.isAvailableUnit(gameState, ent))
+			continue;
 		ent.setMetadata(PlayerID, "plan", plan);
 		this.unitCollection.updateEnt(ent);
 		added = true;
@@ -1488,6 +1497,16 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 	this.nUnits = this.unitCollection.length;
 	return true;
 };
+
+KIARA.AttackPlan.prototype.getCount = function()
+{
+	return this.unitCollection.length;
+}
+
+KIARA.AttackPlan.prototype.getTargetPlayer = function()
+{
+	return this.targetPlayer;
+}
 
 /** Runs every turn after the attack is executed */
 KIARA.AttackPlan.prototype.update = function(gameState, events)
