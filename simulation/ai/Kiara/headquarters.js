@@ -2644,17 +2644,6 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 				return;
 			}
 		}
-
-		// Then 3rd barracks/range/stables if needed
-		if (numBarracks + numRanges < 4 && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2 + 30)
-		{
-			let template = barracksTemplate || stableTemplate || rangeTemplate;
-			if (template)
-			{
-				queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, template, { "militaryBase": true }));
-				return;
-			}
-		}
 	}
 
 	if (this.saveResources)
@@ -2662,6 +2651,17 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 
 	if (this.currentPhase < 3)
 		return;
+
+	// Then 3rd barracks/range/stables if needed
+	if (numBarracks + numRanges < 4 && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2 + 30)
+	{
+		let template = barracksTemplate || stableTemplate || rangeTemplate;
+		if (template)
+		{
+			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, template, { "militaryBase": true }));
+			return;
+		}
+	}
 
 	let nElStables = gameState.getOwnEntitiesByClass(KIARA.TemplateConstants.Elephants, true).length;
 	if (this.canBuild(gameState, KIARA.Templates[KIARA.TemplateConstants.Elephants]) && nElStables < 3)
@@ -2677,6 +2677,12 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Siege], { "militaryBase": true }));
 			return;
 		}
+	}
+
+	if (civ == "brit" && numStables < 5 && stableTemplate && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2)
+	{
+		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
+		return;
 	}
 
 	let champTempl = KIARA.TemplateConstants.Champions[civ];
@@ -3454,7 +3460,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 //	KIARA.Logger.debug(uneval(this.needDropsite));
 
 	let nFields = gameState.getOwnEntitiesByClass("Field", true).length  + gameState.getOwnFoundationsByClass("Field").length;
-	let wantFarm = this.isResourceExhausted("food") || (nFields < 8);
+	let wantFarm = this.isResourceExhausted("food") || (nFields < this.Config.Economy.provisionFields);
 
 	let quedFields = queues.economicBuilding.hasQueuedUnitsWithClass("Field", true) ||
 		gameState.getOwnFoundationsByClass("Field", true).length;

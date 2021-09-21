@@ -277,7 +277,7 @@ KIARA.TradeManager.prototype.performBarter = function(gameState)
 		}
 		if (bestToSell !== undefined)
 		{
-			let amount = available[bestToSell] > 5000 ? 500 : 100;
+			let amount = available[bestToSell] > 600 ? 500 : 100;
 			barterers[0].barter(buy, bestToSell, amount);
 			if (KIARA.Logger.isDebug())
 				KIARA.Logger.debug("Necessity bartering: sold " + bestToSell +" for " + buy +
@@ -313,7 +313,7 @@ KIARA.TradeManager.prototype.performBarter = function(gameState)
 	}
 	if (bestToBuy !== undefined)
 	{
-		let amount = available.food > 5000 ? 500 : 100;
+		let amount = available.food > 600 ? 500 : 100;
 		barterers[0].barter(bestToBuy, "food", amount);
 		if (KIARA.Logger.isDebug())
 			KIARA.Logger.debug("Contingency bartering: sold food for " + bestToBuy +

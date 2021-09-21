@@ -371,7 +371,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			this.rushNumber++;
 		}
 	}
-	else if (doEarlyRaid && this.raidNumber < this.maxRaids)
+	if (doEarlyRaid && this.raidNumber < this.maxRaids)
 	{
 		if (unexecutedAttacks.EarlyRaid === 0)
 		{
@@ -387,7 +387,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			this.raidNumber++;
 		}
 	}
-	else if (doDogRaid && this.dogRaidNumber < this.maxDogRaids && stablesNb)
+	if (doDogRaid && this.dogRaidNumber < this.maxDogRaids && stablesNb)
 	{
 		if (unexecutedAttacks.DogRaid === 0)
 		{
@@ -402,7 +402,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			this.dogRaidNumber++;
 		}
 	}
-	else if (!gameState.ai.HQ.canBuildUnits || (unexecutedAttacks.Attack == 0 && unexecutedAttacks.HugeAttack == 0 &&
+	if (!gameState.ai.HQ.canBuildUnits || (unexecutedAttacks.Attack == 0 && unexecutedAttacks.HugeAttack == 0 &&
 		this.startedAttacks.Attack.length + this.startedAttacks.HugeAttack.length < Math.min(2, 1 + Math.round(gameState.getPopulationMax()/100)) &&
 		(this.startedAttacks.Attack.length + this.startedAttacks.HugeAttack.length == 0 || gameState.getPopulationMax() - gameState.getPopulation() > 12)))
 	{
