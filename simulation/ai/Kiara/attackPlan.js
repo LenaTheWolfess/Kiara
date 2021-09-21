@@ -1658,7 +1658,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 				else // Attacker is unit
 				{
 					// Look first for nearby units to help us if possible
-					let collec = this.unitCollection.filterNearest(ourUnit.position(), 2);
+					let collec = this.unitCollection.filterNearest(ourUnit.position(), 5);
 					for (let ent of collec.values())
 					{
 						let allowCapture = KIARA.allowCapture(gameState, ent, attacker);
@@ -1681,20 +1681,20 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 					let orderData = ourUnit.unitAIOrderData();
 					let amRanged = ourUnit.hasClass("Ranged");
 					let attackerMelee = attacker.hasClass("Melee");
+					// Kite melee attacks
+					if (attackerMelee && amRanged) {
+						let canAttack = ourUnit.canAttackTarget(attacker, false);
+						let myRange = ourUnit.attackRange("Ranged");
+						let pos = attacker.position();
+						//ourUnit.moveToRange(pos[0], pos[1], myRange.min + myRange.max*0.5, myRange.max);
+						ourUnit.moveApart(pos, Math.max(myRange.min, myRange.max*0.8));
+						if (canAttack)
+							ourUnit.attack(attacker.id(), false, true);
+						ourUnit.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
+						continue;
+					}
 					if (orderData && orderData.length && orderData[0].target)
 					{
-						// Kite melee attacks
-						if (attackerMelee && amRanged) {
-							let canAttack = ourUnit.canAttackTarget(attacker, false);
-							let myRange = ourUnit.attackRange("Ranged");
-							let pos = attacker.position();
-							//ourUnit.moveToRange(pos[0], pos[1], myRange.min + myRange.max*0.5, myRange.max);
-							ourUnit.moveApart(pos, Math.max(myRange.min, myRange.max*0.8));
-							if (canAttack)
-								ourUnit.attack(attacker.id(), false, true);
-							ourUnit.setMetadata(PlayerID, "lastAttackPlanUpdateTime", time);
-							continue;
-						}
 						if (orderData[0].target === attacker.id())
 							continue;
 						let target = gameState.getEntityById(orderData[0].target);
@@ -1939,7 +1939,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 						ent.attack(mStruct[0].id(), KIARA.allowCapture(gameState, ent, mStruct[0]));
 					else
 					{
-						let rand = randIntExclusive(0, mStruct.length * 0.2);
+						let rand = 0;//randIntExclusive(0, mStruct.length * 0.2);
 						ent.attack(mStruct[rand].id(), KIARA.allowCapture(gameState, ent, mStruct[rand]));
 					}
 				}
@@ -1956,7 +1956,9 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 			}
 			else
 			{
-				let nearby = !ent.hasClass("FastMoving") && !ent.hasClass("Ranged");
+				const nearby = !ent.hasClass("FastMoving") && !ent.hasClass("Ranged");
+				const isRanged = ent.hasClass("Ranged");
+				const isCavalry = ent.hasClass("FastMoving");
 				let mUnit = enemyUnits.filter(enemy => {
 					if (!enemy.position() || !ent.canAttackTarget(enemy, KIARA.allowCapture(gameState, ent, enemy)))
 						return false;
@@ -1983,6 +1985,10 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 							vala += 100;
 						let valb = unitB.hasClass("Support") ? 50 : 0;
 						if (ent.counters(unitB))
+							valb += 100;
+						if ((isRanged || isCavalry) && unitA.hasClass("Ranged"))
+							vala += 100;
+						if ((isRanged || isCavalry) && unitB.hasClass("Ranged"))
 							valb += 100;
 						let distA = unitA.getMetadata(PlayerID, "distance");
 						let distB = unitB.getMetadata(PlayerID, "distance");
