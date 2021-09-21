@@ -486,7 +486,7 @@ KIARA.DefenseManager.prototype.assignNavalDefenders = function(gameState)
 		if (ent.getMetadata(PlayerID, "plan") !== undefined && ent.getMetadata(PlayerID, "plan") != -1)
 		{
 			let subrole = ent.getMetadata(PlayerID, "subrole");
-			if (subrole && (subrole == "completing" || subrole == "walking" || subrole == "attacking"))
+			if (subrole && (/*subrole == "completing" || subrole == "walking" ||*/ subrole == "attacking"))
 				return;
 		}
 		KIARA.Logger.warn("adding potential defender");

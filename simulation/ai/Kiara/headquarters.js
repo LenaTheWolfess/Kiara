@@ -2679,7 +2679,7 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		}
 	}
 
-	if (civ == "brit" && numStables < 5 && stableTemplate && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2)
+	if (numStables < (civ == "brit" ? 5 : 4) && stableTemplate && this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks2)
 	{
 		queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
 		return;
