@@ -675,7 +675,7 @@ KIARA.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
 				ent.setMetadata(PlayerID, "role", "worker");
 			else
 				ent.setMetadata(PlayerID, "role", undefined);
-			const stance = ent.hasClass("Support") ? KIARA.Stances.FLEE : KIARA.Stances.DEFEND;
+			const stance = ent.hasClass("Support") ? KIARA.Stances.FLEE : KIARA.Stances.ATTACK;
 			ent.setStance(stance);
 		}
 	}

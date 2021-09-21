@@ -875,8 +875,8 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 		}
 		if (num++ < keep || numbase[baseID] < 5)
 			continue;
-		if (this.type != KIARA.AttackTypes.RUSH && ent.getMetadata(PlayerID, "subrole") != "idle")
-			continue;
+//		if (this.type != KIARA.AttackTypes.RUSH && ent.getMetadata(PlayerID, "subrole") != "idle")
+//			continue;
 		ent.setMetadata(PlayerID, "plan", plan);
 		this.unitCollection.updateEnt(ent);
 		added = true;
@@ -1453,7 +1453,7 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 	for (let ent of this.unitCollection.values())
 	{
 		ent.setMetadata(PlayerID, "subrole", "walking");
-		let stance = ent.isPackable() ? "standground" : KIARA.isSiegeUnit(ent) ? KIARA.Behaviour.AGGRESSIVE : "defensive";
+		const stance = ent.isPackable() ? KIARA.Stances.DONT_MOVE : KIARA.Stances.ATTACK;
 		if (ent.getStance() != stance)
 			ent.setStance(stance);
 		if (KIARA.Logger.isTrace())
@@ -2417,7 +2417,7 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 			}
 			if (KIARA.Logger.isTrace())
 				Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 1, 1] });
-			ent.setStance("standground");
+			ent.setStance(KIARA.Stances.DONT_MOVE);
 			this.removeUnit(ent);
 		}
 	}

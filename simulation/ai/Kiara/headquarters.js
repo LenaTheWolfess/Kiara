@@ -671,7 +671,7 @@ KIARA.HQ.prototype.OnPhaseUp = function(gameState, phase)
 KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 {
 	if (gameState.getPopulation() > gameState.getPopulationMax() * 0.8) {
-		warn("pop "+ gameState.getPopulation() + " > " + (gameState.getPopulationMax() * 0.8) + "("+ gameState.getPopulationMax() +")");
+		KIARA.Logger.debug("pop "+ gameState.getPopulation() + " > " + (gameState.getPopulationMax() * 0.8) + "("+ gameState.getPopulationMax() +")");
 		return;
 	}
 
@@ -689,8 +689,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 			plan.goRequirement = "houseNeeded";
 			queues.house.addPlan(plan);
 		}
-		//KIARA.Logger.debug("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
-		warn("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
+		KIARA.Logger.debug("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
 		return;
 	}
 
@@ -713,7 +712,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	});
 
 	let pop = gameState.getPopulation() + numberQueued;
-//	KIARA.Logger.debug("pop = " + gameState.getPopulation() + " queued pop = " + numberQueued);
+	KIARA.Logger.trace("pop = " + gameState.getPopulation() + " queued pop = " + numberQueued);
 	let free = gameState.getPopulationLimit() - (gameState.getPopulation() + numberInTraining);
 
 	let anyClasses = ["Worker"];
@@ -731,7 +730,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let workers = gameState.getOwnEntitiesByClass("Worker", true).length;
 	let cavs = gameState.getOwnEntitiesByClass("FastMoving", true).length;
 
-//	KIARA.Logger.debug("farmers = " + farmers + ", workers = " + workers + ", sieges = " + sieges);
+	KIARA.Logger.trace("farmers = " + farmers + ", workers = " + workers + ", sieges = " + sieges);
 	let supportNum = this.Config.Economy.provisionFields * 5;
 	let siegeNum = 5;
 
