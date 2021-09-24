@@ -3466,11 +3466,8 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		this.Config.behavior = this.lastBehaviour;
 	}
 	if (prev != this.strategy)
-		//KIARA.Logger.debug("strategy: " + prev + "->" + this.strategy);
-		API3.warn("strategy: " + prev + "->" + this.strategy);
-/*	if (this.lastPopGrow > pop)
-		API3.warn(pop + ", " + this.lastPopGrow);
-*/
+		KIARA.Logger.debug("strategy: " + prev + "->" + this.strategy);
+
 	this.lastPop = pop;
 	if (!this.lastPopGrow || this.lastPopGrow < pop)
 		this.lastPopGrow = pop;
