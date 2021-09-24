@@ -105,6 +105,7 @@ KIARA.Config = function(difficulty, behavior)
 
 	this.priorities =
 	{
+		"recover": 500,
 		"villager": 250,      // should be slightly lower than the citizen soldier one to not get all the food
 		"citizenSoldier": 300,
 		"trader": 50,

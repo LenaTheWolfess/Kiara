@@ -556,7 +556,7 @@ KIARA.QueueManager.prototype.checkPausedQueues = function(gameState)
 				!gameState.ai.HQ.navalManager.ships.filter(API3.Filters.byClass("FishingBoat")).hasEntities())
 				toBePaused = false;
 
-			if (q.indexOf("ent_") != -1)
+			if (q.indexOf("recover") != -1)
 				toBePaused = false;
 		}
 

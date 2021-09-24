@@ -106,16 +106,18 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 				return { "name": pickRandom(["traditional_army_sele", "reformed_army_sele"]), "increasePriority": true };
 		}
 		
-		for (let tech of techs)
+		if (gameState.ai.HQ.strategy != KIARA.Strategy.BOOM)
 		{
-			if (tech[0] == "siege_cost_time")
-				return { "name": tech[0], "increasePriority": true };
-			if (tech[0] == "immortals")
-				return { "name": tech[0], "increasePriority": true };
-			if (tech[0] == "archer_attack_spread")
-				return { "name": tech[0], "increasePriority": true };
+			for (let tech of techs)
+			{
+				if (tech[0] == "siege_cost_time")
+					return { "name": tech[0], "increasePriority": true };
+				if (tech[0] == "immortals")
+					return { "name": tech[0], "increasePriority": true };
+				if (tech[0] == "archer_attack_spread")
+					return { "name": tech[0], "increasePriority": true };
+			}
 		}
-		
 		for (let tech of techs)
 		{
 			if (!tech[1]._template.modifications)
@@ -144,30 +146,35 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 				if (template.modifications[i].value === "ResourceGatherer/Rates/food.grain") {
 					return { "name": tech[0], "increasePriority": false };
 				}
-				if (template.modifications[i].value === "BuildingAI/DefaultArrowCount") {
-					return { "name": tech[0], "increasePriority": true};
+				if (this.Config.behavior == KIARA.Behaviour.DEFEND)
+				{
+					if (template.modifications[i].value === "BuildingAI/DefaultArrowCount") {
+						return { "name": tech[0], "increasePriority": true};
+					}
+					if (template.modifications[i].value === "Attack/Ranged/MaxRange") {
+						return { "name": tech[0], "increasePriority": true};
+					}
+					if (template.modifications[i].value === "Attack/Ranged/MinRange") {
+						return { "name": tech[0], "increasePriority": true};
+					}
+					if (template.modifications[i].value === "BuildingAI/GarrisonArrowMultiplier") {
+						return { "name": tech[0], "increasePriority": true};
+					}
 				}
-				if (template.modifications[i].value === "Attack/Ranged/MaxRange") {
-					return { "name": tech[0], "increasePriority": true};
-				}
-				if (template.modifications[i].value === "Attack/Ranged/MinRange") {
-					return { "name": tech[0], "increasePriority": true};
-				}
-				if (template.modifications[i].value === "BuildingAI/GarrisonArrowMultiplier") {
-					return { "name": tech[0], "increasePriority": true};
-				}
-				/*
-				let t = "Ranged";
-				if (template.modifications[i].value == "Attack/"+t+"/Hack") {
-					return { "name": tech[0], "increasePriority": true};
-				}
-				if (template.modifications[i].value == "Attack/"+t+"/Pierce") {
-					return { "name": tech[0], "increasePriority": true};
-				}
-				if (template.modifications[i].value == "Attack/"+t+"/Crush") {
-					return { "name": tech[0], "increasePriority": true};
-				}
-				*/
+				if (gameState.ai.HQ.strategy == KIARA.Strategy.ATTACK) {
+					let t = "Ranged";
+					if (template.modifications[i].value == "Attack/"+t+"/Hack") {
+						return { "name": tech[0], "increasePriority": true};
+					}
+					if (template.modifications[i].value == "Attack/"+t+"/Pierce") {
+						return { "name": tech[0], "increasePriority": true};
+					}
+					if (template.modifications[i].value == "Attack/"+t+"/Crush") {
+						return { "name": tech[0], "increasePriority": true};
+					}
+					if (template.modifications[i].value == "Attack/Ranged/MaxRange")
+						return { "name": tech[0], "increasePriority": false };
+					}
 			}
 		}
 	}
@@ -197,8 +204,6 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 			else if (template.modifications[i].value === "ResourceGatherer/Rates/wood.tree")
 				return { "name": tech[0], "increasePriority": this.CostSum(template.cost) < 400 };
 			else if (template.modifications[i].value.startsWith("ResourceGatherer/Capacities"))
-				return { "name": tech[0], "increasePriority": false };
-			else if (template.modifications[i].value === "Attack/Ranged/MaxRange")
 				return { "name": tech[0], "increasePriority": false };
 		}
 	}
@@ -281,34 +286,6 @@ KIARA.ResearchManager.prototype.update = function(gameState, queues)
 			queues.minorTech.addPlan(new KIARA.ResearchPlan(gameState, techName.name));
 		return;
 	}
-
-	if (gameState.currentPhase() < 3)
-		return;
-
-	// remove some techs not yet used by this AI
-	// remove also sharedLos if we have no ally
-	for (let i = 0; i < techs.length; ++i)
-	{
-		let template = techs[i][1]._template;
-		if (template.affects && template.affects.length === 1 &&
-			(template.affects[0] === "Healer" || template.affects[0] === "Outpost" || template.affects[0] === "Wall"))
-		{
-			techs.splice(i--, 1);
-			continue;
-		}
-		if (template.modifications && template.modifications.length === 1 &&
-			template.modifications[0].value === "Player/sharedLos" &&
-			!gameState.hasAllies())
-		{
-			techs.splice(i--, 1);
-			continue;
-		}
-	}
-//	if (!techs.length)
-//		return;
-
-	// randomly pick one. No worries about pairs in that case.
-	//queues.minorTech.addPlan(new KIARA.ResearchPlan(gameState, pickRandom(techs)[0]));
 };
 
 KIARA.ResearchManager.prototype.CostSum = function(cost)

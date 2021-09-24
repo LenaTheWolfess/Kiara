@@ -1658,7 +1658,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 				else // Attacker is unit
 				{
 					// Look first for nearby units to help us if possible
-					let collec = this.unitCollection.filterNearest(ourUnit.position(), 5);
+					let collec = this.unitCollection.filterNearest(ourUnit.position(), 2);
 					for (let ent of collec.values())
 					{
 						let allowCapture = KIARA.allowCapture(gameState, ent, attacker);
@@ -1743,9 +1743,6 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 			if (rallyPoint && gameState.ai.accessibility.getAccessValue(this.rallyPoint) == access) {
 				for (let ent of toRemove) {
 					KIARA.Logger.debug("Attack " + this.type + " " + this.name + ": Return hurt unit to base");
-					if (ent.getMetadata(PlayerID, "role") == "attack") {
-						ent.setMetadata(PlayerID, "role", "retreat");
-					}
 					ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 40);
 					this.removeUnit(ent, true);
 				}
@@ -1867,11 +1864,15 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 				}
 				else if (target.hasClass("Ship") && !ent.hasClass("Ship"))
 					maybeUpdate = true;
-				else if (attackedByStructure[ent.id()] && target.hasClass("Field"))
-					maybeUpdate = true;
+				else if (target.hasClass("Field")){
+					needsUpdate = true;
+					--unitTargets[targetId];
+				}
 				else if (!ent.hasClass("FastMoving") && !ent.hasClass("Ranged") &&
-					target.unitAIState() && target.unitAIState().split(".")[1] == "FLEEING")
-					maybeUpdate = true;
+					target.unitAIState() && target.unitAIState().split(".")[1] == "FLEEING") {
+					needsUpdate = true;
+					--unitTargets[targetId];
+				}
 			}
 
 			// don't update too soon if not necessary
@@ -1897,7 +1898,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 					range = 10;
 			}
 			else if (attackTypes && attackTypes.indexOf("Ranged") !== -1)
-				range = 30 + ent.attackRange("Ranged").max;
+				range += ent.attackRange("Ranged").max;
 			else if (ent.hasClass("FastMoving"))
 				range += 30;
 			range *= range;
@@ -1994,8 +1995,8 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 						let distB = unitB.getMetadata(PlayerID, "distance");
 						if (distA && distB)
 						{
-							vala -= distA;
-							valb -= distB;
+							vala -= distA * 0.3;
+							valb -= distB * 0.3;
 						}
 						if (veto[unitA.id()])
 							vala -= 20000;
@@ -2459,6 +2460,7 @@ KIARA.AttackPlan.prototype.removeUnit = function(ent, update)
 	{
 		ent.setMetadata(PlayerID, "role", "retreat");
 		ent.setMetadata(PlayerID, "subrole", undefined);
+		ent.setStance(KIARA.Stances.DEFEND);
 	}
 	ent.setMetadata(PlayerID, "plan", -1);
 	if (update)

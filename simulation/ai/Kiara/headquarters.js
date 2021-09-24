@@ -747,6 +747,8 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	if (workers > 40)
 		size = pHouse;
 
+	if (pop < 200)
+		size = Math.min(size, 5);
 	let classes = anyClasses;
 	let requirements = anyRequirements;
 
@@ -798,7 +800,10 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 			gameState.ai.queueManager.addQueue(n, 300);
 			q = gameState.ai.queues[n];
 		}
-		if (ent.trainingQueue().length == 0 && q.length() < 1)
+		const isRecover = this.strategy == KIARA.Strategy.RECOVER;
+		if (isRecover)
+			q = gameState.ai.queues.recover;
+		if (ent.trainingQueue().length == 0 && ((isRecover && q.length() < 10)|| q.length() < 1))
 		{
 			let mmin = min;
 			let wwx = ww;
@@ -1139,19 +1144,30 @@ KIARA.HQ.prototype.findBestTrainableUnitSpecial = function(gameState, classes, r
 	let availableResources = gameState.ai.queueManager.getAvailableResources(gameState); // available (gathered) resources
 	for (let type in remainingResources)
 	{
-		if (availableResources[type] > 800)
-			continue;
-		if (remainingResources[type] > 800)
-			continue;
-		let costsResource = remainingResources[type] > 400 ? 0.6 : 0.2;
 		let toAdd = true;
-		for (let param of parameters)
-		{
-			if (param[0] != "costsResource" || param[2] != type)
+		let level = remainingResources[type] + availableResources[type];
+		let costsResource = remainingResources[type] > 400 ? 0.6 : 0.2;
+		if (level > 500 && level < 1500) {
+			for (let param of parameters)
+			{
+				if (param[0] != "costsResource" || param[2] != type)
+					continue;
+				toAdd = false;
+				break;
+			}
+		} else {
+			if (availableResources[type] > 800)
 				continue;
-			param[1] = Math.min(param[1], costsResource);
-			toAdd = false;
-			break;
+			if (remainingResources[type] > 800)
+				continue;
+			for (let param of parameters)
+			{
+				if (param[0] != "costsResource" || param[2] != type)
+					continue;
+				param[1] = Math.min(param[1], costsResource);
+				toAdd = false;
+				break;
+			}
 		}
 		if (toAdd)
 			parameters.push(["costsResource", costsResource, type]);
@@ -1223,19 +1239,30 @@ KIARA.HQ.prototype.findBestTrainableUnit = function(gameState, classes, requirem
 	let availableResources = gameState.ai.queueManager.getAvailableResources(gameState); // available (gathered) resources
 	for (let type in remainingResources)
 	{
-		if (availableResources[type] > 800)
-			continue;
-		if (remainingResources[type] > 800)
-			continue;
-		let costsResource = remainingResources[type] > 400 ? 0.6 : 0.2;
 		let toAdd = true;
-		for (let param of parameters)
-		{
-			if (param[0] != "costsResource" || param[2] != type)
+		let level = remainingResources[type] + availableResources[type];
+		let costsResource = remainingResources[type] > 400 ? 0.6 : 0.2;
+		if (level > 500 && level < 1500) {
+			for (let param of parameters)
+			{
+				if (param[0] != "costsResource" || param[2] != type)
+					continue;
+				toAdd = false;
+				break;
+			}
+		} else {
+			if (availableResources[type] > 800)
 				continue;
-			param[1] = Math.min(param[1], costsResource);
-			toAdd = false;
-			break;
+			if (remainingResources[type] > 800)
+				continue;
+			for (let param of parameters)
+			{
+				if (param[0] != "costsResource" || param[2] != type)
+					continue;
+				param[1] = Math.min(param[1], costsResource);
+				toAdd = false;
+				break;
+			}
 		}
 		if (toAdd)
 			parameters.push(["costsResource", costsResource, type]);
@@ -3421,24 +3448,31 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		if (pop > 200 * this.Config.popScaling)
 			this.strategy = KIARA.Strategy.ATTACK;
 	}
-	else if (pop < 200 * this.Config.popScaling && pop < this.lastPopGrow && this.lastPopGrow > 200 * this.Config.popScaling) {
+	else if (this.lastPopGrow && pop < this.lastPopGrow * 0.3) {
 		this.strategy = KIARA.Strategy.RECOVER;
 	}
-	else if (pop > 100 * this.Config.popScaling) {
+	else if (this.lastPopGrow && pop > 0.6 * this.lastPopGrow && pop > 100 * this.Config.popScaling) {
 		this.strategy = KIARA.Strategy.ATTACK;
 	} else if (this.cavalryRush && pop > 20) {
 		this.strategy = KIARA.Strategy.EARLY_RAID;
 		this.attackManager.maxRaids = 2;
 		this.cavalryRush = false;
 	}
-	if (pop < this.lastPopGrow * 0.5 && this.Config.behavior != KIARA.Behaviour.DEFENSIVE) {
+	if (this.lastPopGrow && pop < this.lastPopGrow * 0.5 && this.Config.behavior != KIARA.Behaviour.DEFENSIVE) {
+		this.lastBehaviour = this.Config.behavior;
 		this.Config.behavior = KIARA.Behaviour.DEFENSIVE;
 	}
+	if (this.lastPopGrow && pop > this.lastPopGrow && this.Config.behavior == KIARA.Behaviour.DEFENSIVE && this.lastBehaviour) {
+		this.Config.behavior = this.lastBehaviour;
+	}
 	if (prev != this.strategy)
-		KIARA.Logger.debug("strategy: " + prev + "->" + this.strategy);
-
+		//KIARA.Logger.debug("strategy: " + prev + "->" + this.strategy);
+		API3.warn("strategy: " + prev + "->" + this.strategy);
+/*	if (this.lastPopGrow > pop)
+		API3.warn(pop + ", " + this.lastPopGrow);
+*/
 	this.lastPop = pop;
-	if (this.lastPopGrow < pop)
+	if (!this.lastPopGrow || this.lastPopGrow < pop)
 		this.lastPopGrow = pop;
 
 	if (
