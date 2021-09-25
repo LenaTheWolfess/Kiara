@@ -769,7 +769,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 		}
 	}
 
-	let wantCav = workers > 100 * this.Config.popScaling && this.strategy != KIARA.Strategy.EARLY_RAID && cavs < this.huntCav;
+	let wantCav = workers > 20 * this.Config.popScaling && this.strategy == KIARA.Strategy.BOOM && cavs < this.huntCav;
 	let cavClasses = ["FastMoving"];
 	let cavRequirements = [ ["canGather", 1] ];
 
@@ -788,7 +788,6 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	for (let ent of fac) {
 		if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 			KIARA.Logger.debug(gameState.getPopulationLimit() + " < " + this.wantPop);
-		//	return;
 		//	return;
 		}
 		let tt = ent.trainableEntities(civ);
@@ -818,6 +817,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 				template = this.findBestTrainableUnitSpecial(gameState, siegeClass, siegeRequirements, t);
 				if (template)
 				{
+					KIARA.Logger.debug("picked siege: " + template);
 					//wwx = "attack";
 					wwx = undefined;
 					size = 2;
@@ -827,6 +827,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 			if (!template && wantCav && this.cavSwitcher) {
 				template = this.findBestTrainableUnitSpecial(gameState, cavClasses, cavRequirements, t);
 				if (template) {
+					KIARA.Logger.debug("picked cav: " + template);
 					size = 2;
 					mmin = 1;
 				}
@@ -834,18 +835,31 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 			if (!template && wantChampions) {
 				template = this.findBestTrainableUnitSpecial(gameState, championClass, championRequirements, t);
 				if (template) {
+					KIARA.Logger.debug("picked champion: " + template);
 					wwx = undefined;
 				}
 			}
-			if (!template)
+			if (!template) {
 				template = this.findBestTrainableUnitSpecial(gameState, classes, requirements, t, antiClasses);
-			if (!template && wantDefenders && this.rangedSwitcher)
+				if (template)
+					KIARA.Logger.debug("picked classes: " + template);
+			}
+			if (!template && wantDefenders && this.rangedSwitcher) {
 				template = this.findBestTrainableUnitSpecial(gameState, classesRangedInf, requirements, t, antiClasses);
-			if (!template && wantDefenders && !this.rangedSwitcher)
+				if (template)
+					KIARA.Logger.debug("picked ranged: " + template);
+			}
+			if (!template && wantDefenders && !this.rangedSwitcher) {
 				template = this.findBestTrainableUnitSpecial(gameState, classesMeleeInf, requirements, t, antiClasses);
+				if (template)
+					KIARA.Logger.debug("picked melee: " + template);
+			}
 
-			if (!template)
+			if (!template) {
 				template = this.findBestTrainableUnitSpecial(gameState, anyClasses, anyRequirements, t, antiClasses);
+				if (template)
+					KIARA.Logger.debug("picked any: " + template);
+			}
 /*
 			if (!template && wantCav) {
 				template = this.findBestTrainableUnitSpecial(gameState, cavClasses, cavRequirements, t);
