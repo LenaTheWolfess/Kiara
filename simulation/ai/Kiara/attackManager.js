@@ -306,7 +306,9 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 		}
 	}
 
-	const mine = gameState.getOwnUnits().length;
+	const mUnits = gameState.getOwnUnits();
+	const mSup = mUnits.filter(a => a.hasClass("Support")).length;
+	const mine = mUnits.length - mSup;
 	for (let attackType in this.startedAttacks)
 	{
 		for (let i = 0; i < this.startedAttacks[attackType].length; ++i)
@@ -333,7 +335,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 					
 					const mRaids = isDogRaid ? this.maxDogRaids : this.maxRaids;
 					const nRaids = isDogRaid ? this.dogRaidNumber : this.raidNumber;
-					if (sol < mine && mRaids == nRaids) {
+					if (sol * 1.2 < mine && mRaids == nRaids) {
 						if (isDogRaid)
 							this.maxDogRaids++;
 						else
@@ -375,8 +377,7 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 	{
 		if (unexecutedAttacks.EarlyRaid === 0)
 		{
-			let data = { "targetSize": this.raidSize[this.raidNumber] };
-			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, KIARA.AttackTypes.EARLY_RAID, data);
+			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, KIARA.AttackTypes.EARLY_RAID);
 			if (!attackPlan.failed)
 			{
 				KIARA.Logger.debug("Military Manager: "+KIARA.AttackTypes.EARLY_RAID+" plan " + this.totalNumber + " with maxRaids " + this.maxRaids);

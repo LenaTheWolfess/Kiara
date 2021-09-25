@@ -670,10 +670,12 @@ KIARA.HQ.prototype.OnPhaseUp = function(gameState, phase)
 
 KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 {
+	/*
 	if (gameState.getPopulation() > gameState.getPopulationMax() * 0.8) {
 		KIARA.Logger.debug("pop "+ gameState.getPopulation() + " > " + (gameState.getPopulationMax() * 0.8) + "("+ gameState.getPopulationMax() +")");
 		return;
 	}
+	*/
 
 	let fHouse = gameState.getOwnFoundationsByClass("House").length;
 	let nHouses = queues.house.length();
@@ -690,7 +692,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 			queues.house.addPlan(plan);
 		}
 		KIARA.Logger.debug("need house " + gameState.getPopulationLimit() + " < " + this.wantPop + " houses queued " + nHouses);
-		return;
+//		return;
 	}
 
 	let civ = gameState.getPlayerCiv();
@@ -767,16 +769,16 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 		}
 	}
 
-	let wantCav = workers > 20 && this.strategy != KIARA.Strategy.EARLY_RAID && cavs < this.huntCav;
+	let wantCav = workers > 100 * this.Config.popScaling && this.strategy != KIARA.Strategy.EARLY_RAID && cavs < this.huntCav;
 	let cavClasses = ["FastMoving"];
 	let cavRequirements = [ ["canGather", 1] ];
 
-	let wantSiege = workers > 200 && gameState.currentPhase(gameState) > 2 && sieges < siegeNum;
+	let wantSiege = workers > 200 * this.Config.popScaling && gameState.currentPhase(gameState) > 2 && sieges < siegeNum;
 	let siegeClass = ["Siege"];
 	let siegeRequirements = [["strength", 3]];
 
-	let wantChampions = gameState.currentPhase(gameState) > 2 && workers > 200;
-//	wantChampions = false;
+	let wantChampions = gameState.currentPhase(gameState) > 2 && workers > 200 * this.Config.popScaling;
+	wantChampions = false;
 	let championClass = ["Champion"];
 	let championRequirements = [["strength", 2]];
 
@@ -786,7 +788,8 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	for (let ent of fac) {
 		if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 			KIARA.Logger.debug(gameState.getPopulationLimit() + " < " + this.wantPop);
-			return;
+		//	return;
+		//	return;
 		}
 		let tt = ent.trainableEntities(civ);
 		if (!tt)
@@ -843,7 +846,15 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 
 			if (!template)
 				template = this.findBestTrainableUnitSpecial(gameState, anyClasses, anyRequirements, t, antiClasses);
-
+/*
+			if (!template && wantCav) {
+				template = this.findBestTrainableUnitSpecial(gameState, cavClasses, cavRequirements, t);
+				if (template) {
+					size = 2;
+					mmin = 1;
+				}
+			}
+*/
 			if (!template)
 				continue;
 
@@ -886,8 +897,8 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 					size = possible;
 					mSize = size;
 				}
-				else
-					return;
+			//	else
+			//		return;
 			}
 
 			let role = {"base": 0, "role": wwx, "support": actualTemplate.hasClass("Support")};
@@ -903,8 +914,8 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 			}
 			if (wantCav)
 				this.cavSwitcher = !this.cavSwitcher;
-			if (missing > 0)
-				return;
+		//	if (missing > 0)
+		//		return;
 		}
 	}
 }
@@ -2340,12 +2351,15 @@ KIARA.HQ.prototype.buildMoreHouses = function(gameState, queues)
 		if (!gameState.isTemplateAvailable(gameState.applyCiv(houseTemplateString)))
 			return;
 	}
-	if (gameState.getPopulationMax() <= gameState.getPopulationLimit())
+	if (gameState.getPopulationMax() <= gameState.getPopulationLimit()) {
+		KIARA.Logger.debug("no more houses " + gameState.getPopulationMax() + "/" + gameState.getPopulationLimit());
 		return;
+	}
 
 	let numPlanned = queues.house.length();
 	if (numPlanned < 3 || numPlanned < 5 && gameState.getPopulation() > 80)
 	{
+		KIARA.Logger.debug("add house");
 		let plan = new KIARA.ConstructionPlan(gameState, houseTemplateString);
 		// change the starting condition according to the situation.
 		plan.goRequirement = "houseNeeded";
@@ -2685,7 +2699,11 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 		let template = barracksTemplate || stableTemplate || rangeTemplate;
 		if (template)
 		{
-			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, template, { "militaryBase": true }));
+			
+			gameState.ai.queueManager.changePriority("militaryBuilding", 2 * this.Config.priorities.militaryBuilding);
+			const plan = new KIARA.ConstructionPlan(gameState, template, { "militaryBase": true });
+			plan.queueToReset = "militaryBuilding";
+			queues.militaryBuilding.addPlan(plan);
 			return;
 		}
 	}
@@ -3455,7 +3473,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		this.strategy = KIARA.Strategy.ATTACK;
 	} else if (this.cavalryRush && pop > 20) {
 		this.strategy = KIARA.Strategy.EARLY_RAID;
-		this.attackManager.maxRaids = 2;
+		this.attackManager.maxRaids = 1;
 		this.cavalryRush = false;
 	}
 	if (this.lastPopGrow && pop < this.lastPopGrow * 0.5 && this.Config.behavior != KIARA.Behaviour.DEFENSIVE) {

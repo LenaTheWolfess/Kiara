@@ -23,7 +23,7 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	{
 		this.target = undefined;
 		this.targetPos = undefined;
-		this.targetPlayer = undefined;
+		this.targetPlayer = gameState.ai.HQ.attackManager.getEnemyPlayer(gameState, this);
 	}
 
 	let popCaped = gameState.getPopulationMax() - gameState.getPopulation() < 5;
@@ -102,6 +102,10 @@ KIARA.AttackPlan = function(gameState, Config, uniqueID, type, data)
 	}
 	this.paused = false;
 	this.maxCompletingTime = 0;
+
+	const eUnits = gameState.getEnemyUnits(this.targetPlayer);
+	const eSup = eUnits.filter(a => a.hasClass("Support")).length;
+	const eSol = eUnits.length - eSup;
 
 	// priority of the queues we'll create.
 	let priority = 70;

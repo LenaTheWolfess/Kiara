@@ -949,11 +949,13 @@ KIARA.ConstructionPlan.prototype.isGo = function(gameState)
 
 		if (gameState.ai.HQ.saveResources)
 			return freeSlots <= 10;
+		if (gameState.getPopulation() > 100)
+			return freeSlots <= gameState.getPopulation() * 0.2;
 		if (gameState.getPopulation() > 55)
 			return freeSlots <= 21;
 		if (gameState.getPopulation() > 30)
 			return freeSlots <= 15;
-		return freeSlots <= 10;
+		return freeSlots <= gameState.getPopulation() * 0.2;
 	}
 	return true;
 };

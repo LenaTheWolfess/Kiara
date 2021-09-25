@@ -111,7 +111,7 @@ KIARA.Config = function(difficulty, behavior)
 		"trader": 50,
 		"healer": 20,
 		"ships": 70,
-		"house": 350,
+		"house": 400,
 		"dropsites": 200,
 		"field": 400,
 		"dock": 90,
