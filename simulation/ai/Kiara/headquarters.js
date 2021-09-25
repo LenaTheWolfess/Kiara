@@ -2247,12 +2247,12 @@ KIARA.HQ.prototype.buildWonder = function(gameState, queues, force = false)
 		let lowLevel = 0;
 		for (let res in cost)
 		{
-			if (resources[res] && resources[res] > 0.7 * cost[res])
+			if (resources[res] && resources[res] > cost[res])
 				++highLevel;
-			else if (!resources[res] || resources[res] < 0.3 * cost[res])
+			else if (!resources[res] || resources[res] < 0.8 * cost[res])
 				++lowLevel;
 		}
-		if (highLevel == 0 || lowLevel > 1)
+		if (highLevel < 3 || lowLevel > 1)
 			return;
 		queues.wonderN.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.Wonder]));
 		return;

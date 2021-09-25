@@ -557,7 +557,15 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 		}
 		return 1;
 	}
-
+	if (!popCaped && this.type != KIARA.AttackTypes.DOG_RAID) {
+		const eUnits = gameState.getEnemyUnits(this.targetPlayer);
+		const sup = eUnits.filter(a => a.hasClass("Support")).length;
+		const sol = eUnits.length - sup;
+		if (sol > this.unitCollection.length * 0.9) {
+			KIARA.Logger.debug("enemy has a lot of units, abort");
+			return 0;
+		}
+	}
 	// if we're here, it means we must start
 	this.state = "completing";
 
@@ -1460,6 +1468,16 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 	    !this.chooseTarget(gameState))
 		return false;
 
+	if (this.type != KIARA.AttackTypes.HUGE_ATTACK && this.type != KIARA.AttackTypes.DOG_RAID) {
+		const eUnits = gameState.getEnemyUnits(aTargetPlayer);
+		const sup = eUnits.filter(a => a.hasClass("Support")).length;
+		const sol = eUnits.length - sup;
+		if (eUnits > this.unitCollection.length * 0.9) {
+			this.debug("enemy has a lot of soldiers -> abort");
+			return false;
+		}
+	}
+
 	// erase our queue. This will stop any leftover unit from being trained.
 	this.removeQueues(gameState);
 
@@ -1531,12 +1549,13 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 		}
 	}
 
-	if (this.unitCollection.length < this.nUnits / 2) {
+	const toAbort = this.nUnits * 0.7;
+	if (this.unitCollection.length < toAbort) {
 		Engine.ProfileStop();
 		KIARA.Logger.warn("attackplan " + this.type + " " + this.name + " update -> half of units " + this.unitCollection.length + " -> abort");
 		return 0;
 	} else {
-		KIARA.Logger.warn("Attack: " + this.type + "." + this.name + " units = " + this.unitCollection.length + " vs " + (this.nUnits / 2));
+		KIARA.Logger.warn("Attack: " + this.type + "." + this.name + " units = " + this.unitCollection.length + " vs " + toAbort);
 	}
 
 

@@ -124,7 +124,7 @@ KIARA.Config = function(difficulty, behavior)
 		"civilCentre": 950,
 		"majorTech": 700,
 		"minorTech": 270,
-		"wonderN": 400,
+		"wonderN": 200,
 		"wonder": 1000,
 		"emergency": 1000    // used only in emergency situations, should be the highest one
 	};
