@@ -2645,14 +2645,17 @@ KIARA.HQ.prototype.constructTrainingBuildings = function(gameState, queues)
 	if (this.getAccountedPopulation(gameState) > this.Config.Military.popForBarracks1 ||
 	    this.phasing == 2 && gameState.getOwnStructures().filter(API3.Filters.byClass("Village")).length < 5)
 	{
-		if (numStables == 0 && stableTemplate && civ == "brit")
+		if (stableTemplate)
 		{
-			this.strategy = KIARA.Strategy.DOG_RAID;
-			this.attackManager.maxDogRaids = 1;
-			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
-		} else if (numStables == 0 && (this.strategy == KIARA.Strategy.EARLY_RAID || this.cavalryRush)) {
-			queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
-			return;
+			if (numStables == 0 && civ == "brit")
+			{
+				this.strategy = KIARA.Strategy.DOG_RAID;
+				this.attackManager.maxDogRaids = 1;
+				queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
+			} else if (numStables == 0 && (this.strategy == KIARA.Strategy.EARLY_RAID || this.cavalryRush)) {
+				queues.militaryBuilding.addPlan(new KIARA.ConstructionPlan(gameState, stableTemplate, { "militaryBase": true }));
+				return;
+			}
 		}
 		// first barracks/range and stables.
 		if (numBarracks + numRanges < 2)
