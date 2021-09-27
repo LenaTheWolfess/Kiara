@@ -16,7 +16,7 @@ m.Template.prototype.attackRange = function(type) {
 	};
 };
 
-m.Entity.prototype.counters = function(target) {
+m.Entity.prototype.api4_counters = function(target) {
 	const attack = this.get("Attack");
 	const def = target.resistanceStrengths();
 	if (!attack)

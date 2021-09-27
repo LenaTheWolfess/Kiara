@@ -2022,8 +2022,8 @@ let lgth = this.unitCollUpdateArray.length < 15 || this.startingAttack || update
 				{
 					mUnit.sort((unitA, unitB) => {
 						let vala = !unitA.hasClass("Support") * 100;
-						let counta = ent.counters(unitA);
-						let countb = ent.counters(unitB);
+						let counta = ent.api4_counters(unitA);
+						let countb = ent.api4_counters(unitB);
 						vala += (100*counta);
 						let valb = !unitB.hasClass("Support") * 100;
 						valb += (100*countb);
@@ -2036,8 +2036,8 @@ let lgth = this.unitCollUpdateArray.length < 15 || this.startingAttack || update
 							vala -= distA;
 							valb -= distB;
 						}
-						vala -= 200*unitA.counters(ent);
-						valb -= 200*unitB.counters(ent);
+						vala -= 200*unitA.api4_counters(ent);
+						valb -= 200*unitB.api4_counters(ent);
 						vala -= (unitTargets[unitA.id()]>0)*100;
 						valb -= (unitTargets[unitB.id()]>0)*100;
 						vala -= veto[unitA.id()]*20000;
