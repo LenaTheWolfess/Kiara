@@ -657,6 +657,9 @@ KIARA.DefenseManager.prototype.assignDefenders = function(gameState)
 		}
 	}
 
+	if (armiesNeeding.length) {
+		gameState.ai.HQ.attackManager.abortAllAttacks(gameState);
+	}
 	// If shortage of defenders, produce infantry garrisoned in nearest civil center.
 	/*
 	let armiesPos = [];

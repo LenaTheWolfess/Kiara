@@ -347,11 +347,14 @@ KIARA.HQ.prototype.buildFirstBase = function(gameState)
 
 	if (goal == "dock")
 	{
+		if (!this.navalMap)
+			return false;
 		let sea = startingPoint[imax].sea > 1 ? startingPoint[imax].sea : undefined;
 		gameState.ai.queues.dock.addPlan(new KIARA.ConstructionPlan(gameState, "structures/{civ}/dock", { "sea": sea, "proximity": startingPoint[imax].pos }));
 	}
 	else
 		gameState.ai.queues.civilCentre.addPlan(new KIARA.ConstructionPlan(gameState, KIARA.Templates[KIARA.TemplateConstants.CC], { "base": -1, "resource": "wood", "proximity": startingPoint[imax].pos }));
+	KIARA.Logger.trace("can build " + goal);
 	return true;
 };
 

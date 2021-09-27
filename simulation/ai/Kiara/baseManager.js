@@ -649,6 +649,7 @@ KIARA.BaseManager.prototype.addGatherRates = function(gameState, currentRates)
 
 KIARA.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
 {
+	let territoryMap = gameState.ai.HQ.territoryMap;
 	if (!roleless)
 		roleless = this.units.filter(API3.Filters.not(API3.Filters.byHasMetadata(PlayerID, "role"))).values();
 
@@ -665,7 +666,13 @@ KIARA.BaseManager.prototype.assignRolelessUnits = function(gameState, roleless)
 	let retreating = this.units.filter(API3.Filters.byMetadata(PlayerID, "role", "retreat")).values();
 	for (let ent of retreating)
 	{
-		if (ent.isIdle())
+		const pos = ent.position();
+		let done = false;
+		if (pos) {
+			const territoryOwner = territoryMap.getOwner(pos);
+			done = territoryOwner == PlayerID;
+		}
+		if (ent.isIdle() || done)
 		{
 			if (ent.hasClass("Worker") || ent.hasClass("CitizenSoldier") || ent.hasClass("FishingBoat"))
 				ent.setMetadata(PlayerID, "role", "worker");

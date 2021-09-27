@@ -16,6 +16,36 @@ m.Template.prototype.attackRange = function(type) {
 	};
 };
 
+m.Entity.prototype.counters = function(target) {
+	const attack = this.get("Attack");
+	const def = target.resistanceStrengths();
+	if (!attack)
+		return false;
+	let mcounter = [];
+	let lowest = undefined;
+	if (def.Damage) {
+		for (let type in attack) {
+			if (!lowest || def.Damage[type] < lowest)
+				lowest = type;
+		}
+	}
+	let counterLowest = false;
+	for (let type in attack)
+	{
+		counterLowest = type == lowest || counterLowest;
+		let bonuses = this.get("Attack/" + type + "/Bonuses");
+		if (!bonuses)
+			continue;
+		for (let b in bonuses)
+		{
+			let bonusClasses = this.get("Attack/" + type + "/Bonuses/" + b + "/Classes");
+			if (bonusClasses)
+				mcounter.concat(bonusClasses.split(" "));
+		}
+	}
+	return counterLowest || target.hasClasses(mcounter);
+};
+
 m.Entity.prototype.raiseAlert = function() {
 	if (!this.alertRaiser())
 		return undefined;

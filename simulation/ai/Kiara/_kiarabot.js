@@ -72,6 +72,7 @@ KIARA.Stances.ATTACK = "aggressive";
 KIARA.Stances.DEFEND = "defensive";
 KIARA.Stances.FLEE = "passive";
 KIARA.Stances.DONT_MOVE = "standground";
+KIARA.Stances.NONE = "none";
 
 KIARA.Difficulty = function() {};
 KIARA.Difficulty.SANDBOX = 0;

@@ -18,7 +18,7 @@ KIARA.AttackManager = function(Config)
 	this.rushSize = [];
 	this.currentEnemyPlayer = undefined; // enemy player we are currently targeting
 	this.defeated = {};
-	this.raidSize = [ 5, 10 ];
+	this.raidSize = [ 6, 10, 15, 20 ];
 };
 
 /** More initialisation for stuff that needs the gameState */
@@ -377,7 +377,8 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 	{
 		if (unexecutedAttacks.EarlyRaid === 0)
 		{
-			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, KIARA.AttackTypes.EARLY_RAID);
+			let data = { "targetSize": this.raidSize[Math.min(this.raidNumber, this.raidSize.length - 1)] };
+			let attackPlan = new KIARA.AttackPlan(gameState, this.Config, this.totalNumber, KIARA.AttackTypes.EARLY_RAID, data);
 			if (!attackPlan.failed)
 			{
 				KIARA.Logger.debug("Military Manager: "+KIARA.AttackTypes.EARLY_RAID+" plan " + this.totalNumber + " with maxRaids " + this.maxRaids);
@@ -450,6 +451,20 @@ KIARA.AttackManager.prototype.update = function(gameState, queues, events)
 			this.assignBombers(gameState);
 	}
 };
+
+KIARA.AttackManager.prototype.abortAllAttacks = function(gameState)
+{
+	return;
+	for (let attackType in this.startedAttacks)
+	{
+		for (let i = 0; i < this.startedAttacks[attackType].length; ++i)
+		{
+			const attack = this.startedAttacks[attackType][i];
+			attack.Abort(gameState);
+			this.startedAttacks[attackType].splice(i--, 1);
+		}
+	}
+}
 
 KIARA.AttackManager.prototype.getPlan = function(planName)
 {
