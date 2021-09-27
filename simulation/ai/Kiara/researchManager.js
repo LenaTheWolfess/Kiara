@@ -247,6 +247,18 @@ KIARA.ResearchManager.prototype.researchPreferredTechs = function(gameState, tec
 	return null;
 };
 
+
+/** Techs to be searched for as soon as they are available, but only after phase 3 */
+KIARA.ResearchManager.prototype.researchNiceTechs = function(gameState, techs)
+{
+	for (let tech of techs)
+	{
+		if (tech[0] == "wonder_population_cap")
+			return { "name": tech[0], "increasePriority": false };
+	}
+	return null;
+};
+
 KIARA.ResearchManager.prototype.update = function(gameState, queues)
 {
 //	if (queues.minorTech.hasQueuedUnits() || queues.majorTech.hasQueuedUnits())
@@ -285,6 +297,22 @@ KIARA.ResearchManager.prototype.update = function(gameState, queues)
 		else
 			queues.minorTech.addPlan(new KIARA.ResearchPlan(gameState, techName.name));
 		return;
+	}
+
+	if (gameState.currentPhase() < 3)
+		return;
+	techName = this.researchNiceTechs(gameState, techs);
+	if (techName)
+	{
+		if (techName.increasePriority)
+		{
+			gameState.ai.queueManager.changePriority("minorTech", 2*this.Config.priorities.minorTech);
+			let plan = new KIARA.ResearchPlan(gameState, techName.name);
+			plan.queueToReset = "minorTech";
+			queues.minorTech.addPlan(plan);
+		}
+		else
+			queues.minorTech.addPlan(new KIARA.ResearchPlan(gameState, techName.name));
 	}
 };
 
