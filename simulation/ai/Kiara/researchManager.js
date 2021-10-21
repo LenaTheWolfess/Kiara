@@ -79,6 +79,7 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 	let phase1 = gameState.currentPhase() === 1;
 	let available = phase1 ? gameState.ai.queueManager.getAvailableResources(gameState) : null;
 	let numWorkers = phase1 ? gameState.getOwnEntitiesByRole("worker", true).length : 0;
+	let wantPop = gameState.getPopulationLimit() > 100;
 
 	if (gameState.currentPhase() > 1)
 	{
@@ -133,6 +134,9 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 				}
 				if (template.modifications[0].value == "Cost/PopulationBonus") {
 					return { "name": tech[0], "increasePriority": true };
+				}
+				if (wantPop && template.modifications[0].value == "Population/Bonus") {
+					return { "name": tech[0], "increasePriority": false };
 				}
 			}
 		}
