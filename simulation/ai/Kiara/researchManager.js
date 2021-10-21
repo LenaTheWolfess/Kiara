@@ -184,6 +184,11 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 		if (!tech[1]._template.modifications)
 			continue;
 		let template = tech[1]._template;
+		for (let i in template.modifications)
+		{
+			if (gameState.ai.HQ.hasBerries && template.modifications[i].value === "ResourceGatherer/Rates/food.fruit")
+				return { "name": tech[0], "increasePriority": this.CostSum(template.cost) < 400, "queue": "economyTech"};
+		}
 		if (phase1)
 		{
 			let cost = template.cost;
@@ -196,8 +201,6 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 		for (let i in template.modifications)
 		{
 			if (gameState.ai.HQ.navalMap && template.modifications[i].value === "ResourceGatherer/Rates/food.fish")
-				return { "name": tech[0], "increasePriority": this.CostSum(template.cost) < 400 };
-			else if (gameState.ai.HQ.hasBerries && template.modifications[i].value === "ResourceGatherer/Rates/food.fruit")
 				return { "name": tech[0], "increasePriority": this.CostSum(template.cost) < 400 };
 			else if (template.modifications[i].value === "ResourceGatherer/Rates/food.grain")
 				return { "name": tech[0], "increasePriority": false };
@@ -269,15 +272,18 @@ KIARA.ResearchManager.prototype.update = function(gameState, queues)
 	let techName = this.researchWantedTechs(gameState, techs);
 	if (techName)
 	{
+		let queue = "minorTech";
+		if (techName.queue)
+			queue = techName.queue;
 		if (techName.increasePriority)
 		{
-			gameState.ai.queueManager.changePriority("minorTech", 2*this.Config.priorities.minorTech);
+			gameState.ai.queueManager.changePriority(queue, 2*this.Config.priorities[queue]);
 			let plan = new KIARA.ResearchPlan(gameState, techName.name);
-			plan.queueToReset = "minorTech";
+			plan.queueToReset = queue;
 			queues.minorTech.addPlan(plan);
 		}
 		else
-			queues.minorTech.addPlan(new KIARA.ResearchPlan(gameState, techName.name));
+			queues[queue].addPlan(new KIARA.ResearchPlan(gameState, techName.name));
 		return;
 	}
 
@@ -287,15 +293,18 @@ KIARA.ResearchManager.prototype.update = function(gameState, queues)
 	techName = this.researchPreferredTechs(gameState, techs);
 	if (techName)
 	{
+		let queue = "minorTech";
+		if (techName.queue)
+			queue = techName.queue;
 		if (techName.increasePriority)
 		{
-			gameState.ai.queueManager.changePriority("minorTech", 2*this.Config.priorities.minorTech);
+			gameState.ai.queueManager.changePriority(queue, 2*this.Config.priorities[queue]);
 			let plan = new KIARA.ResearchPlan(gameState, techName.name);
-			plan.queueToReset = "minorTech";
-			queues.minorTech.addPlan(plan);
+			plan.queueToReset = queue;
+			queues[queue].addPlan(plan);
 		}
 		else
-			queues.minorTech.addPlan(new KIARA.ResearchPlan(gameState, techName.name));
+			queues[queue].addPlan(new KIARA.ResearchPlan(gameState, techName.name));
 		return;
 	}
 
@@ -304,15 +313,18 @@ KIARA.ResearchManager.prototype.update = function(gameState, queues)
 	techName = this.researchNiceTechs(gameState, techs);
 	if (techName)
 	{
+		let queue = "minorTech";
+		if (techName.queue)
+			queue = techName.queue;
 		if (techName.increasePriority)
 		{
-			gameState.ai.queueManager.changePriority("minorTech", 2*this.Config.priorities.minorTech);
+			gameState.ai.queueManager.changePriority(queue, 2*this.Config.priorities[queue]);
 			let plan = new KIARA.ResearchPlan(gameState, techName.name);
-			plan.queueToReset = "minorTech";
-			queues.minorTech.addPlan(plan);
+			plan.queueToReset = queue;
+			queues[queue].addPlan(plan);
 		}
 		else
-			queues.minorTech.addPlan(new KIARA.ResearchPlan(gameState, techName.name));
+			queues[queue].addPlan(new KIARA.ResearchPlan(gameState, techName.name));
 	}
 };
 
