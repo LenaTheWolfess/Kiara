@@ -628,7 +628,7 @@ KIARA.AttackPlan.prototype.updatePreparation = function(gameState)
 			queued = KIARA.returnResources(gameState, ent);
 		let index = KIARA.getLandAccess(gameState, ent);
 		if (index == rallyIndex)
-			ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 20, queued);
+			ent.moveToRange_api4("attackplan:completing",rallyPoint[0], rallyPoint[1], 0, 20, queued);
 		else
 			gameState.ai.HQ.navalManager.requireTransport(gameState, ent, index, rallyIndex, rallyPoint);
 	}
@@ -1511,7 +1511,7 @@ KIARA.AttackPlan.prototype.StartAttack = function(gameState)
 		this.state = "walking";
 		// put units into formation and move them together
 		this.RecreateGroups(gameState, true);
-//		this.unitCollection.moveToRange(this.path[0][0], this.path[0][1], 0, 15);
+//		this.unitCollection.moveToRange_api4("attackplan",this.path[0][0], this.path[0][1], 0, 15);
 	}
 	else
 	{
@@ -1722,7 +1722,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 						let canAttack = ourUnit.canAttackTarget(attacker, false);
 						let myRange = ourUnit.attackRange("Ranged");
 						let pos = attacker.position();
-						//ourUnit.moveToRange(pos[0], pos[1], myRange.min + myRange.max*0.5, myRange.max);
+						//ourUnit.moveToRange_api4("attackplan",pos[0], pos[1], myRange.min + myRange.max*0.5, myRange.max);
 						ourUnit.moveApart(pos, Math.max(myRange.min, myRange.max*0.8));
 						if (canAttack)
 							ourUnit.attack(attacker.id(), false, true);
@@ -1779,7 +1779,7 @@ KIARA.AttackPlan.prototype.update = function(gameState, events)
 			if (rallyPoint && gameState.ai.accessibility.getAccessValue(this.rallyPoint) == access) {
 				for (let ent of toRemove) {
 					KIARA.Logger.debug("Attack " + this.type + " " + this.name + ": Return hurt unit to base");
-					ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 40);
+					ent.moveToRange_api4("attackplan:returnToBase",rallyPoint[0], rallyPoint[1], 0, 40);
 					this.removeUnit(ent, true);
 				}
 			}
@@ -2283,7 +2283,7 @@ KIARA.AttackPlan.prototype.UpdateWalking = function(gameState, events)
 		this.path.shift();
 		if (this.path.length) {
 			for (let group of this.formationList)
-				group.moveToRange(this.path[0][0], this.path[0][1], 0, 20);
+				group.moveToRange_api4("attackplan:moveOnPath",this.path[0][0], this.path[0][1], 0, 20);
 		}
 		else
 		{
@@ -2417,6 +2417,7 @@ KIARA.AttackPlan.prototype.RecreateGroups = function(gameState, moveThem = false
 		count++;
 	}
 	for (let group of this.formationList) {
+		group.freeze();
 		let f = "special/formations/line_closed";
 		if (group.toEntityArray().length > 8)
 			f = "special/formations/box";
@@ -2424,7 +2425,7 @@ KIARA.AttackPlan.prototype.RecreateGroups = function(gameState, moveThem = false
 			f= "special/formations/line_closed";
 		group.form(f);
 		if (moveThem)
-			group.moveToRange(this.path[0][0], this.path[0][1], 0, 20, true);
+			group.moveToRange_api4("attackplan:RecreateGroups",this.path[0][0], this.path[0][1], 0, 20, true);
 	}
 };
 
@@ -2482,7 +2483,7 @@ KIARA.AttackPlan.prototype.Abort = function(gameState)
 					Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [1, 0, 0] });
 			}
 			if (rallyPoint) {
-				ent.moveToRange(rallyPoint[0], rallyPoint[1], 0, 40);
+				ent.moveToRange_api4("attackplan:Abort",rallyPoint[0], rallyPoint[1], 0, 40);
 				if (KIARA.Logger.isTrace())
 					Engine.PostCommand(PlayerID, { "type": "set-shading-color", "entities": [ent.id()], "rgb": [0, 0, 1] });
 			}

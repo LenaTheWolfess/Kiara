@@ -86,6 +86,13 @@ m.Entity.prototype.upgrade = function(template) {
 	return this;
 };
 
+m.Entity.prototype.moveToRange_api4 = function(func, x, z, min, max, queued = false, pushFront = false) {
+	let cmd = { "type": "walk-to-range", "entities": [this.id()], "x": x, "z": z, "min": min, "max": max, "queued": queued, "pushFront": pushFront };
+//	warn("function[" + func + "]: " + uneval(cmd));
+	Engine.PostCommand(PlayerID, cmd);
+	return this;
+};
+
 return m;
 
 }(API3);

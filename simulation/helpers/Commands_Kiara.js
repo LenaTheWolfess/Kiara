@@ -13,7 +13,6 @@ g_Commands["regroup"] = function(player, cmd, data)
 	});
 };
 
-
 /**
  * Returns a list of UnitAI components, each belonging either to a
  * selected unit or to a formation entity for groups of the selected units.
