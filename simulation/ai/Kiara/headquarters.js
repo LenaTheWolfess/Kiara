@@ -777,8 +777,8 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let siegeClass = ["Siege"];
 	let siegeRequirements = [["strength", 3]];
 
-	let wantChampions = gameState.currentPhase(gameState) > 2 && workers > 200 * this.Config.popScaling;
-	wantChampions = false;
+	let wantChampions = gameState.currentPhase(gameState) > 2 && workers > 250 * this.Config.popScaling;
+//	wantChampions = false;
 	let championClass = ["Champion"];
 	let championRequirements = [["strength", 2]];
 
@@ -3492,6 +3492,9 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		this.strategy = KIARA.Strategy.EARLY_RAID;
 		this.attackManager.maxRaids = 1;
 		this.cavalryRush = false;
+	}
+	else if (pop > gameState.getPopulationMax() - 50) {
+		this.strategy = KIARA.Strategy.ATTACK;
 	}
 	if (this.lastPopGrow && pop < this.lastPopGrow * 0.5 && this.Config.behavior != KIARA.Behaviour.DEFENSIVE) {
 		this.lastBehaviour = this.Config.behavior;

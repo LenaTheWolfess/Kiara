@@ -623,7 +623,7 @@ KIARA.AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 
 	// then let's target our strongest enemy (basically counting enemies units)
 	// with priority to enemies with civ center
-	let max = Math.min();
+	let max = Math.max();
 	for (let i = 1; i < gameState.sharedScript.playersData.length; ++i)
 	{
 		if (veto[i])
@@ -632,7 +632,7 @@ KIARA.AttackManager.prototype.getEnemyPlayer = function(gameState, attack)
 			continue;
 		let enemyCount = gameState.getEnemyUnits(i).length;
 		KIARA.Logger.debug("enemy " + i + " : " + enemyCount + " > " + max);
-		if (enemyCount > max)
+		if (enemyCount < max)
 			continue;
 		max = enemyCount;
 		enemyPlayer = i;

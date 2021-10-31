@@ -888,6 +888,7 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 	let num = 0;
 	let numbase = {};
 	let keep = this.type != KIARA.AttackTypes.RUSH ? 6 + 4 * gameState.getNumPlayerEnemies() : 8;
+	keep = Math.min(50, gameState.getPopulationLimit() * 0.3);
 	keep = Math.round(this.Config.popScaling * keep);
 	for (let ent of gameState.getOwnEntitiesByRole("worker", true).values())
 	{
@@ -906,6 +907,9 @@ KIARA.AttackPlan.prototype.assignUnits = function(gameState)
 			continue;
 //		if (this.type != KIARA.AttackTypes.RUSH && ent.getMetadata(PlayerID, "subrole") != "idle")
 //			continue;
+		const subrole = ent.getMetadata(PlayerID, "subrole");
+		if (subrole == "builder")
+			continue;
 		ent.setMetadata(PlayerID, "plan", plan);
 		this.unitCollection.updateEnt(ent);
 		added = true;

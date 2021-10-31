@@ -176,9 +176,9 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 					if (template.modifications[i].value == "Attack/"+t+"/Crush") {
 						return { "name": tech[0], "increasePriority": true};
 					}
-					if (template.modifications[i].value == "Attack/Ranged/MaxRange")
+					if (template.modifications[i].value == "Attack/"+t+"/MaxRange")
 						return { "name": tech[0], "increasePriority": false };
-					}
+				}
 			}
 		}
 	}
