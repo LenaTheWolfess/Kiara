@@ -166,18 +166,23 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 					}
 				}
 				if (gameState.ai.HQ.strategy == KIARA.Strategy.ATTACK) {
-					let t = "Ranged";
-					if (template.modifications[i].value == "Attack/"+t+"/Hack") {
+					//let t = "Ranged";
+					for (let t of ["Ranged", "Melee"]) {
+						if (template.modifications[i].value == "Attack/"+t+"/Damage/Hack") {
+							return { "name": tech[0], "increasePriority": true};
+						}
+						if (template.modifications[i].value == "Attack/"+t+"/Damage/Pierce") {
+							return { "name": tech[0], "increasePriority": true};
+						}
+						if (template.modifications[i].value == "Attack/"+t+"/Damage/Crush") {
+							return { "name": tech[0], "increasePriority": true};
+						}
+						if (template.modifications[i].value == "Attack/"+t+"/MaxRange")
+							return { "name": tech[0], "increasePriority": false };
+					}
+					if (template.modifications[i].value.indexOf("Resistance/Entity/Damage") != -1) {
 						return { "name": tech[0], "increasePriority": true};
 					}
-					if (template.modifications[i].value == "Attack/"+t+"/Pierce") {
-						return { "name": tech[0], "increasePriority": true};
-					}
-					if (template.modifications[i].value == "Attack/"+t+"/Crush") {
-						return { "name": tech[0], "increasePriority": true};
-					}
-					if (template.modifications[i].value == "Attack/"+t+"/MaxRange")
-						return { "name": tech[0], "increasePriority": false };
 				}
 			}
 		}
@@ -279,6 +284,7 @@ KIARA.ResearchManager.prototype.update = function(gameState, queues)
 		let queue = "minorTech";
 		if (techName.queue)
 			queue = techName.queue;
+		KIARA.Logger.trace("["+queue+"].add("+techName.name+")");
 		if (techName.increasePriority)
 		{
 			gameState.ai.queueManager.changePriority(queue, 2*this.Config.priorities[queue]);
@@ -300,6 +306,7 @@ KIARA.ResearchManager.prototype.update = function(gameState, queues)
 		let queue = "minorTech";
 		if (techName.queue)
 			queue = techName.queue;
+		KIARA.Logger.trace("["+queue+"].add("+techName.name+")");
 		if (techName.increasePriority)
 		{
 			gameState.ai.queueManager.changePriority(queue, 2*this.Config.priorities[queue]);
@@ -320,6 +327,7 @@ KIARA.ResearchManager.prototype.update = function(gameState, queues)
 		let queue = "minorTech";
 		if (techName.queue)
 			queue = techName.queue;
+		KIARA.Logger.trace("["+queue+"].add("+techName.name+")");
 		if (techName.increasePriority)
 		{
 			gameState.ai.queueManager.changePriority(queue, 2*this.Config.priorities[queue]);

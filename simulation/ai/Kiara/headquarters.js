@@ -718,7 +718,8 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let free = gameState.getPopulationLimit() - (gameState.getPopulation() + numberInTraining);
 
 	let anyClasses = ["Worker"];
-	let antiClasses = ["Mercenary", "Healer"];
+	let antiClasses = ["Mercenary", "Healer", "SiegeTower", "Hero"];
+	let genAntiClasses = ["SiegeTower", "Hero"];
 	let anyRequirements = [ ["costsResource", 1, "food"], ["canGather", 1] ];
 
 	let classesInf = ["Infantry"];
@@ -770,7 +771,7 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	}
 
 	let wantCav = workers > 20 * this.Config.popScaling && this.strategy == KIARA.Strategy.BOOM && cavs < this.huntCav;
-	let cavClasses = ["FastMoving"];
+	let cavClasses = ["FastMoving+CitizenSoldier"];
 	let cavRequirements = [ ["canGather", 1] ];
 
 	let wantSiege = workers > 200 * this.Config.popScaling && gameState.currentPhase(gameState) > 2 && sieges < siegeNum;
@@ -785,7 +786,11 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 	let ww = "worker";
 	let fac = gameState.getOwnTrainingFacilities().values();
 	let ssize = size;
+
+	KIARA.Logger.trace("["+this.strategy+"]" + ", wantDefenders="+wantDefenders +", wantCav="+wantCav + ", wantSiege=" + wantSiege + ", wantChampions=" + wantChampions);
+
 	for (let ent of fac) {
+		const tn = ent.templateName();
 		if (this.wantPop && gameState.getPopulationLimit() < this.wantPop) {
 			KIARA.Logger.debug(gameState.getPopulationLimit() + " < " + this.wantPop);
 		//	return;
@@ -814,10 +819,11 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 
 			if (wantSiege)
 			{
-				template = this.findBestTrainableUnitSpecial(gameState, siegeClass, siegeRequirements, t);
+				KIARA.Logger.trace(tn + " want siege");
+				template = this.findBestTrainableUnitSpecial(gameState, siegeClass, siegeRequirements, t, genAntiClasses);
 				if (template)
 				{
-					KIARA.Logger.debug("picked siege: " + template);
+					KIARA.Logger.debug(tn + " picked siege: " + template);
 					//wwx = "attack";
 					wwx = undefined;
 					size = 2;
@@ -825,52 +831,59 @@ KIARA.HQ.prototype.alwaysTrain = function(gameState, queues)
 				}
 			}
 			if (!template && wantCav && this.cavSwitcher) {
-				template = this.findBestTrainableUnitSpecial(gameState, cavClasses, cavRequirements, t);
+				KIARA.Logger.trace(tn + " want cav");
+				template = this.findBestTrainableUnitSpecial(gameState, cavClasses, cavRequirements, t, genAntiClasses);
 				if (template) {
-					KIARA.Logger.debug("picked cav: " + template);
+					KIARA.Logger.debug(tn + " picked cav: " + template);
 					size = 2;
 					mmin = 1;
 				}
 			}
 			if (!template && wantChampions) {
-				template = this.findBestTrainableUnitSpecial(gameState, championClass, championRequirements, t);
+				KIARA.Logger.trace(tn + " want champs");
+				template = this.findBestTrainableUnitSpecial(gameState, championClass, championRequirements, t, genAntiClasses);
 				if (template) {
-					KIARA.Logger.debug("picked champion: " + template);
+					KIARA.Logger.debug(tn + " picked champion: " + template);
 					wwx = undefined;
 				}
 			}
 			if (!template) {
 				template = this.findBestTrainableUnitSpecial(gameState, classes, requirements, t, antiClasses);
 				if (template)
-					KIARA.Logger.debug("picked classes: " + template);
+					KIARA.Logger.debug(tn + " picked classes: " + template);
 			}
 			if (!template && wantDefenders && this.rangedSwitcher) {
+				KIARA.Logger.trace(tn + " want def && range");
 				template = this.findBestTrainableUnitSpecial(gameState, classesRangedInf, requirements, t, antiClasses);
 				if (template)
-					KIARA.Logger.debug("picked ranged: " + template);
+					KIARA.Logger.debug(tn + " picked ranged: " + template);
 			}
 			if (!template && wantDefenders && !this.rangedSwitcher) {
+				KIARA.Logger.trace(tn + " want def && melee");
 				template = this.findBestTrainableUnitSpecial(gameState, classesMeleeInf, requirements, t, antiClasses);
 				if (template)
-					KIARA.Logger.debug("picked melee: " + template);
+					KIARA.Logger.debug(tn + " picked melee: " + template);
 			}
 
 			if (!template) {
+				KIARA.Logger.trace(tn + " any");
 				template = this.findBestTrainableUnitSpecial(gameState, anyClasses, anyRequirements, t, antiClasses);
 				if (template)
-					KIARA.Logger.debug("picked any: " + template);
+					KIARA.Logger.debug(tn + " picked any: " + template);
 			}
 /*
 			if (!template && wantCav) {
-				template = this.findBestTrainableUnitSpecial(gameState, cavClasses, cavRequirements, t);
+				template = this.findBestTrainableUnitSpecial(gameState, cavClasses, cavRequirements, t, genAntiClasses);
 				if (template) {
 					size = 2;
 					mmin = 1;
 				}
 			}
 */
-			if (!template)
+			if (!template) {
+				KIARA.Logger.debug("nothing for: " + tn);
 				continue;
+			}
 
 			mSize = size;
 
@@ -1149,16 +1162,15 @@ KIARA.HQ.prototype.trainMoreWorkersOld = function(gameState, queues)
 /** This code trains citizen workers, trying to keep close to a ratio of worker/soldiers */
 KIARA.HQ.prototype.trainMoreWorkers = function(gameState, queues)
 {
+	const level = KIARA.Logger.level;
+//	KIARA.Logger.level = KIARA.Logger.TRACE;
 	this.alwaysTrain(gameState, queues);
+	KIARA.Logger.level = level;
 };
 
 KIARA.HQ.prototype.findBestTrainableUnitSpecial = function(gameState, classes, requirements, units, anticlasses = [])
 {
-	if (classes.indexOf("Hero") == -1)
-		anticlasses.push("Hero");
-	else if (classes.indexOf("Siege") != -1)	// We do not want siege tower as AI does not know how to use it
-		anticlasses.push("SiegeTower");
-
+	KIARA.Logger.trace("classes: " + uneval(classes) + ", antiClasses: " + uneval(anticlasses) + ", req: " + uneval(requirements));
 	units = gameState.filterTrainableUnitsByClass(units, classes, anticlasses);
 
 	if (!units.length)
@@ -3484,7 +3496,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 			this.strategy = KIARA.Strategy.ATTACK;
 	}
 	else if (this.lastPopGrow && pop < this.lastPopGrow * 0.3) {
-		this.strategy = KIARA.Strategy.RECOVER;
+	//	this.strategy = KIARA.Strategy.RECOVER;
 	}
 	else if (this.lastPopGrow && pop > 0.6 * this.lastPopGrow && pop > 100 * this.Config.popScaling) {
 		this.strategy = KIARA.Strategy.ATTACK;
@@ -3579,8 +3591,11 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 		if (this.needCorral && gameState.ai.playedTurn % 4 == 3)
 			this.manageCorral(gameState, queues);
 
-	if (!queues.minorTech.hasQueuedUnits() && this.strategy != KIARA.Strategy.RECOVER/* && gameState.ai.playedTurn % 5 == 1*/)
+		const level = KIARA.Logger.level;
+//		KIARA.Logger.level = KIARA.Logger.TRACE;
+		if (!queues.minorTech.hasQueuedUnits() && this.strategy != KIARA.Strategy.RECOVER/* && gameState.ai.playedTurn % 5 == 1*/)
 			this.researchManager.update(gameState, queues);
+		KIARA.Logger.level = level;
 	}
 
 	if (this.currentPhase > 1 && !this.expanding && this.canExpand)
