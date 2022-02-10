@@ -137,14 +137,13 @@ KIARA.TrainingPlan.prototype.start = function(gameState)
 	let number = Math.floor(this.number / ln);
 	let nMissing = this.number - (number*ln);
 
-	let pt = this.promotedTypes(gameState);
 	let civ = gameState.getPlayerCiv();
 	let i = 1;
 	while (i < ln) {
 	//	KIARA.Logger.debug("spreading load with " + number);
 		if (this.metadata && this.metadata.base !== undefined && this.metadata.base === 0)
 			this.metadata.base = this.trainers[i].getMetadata(PlayerID, "base");
-		this.trainers[i].train(civ, this.type, number, this.metadata, pt);
+		this.trainers[i].train(civ, this.type, number, this.metadata);
 		i++;
 	}
 
@@ -154,7 +153,7 @@ KIARA.TrainingPlan.prototype.start = function(gameState)
 	i = 0;
 	if (this.metadata && this.metadata.base !== undefined && this.metadata.base === 0)
 		this.metadata.base = this.trainers[i].getMetadata(PlayerID, "base");
-	this.trainers[i].train(civ, this.type, number, this.metadata, pt);
+	this.trainers[i].train(civ, this.type, number, this.metadata);
 
 	this.onStart(gameState);
 };
@@ -162,34 +161,6 @@ KIARA.TrainingPlan.prototype.start = function(gameState)
 KIARA.TrainingPlan.prototype.addItem = function(amount = 1)
 {
 	this.number += amount;
-};
-
-/** Find the promoted types corresponding to this.type */
-KIARA.TrainingPlan.prototype.promotedTypes = function(gameState)
-{
-	let types = [];
-	let promotion = this.template.promotion();
-	let previous;
-	let template;
-	while (promotion)
-	{
-		types.push(promotion);
-		previous = promotion;
-		template = gameState.getTemplate(promotion);
-		if (!template)
-		{
-			KIARA.Logger.error(" promotion template " + promotion + " is not found");
-			promotion = undefined;
-			break;
-		}
-		promotion = template.promotion();
-		if (previous === promotion)
-		{
-			KIARA.Logger.error(" unit " + promotion + " is its own promoted unit");
-			promotion = undefined;
-		}
-	}
-	return types;
 };
 
 KIARA.TrainingPlan.prototype.Serialize = function()

@@ -90,12 +90,11 @@ function GetFormationUnitAIs(ents, player, cmd, formationTemplate, forceTemplate
 		if (!cmpUnitAI || !cmpPosition || !cmpPosition.IsInWorld())
 			continue;
 
-		let cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
 		// TODO: We only check if the formation is usable by some units
 		// if we move them to it. We should check if we can use formations
 		// for the other cases.
 		let nullFormation = (formationTemplate || cmpUnitAI.GetFormationTemplate()) == NULL_FORMATION;
-		if (nullFormation || !cmpIdentity || !cmpIdentity.CanUseFormation(formationTemplate || NULL_FORMATION))
+		if (nullFormation || !cmpUnitAI.CanUseFormation(formationTemplate || NULL_FORMATION))
 		{
 			if (nullFormation && cmpUnitAI.GetFormationController())
 				cmpUnitAI.LeaveFormation(cmd.queued || false);
@@ -147,55 +146,6 @@ function GetFormationUnitAIs(ents, player, cmd, formationTemplate, forceTemplate
 	}
 
 	return nonformedUnitAIs.concat(formationUnitAIs);
-}
-
-/**
- * Get some information about the formations used by entities.
- */
-function ExtractFormations(ents)
-{
-	let entities = []; // Entities with UnitAI.
-	let members = {}; // { formationentity: [ent, ent, ...], ... }
-	let templates = {};  // { formationentity: template }
-	for (let ent of ents)
-	{
-		let cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
-		if (!cmpUnitAI)
-			continue;
-
-		entities.push(ent);
-
-		let fid = cmpUnitAI.GetFormationController();
-		if (fid == INVALID_ENTITY)
-			continue;
-
-		if (!members[fid])
-		{
-			members[fid] = [];
-			templates[fid] = cmpUnitAI.GetFormationTemplate();
-		}
-		members[fid].push(ent);
-	}
-
-	return {
-		"entities": entities,
-		"members": members,
-		"templates": templates
-	};
-}
-
-/**
- * Remove the given list of entities from their current formations.
- */
-function RemoveFromFormation(ents)
-{
-	let formation = ExtractFormations(ents);
-	for (let fid in formation.members)
-	{
-		let cmpFormation = Engine.QueryInterface(+fid, IID_Formation);
-		if (cmpFormation)
-			cmpFormation.RemoveMembers(formation.members[fid]);
-	}
 }
 
 /**
@@ -271,3 +221,52 @@ function ClusterEntities(ents, separationDistance)
 	return clusters;
 }
 
+
+/**
+ * Get some information about the formations used by entities.
+ */
+function ExtractFormations(ents)
+{
+	let entities = []; // Entities with UnitAI.
+	let members = {}; // { formationentity: [ent, ent, ...], ... }
+	let templates = {};  // { formationentity: template }
+	for (let ent of ents)
+	{
+		let cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
+		if (!cmpUnitAI)
+			continue;
+
+		entities.push(ent);
+
+		let fid = cmpUnitAI.GetFormationController();
+		if (fid == INVALID_ENTITY)
+			continue;
+
+		if (!members[fid])
+		{
+			members[fid] = [];
+			templates[fid] = cmpUnitAI.GetFormationTemplate();
+		}
+		members[fid].push(ent);
+	}
+
+	return {
+		"entities": entities,
+		"members": members,
+		"templates": templates
+	};
+}
+
+/**
+ * Remove the given list of entities from their current formations.
+ */
+function RemoveFromFormation(ents)
+{
+	let formation = ExtractFormations(ents);
+	for (let fid in formation.members)
+	{
+		let cmpFormation = Engine.QueryInterface(+fid, IID_Formation);
+		if (cmpFormation)
+			cmpFormation.RemoveMembers(formation.members[fid]);
+	}
+}
