@@ -174,7 +174,9 @@ KIARA.Worker.prototype.update = function(gameState, ent)
 
 	let unitAIState = ent.unitAIState();
 	if ((subrole == "hunter" || subrole == "gatherer") &&
-	    (unitAIState == "INDIVIDUAL.GATHER.GATHERING" || unitAIState == "INDIVIDUAL.GATHER.APPROACHING" ||
+	    (unitAIState == "INDIVIDUAL.GATHER.GATHERING" ||
+	     unitAIState == "INDIVIDUAL.GATHER.APPROACHING" ||
+	     unitAIState == "INDIVIDUAL.COLLECTTREASURE.APPROACHING" ||
 	     unitAIState == "INDIVIDUAL.COMBAT.APPROACHING"))
 	{
 		if (this.isInaccessibleSupply(gameState))

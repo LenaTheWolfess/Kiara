@@ -12,7 +12,7 @@ m.Template.prototype.attackRange = function(type) {
 	return {
 		"max": +this.get("Attack/" + type +"/MaxRange"),
 		"min": +(this.get("Attack/" + type +"/MinRange") || 0),
-		"elevationBonus": +(this.get("Attack/" + type + "/ElevationBonus") || 0)
+		"elevationBonus": +(this.get("Attack/" + type + "/Origin/Y") || 0)
 	};
 };
 

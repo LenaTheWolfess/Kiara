@@ -3253,7 +3253,7 @@ KIARA.HQ.prototype.isUnderEnemyFire = function(gameState, pos, radius = 0)
 	{
 		let ranged = ent.attackRange("Ranged");
 		let range = radius + ranged.max + ranged.elevationBonus;
-		if (API3.SquareVectorDistance(ent.position(), pos) < range*range)
+		if (API3.SquareVectorDistance(ent.position(), pos) < range*range + 1)
 			return true;
 	}
 	return false;

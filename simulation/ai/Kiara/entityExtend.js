@@ -392,6 +392,9 @@ KIARA.gatherTreasure = function(gameState, ent, water = false)
 	let access = water ? KIARA.getSeaAccess(gameState, ent) : KIARA.getLandAccess(gameState, ent);
 	for (let treasure of gameState.ai.HQ.treasures.values())
 	{
+		const inaccessibleTime = treasure.getMetadata(PlayerID, "inaccessibleTime");
+		if (!!inaccessibleTime)
+			continue;
 		// let some time for the previous gatherer to reach the treasure before trying again
 		let lastGathered = treasure.getMetadata(PlayerID, "lastGathered");
 		if (lastGathered && gameState.ai.elapsedTime - lastGathered < 20)
