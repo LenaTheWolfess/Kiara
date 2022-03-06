@@ -22,8 +22,8 @@ KIARA.Config = function(difficulty, behavior)
 		"Hack": 0.085,
 		"Pierce": 0.085,
 		"Crush": 0.055,
-		"Fire": 0.095,
-		"Poison": 0.95
+		"Fire": 1.0,
+		"Poison": 1.0
 	};
 
 	this.Economy = {

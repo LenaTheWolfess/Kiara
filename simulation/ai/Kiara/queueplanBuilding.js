@@ -121,6 +121,7 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 	if (template.buildPlacementType() == "shore")
 		return this.findDockPosition(gameState);
 
+	const civ = gameState.getPlayerCiv();
 	let HQ = gameState.ai.HQ;
 	if ((template.hasClass("Storehouse")|| template.hasClass("Farmstead")  && this.metadata && this.metadata.base))
 	{
@@ -236,6 +237,8 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 					placement.set(j, 45);
 		}
 
+		const fieldRadius = civ == "han" ? 35 : 40;
+
 		if (!HQ.requireHouses || !template.hasClass("House"))
 		{
 			gameState.getOwnStructures().forEach(function(ent) {
@@ -247,15 +250,15 @@ KIARA.ConstructionPlan.prototype.findGoodPosition = function(gameState)
 				if (struct.resourceDropsiteTypes() && struct.resourceDropsiteTypes().indexOf("food") != -1)
 				{
 					if (template.hasClass("Field") || template.hasClass("Corral"))
-						placement.addInfluence(x, z, 80 / cellSize, 50);
+						placement.addInfluence(x, z, fieldRadius*2 / cellSize, 50);
 					else // If this is not a field add a negative influence because we want to leave this area for fields
-						placement.addInfluence(x, z, 80 / cellSize, -20);
+						placement.addInfluence(x, z, fieldRadius*2 / cellSize, -20);
 				}
 /**/
 				if (template.hasClass("House") && ent.hasClass("CivilCentre"))
-					placement.addInfluence(x, z, 40/cellSize, -10);    // we want to leave this for fields
+					placement.addInfluence(x, z, fieldRadius/cellSize, -10);    // we want to leave this for fields
 				if (template.hasClass("House") && ent.hasClass("Field"))
-					placement.addInfluence(x, z, 40/cellSize, 5);
+					placement.addInfluence(x, z, fieldRadius/cellSize, 5);
 				if (template.hasClass("Farmstead") && (!ent.hasClass("Field") && !ent.hasClass("Corral") &&
 					(!ent.hasClass("StoneWall") || ent.hasClass("Gates"))))
 					placement.addInfluence(x, z, 100/cellSize, -25);       // move farmsteads away to make room (StoneWall test needed for iber)
