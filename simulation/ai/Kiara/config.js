@@ -22,7 +22,8 @@ KIARA.Config = function(difficulty, behavior)
 		"Hack": 0.085,
 		"Pierce": 0.085,
 		"Crush": 0.055,
-		"Fire": 0.095
+		"Fire": 0.095,
+		"Poison": 0.95
 	};
 
 	this.Economy = {
@@ -65,6 +66,9 @@ KIARA.Config = function(difficulty, behavior)
 		],
 		"gaul": [
 			"structures/{civ}/assembly"
+		],
+		"han": [
+			"structures/{civ}/academy"
 		],
 		"iber": [
 			"structures/{civ}/monument"

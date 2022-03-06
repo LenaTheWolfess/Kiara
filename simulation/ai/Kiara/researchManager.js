@@ -126,7 +126,7 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 			let template = tech[1]._template;
 			for (let i in template.modifications)
 			{
-				if (template.modifications[i].value === "ResourceGatherer/Rates/food.grain") {
+				if (template.modifications[i].value === "ResourceGatherer/Rates/food.grain" || template.modifications[i].value === "ResourceGatherer/Rates/food.rice") {
 					return { "name": tech[0], "increasePriority": true };
 				}
 				if (template.modifications[i].value === "ResourceGatherer/Rates/wood.tree") {
@@ -147,7 +147,7 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 			let template = tech[1]._template;
 			for (let i in template.modifications)
 			{
-				if (template.modifications[i].value === "ResourceGatherer/Rates/food.grain") {
+				if (template.modifications[i].value === "ResourceGatherer/Rates/food.grain" || template.modifications[i].value === "ResourceGatherer/Rates/food.rice") {
 					return { "name": tech[0], "increasePriority": false };
 				}
 				if (this.Config.behavior == KIARA.Behaviour.DEFEND)
@@ -211,7 +211,7 @@ KIARA.ResearchManager.prototype.researchWantedTechs = function(gameState, techs)
 		{
 			if (gameState.ai.HQ.navalMap && template.modifications[i].value === "ResourceGatherer/Rates/food.fish")
 				return { "name": tech[0], "increasePriority": this.CostSum(template.cost) < 400 };
-			else if (template.modifications[i].value === "ResourceGatherer/Rates/food.grain")
+			else if (template.modifications[i].value === "ResourceGatherer/Rates/food.grain" || template.modifications[i].value === "ResourceGatherer/Rates/food.rice")
 				return { "name": tech[0], "increasePriority": false };
 			else if (template.modifications[i].value === "ResourceGatherer/Rates/wood.tree")
 				return { "name": tech[0], "increasePriority": this.CostSum(template.cost) < 400 };
