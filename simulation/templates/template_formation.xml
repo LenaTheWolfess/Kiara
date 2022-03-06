@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Entity>
   <!--
-  <Identity>
-    <Civ>gaia</Civ>
-    <GenericName>Formation</GenericName>
-    <Undeletable>true</Undeletable>
-  </Identity>
   <Selectable>
     <Overlay>
       <Texture>
@@ -20,6 +15,7 @@
     <DisabledTooltip>Requires at least 2 Soldiers or Siege Engines.</DisabledTooltip>
     <SpeedMultiplier>1</SpeedMultiplier>
     <FormationShape>square</FormationShape>
+    <MaxTurningAngle>0.785</MaxTurningAngle>
     <SortingClasses>Hero Champion Cavalry Melee Ranged</SortingClasses>
     <ShiftRows>false</ShiftRows>
     <UnitSeparationWidthMultiplier>1</UnitSeparationWidthMultiplier>
@@ -31,6 +27,10 @@
   <FormationAttack>
     <CanAttackAsFormation>false</CanAttackAsFormation>
   </FormationAttack>
+  <Identity>
+    <Civ/> <!-- Unused -->
+    <Undeletable>true</Undeletable>
+  </Identity>
   <Obstruction>
     <Unit/>
     <Active>true</Active>

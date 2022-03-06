@@ -337,7 +337,7 @@ KIARA.TransportPlan.prototype.onBoarding = function(gameState)
 					{
 						let oldPos = ent.getMetadata(PlayerID, "posGarrison");
 						let newPos = ent.position();
-						if (oldPos[0] == newPos[0] && oldPos[1] == newPos[1])
+						if (!!oldPos && oldPos[0] == newPos[0] && oldPos[1] == newPos[1])
 							retry = true;
 						ent.setMetadata(PlayerID, "posGarrison", newPos);
 						ent.setMetadata(PlayerID, "timeGarrison", time);
@@ -374,7 +374,7 @@ KIARA.TransportPlan.prototype.onBoarding = function(gameState)
 			{
 				let oldPos = ent.getMetadata(PlayerID, "posGarrison");
 				let newPos = ent.position();
-				if (oldPos[0] == newPos[0] && oldPos[1] == newPos[1])
+				if (!!oldPos && oldPos[0] == newPos[0] && oldPos[1] == newPos[1])
 				{
 					if (distShip < this.boardingRange)	// looks like we are blocked ... try to go out of this trap
 					{
