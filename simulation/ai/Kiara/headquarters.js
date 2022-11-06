@@ -309,9 +309,9 @@ KIARA.HQ.prototype.checkEvents = function(gameState, events)
 			this.expanding = false;
 		if (ent.getMetadata(PlayerID, "base") === undefined)
 			continue;
-			let res = ent.getMetadata(PlayerID, "type");
-		let coloring = false;
-		if (res & coloring) {
+		let res = ent.getMetadata(PlayerID, "type");
+		let debug = KIARA.Logger.isDebug();
+		if (res & debug) {
 			KIARA.Logger.trace("Dropsite build for " + res);
 			if (res == "wood")
 				Engine.PostCommand(PlayerID,{"type": "set-shading-color", "entities": [ent.id()], "rgb": [2,0,0]});
@@ -3380,6 +3380,16 @@ KIARA.HQ.prototype.isResourceExhausted = function(resource)
 	return this.turnCache["exhausted-" + resource];
 };
 
+KIARA.HQ.prototype.isResourceFarAway = function(resource)
+{
+	if (this.turnCache["faraway-" + resource] == undefined)
+		this.turnCache["faraway-" + resource] = this.baseManagers.every(base =>
+			!base.dropsiteSupplies[resource].nearby.length &&
+			!base.dropsiteSupplies[resource].medium.length);
+
+	return this.turnCache["faraway-" + resource] && !this.expanding;
+};
+
 /**
  * Check if a structure in blinking territory should/can be defended (currently if it has some attacking armies around)
  */
@@ -3571,10 +3581,11 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 			}
 			if (
 				!dq &&
-				this.isResourceExhausted(res)
+				(this.isResourceExhausted(res) || this.isResourceFarAway(res))
 			) {
 				needToExpand = res;
 				KIARA.Logger.debug("need expand " + res);
+				this.buildNewBase(gameState, queues, needToExpand);
 			}
 		} else {
 			KIARA.Logger.debug("has qued or foundation for : " + res + " : " + cl);
