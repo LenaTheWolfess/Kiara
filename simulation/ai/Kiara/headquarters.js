@@ -3586,7 +3586,7 @@ KIARA.HQ.prototype.update = function(gameState, queues, events)
 				needToExpand = res;
 				KIARA.Logger.debug("need expand " + res);
 				this.buildNewBase(gameState, queues, needToExpand);
-			}
+			} 
 		} else {
 			KIARA.Logger.debug("has qued or foundation for : " + res + " : " + cl);
 		}
